@@ -5,11 +5,13 @@ import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.util.ListIterator;
 
 import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
@@ -40,11 +42,13 @@ public class AC_GUI extends JFrame
 	// -------------------------------------------------------------------------------------
 	protected final static String MENU_HELP = "Help Contents";
 	protected final static String MENU_ABOUT = "About Aggregation Connector";
-	
+
 	protected static AC_GUI currentGUI;
 	protected static DrawingBoard drawingBoard;
 	protected static TreeView treeView;
-	protected static ModuleList moduleList;
+	protected static ModuleList masterModuleList;
+	protected static Module selectedModule;
+	protected static boolean isModuleOpen;
 
 	/**
 	 * Construct the AC_GUI object.
@@ -52,13 +56,12 @@ public class AC_GUI extends JFrame
 	public AC_GUI()
 	{
 		super("Aggregation Connector");
-		//System.out.println("AC_GUI constructor");
-		moduleList = new ModuleList();
+		// System.out.println("AC_GUI constructor");
+		//moduleList = new ModuleList();
 		initializeComponents();
+		isModuleOpen = false;
 		this.setVisible(true);
 	}
-
-	
 
 	/**
 	 * Starts the tool.
@@ -75,14 +78,88 @@ public class AC_GUI extends JFrame
 		{
 			e1.printStackTrace();
 		}
-		
+
 		currentGUI = new AC_GUI();
 		currentGUI.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		currentGUI.setSize(900, 800);
 		// make the frame full screen
-		//currentGUI.setExtendedState(JFrame.MAXIMIZED_BOTH);
+		// currentGUI.setExtendedState(JFrame.MAXIMIZED_BOTH);
 	}
 
+	/**
+	 * Create a new module in the three panels.
+	 * @param name the name of the new module
+	 */
+	public void newModule(String name)
+	{
+		masterModuleList = new ModuleList();
+		Module mod = new Module(name);
+		masterModuleList.add(mod);
+		treeView.setup(mod);
+		//drawingBoard.setup(mod);
+		drawingBoard.createCell(mod);
+		drawingBoard.changeModule(mod);
+		
+		isModuleOpen = true;
+	}
+	
+	/**
+	 * Create a new submodule in the three panels.
+	 * @param name the name of the new submodule
+	 */
+	public void newSubmodule(String name, Module parent)
+	{
+		Module mod = new Module(name, parent);
+		parent.addChild(mod);
+		treeView.addNode(mod);
+		drawingBoard.createCell(mod);
+		drawingBoard.addCell(mod);
+		//moduleList.add(mod);
+		//printList();
+	}
+	
+	/**
+	 * Remove the given module, and its children, from all three panels.
+	 * @param mod the module to be removed
+	 */
+	public void removeSubmodule(Module mod)
+	{
+		setSelectedModule(mod.getParent());
+		treeView.removeNode(mod.getTreeNode());
+		drawingBoard.removeCell(mod.getDrawingCell());
+		mod.getParent().removeChild(mod);
+		//moduleList.remove(mod);
+	}
+	
+	/**
+	 * Select the representation of the given module on the treeView and drawingBoard.
+	 * @param mod the module to be selected
+	 */
+	public void setSelectedModule(Module mod)
+	{
+		selectedModule = mod;
+		treeView.setSelected(mod.getTreeNode());
+		drawingBoard.setSelected(mod.getDrawingCell());
+	}
+	
+	/**
+	 * Select the module represented by the given tree node. 
+	 * @param treeNode the treeView representation of the module to be selected
+	 */
+	public void setSelectedModule(DefaultMutableTreeNode treeNode)
+	{
+		setSelectedModule(masterModuleList.findModule(treeNode));
+	}
+	
+	/**
+	 * Select the module represented by the given drawing cell,
+	 * @param drawingCell the drawingBoard representation of the module to be selected
+	 */
+	public void setSelectedModule(Object drawingCell)
+	{
+		setSelectedModule(masterModuleList.findModule(drawingCell));
+	}
+	
 	/**
 	 * Initialize the components within the AC frame.
 	 */
@@ -94,9 +171,9 @@ public class AC_GUI extends JFrame
 
 		// The aggregation window
 		drawingBoard = new DrawingBoard();
-		//drawingBoard.newModel();
-		//JScrollPane aggregationWindow = new JScrollPane(drawingBoard);
-		//aggregationWindow.setOpaque(true);
+		// drawingBoard.newModel();
+		// JScrollPane aggregationWindow = new JScrollPane(drawingBoard);
+		// aggregationWindow.setOpaque(true);
 
 		// The tree window
 		treeView = new TreeView();
@@ -105,11 +182,12 @@ public class AC_GUI extends JFrame
 
 		initializeMenuItems();
 
-		//JSplitPane verticalLine = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, treeWindow, aggregationWindow);
+		// JSplitPane verticalLine = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, treeWindow, aggregationWindow);
 		JSplitPane verticalLine = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, treeWindow, drawingBoard);
 		verticalLine.setDividerLocation(180 + verticalLine.getInsets().left);
 		JSplitPane horizontalLine = new JSplitPane(JSplitPane.VERTICAL_SPLIT, verticalLine, modelBuilderWindow);
 		horizontalLine.setDividerLocation(610 + horizontalLine.getInsets().top);
+		
 		this.add(horizontalLine);
 
 		this.pack();
@@ -140,7 +218,7 @@ public class AC_GUI extends JFrame
 		moduleMenu.add(makeMenuItem(MENU_ADD_SUBMODULE, menuListener, -1));
 		moduleMenu.addSeparator();
 		moduleMenu.add(makeMenuItem(MENU_REMOVE_SUBMODULE, menuListener, -1));
-		
+
 		// Help
 		JMenu helpMenu = new JMenu("Help");
 		helpMenu.add(makeMenuItem(MENU_HELP, menuListener, -1));
@@ -176,37 +254,5 @@ public class AC_GUI extends JFrame
 			menuItem.setAccelerator(KeyStroke.getKeyStroke(keyEvent, defaultShortcutMask));
 		}
 		return menuItem;
-	}
-	
-	/**
-	 * Creates a new module in the three panels.
-	 */
-	public void newModule(String name)
-	{
-		Module mod = new Module(name);
-		mod.setTreeNode(treeView.addChild(mod.getName()));
-		mod.setName((String)mod.getTreeNode().getUserObject());
-		mod.setDrawingCell(drawingBoard.newModel(mod.getName()));
-		moduleList.add(mod);
-	}
-	
-	/**
-	 * Removes all of the modules.
-	 */
-	public void removeModule()
-	{
-		DefaultMutableTreeNode node = null;
-		Module mod = null;
-		
-		node = treeView.removeChild();
-		
-		if (node == null)
-		{
-			return;
-		}
-		
-		mod = moduleList.findModule(node);
-		drawingBoard.removeModel(mod.getDrawingCell());
-		moduleList.remove(mod);
 	}
 }
