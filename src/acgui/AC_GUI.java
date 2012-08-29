@@ -1,6 +1,7 @@
 package acgui;
 
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -72,7 +73,7 @@ public class AC_GUI extends JFrame
 	{
 		try
 		{
-			//UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 		}
 		catch (Exception e1)
 		{
@@ -184,9 +185,14 @@ public class AC_GUI extends JFrame
 
 		// JSplitPane verticalLine = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, treeWindow, aggregationWindow);
 		JSplitPane verticalLine = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, treeWindow, drawingBoard);
-		verticalLine.setDividerLocation(180 + verticalLine.getInsets().left);
+		//verticalLine.setDividerLocation(180 + verticalLine.getInsets().left);
+		Dimension dim = new Dimension(180, 500);
+		treeWindow.setMinimumSize(dim);
 		JSplitPane horizontalLine = new JSplitPane(JSplitPane.VERTICAL_SPLIT, verticalLine, modelBuilderWindow);
-		horizontalLine.setDividerLocation(610 + horizontalLine.getInsets().top);
+		//horizontalLine.setDividerLocation(610 + horizontalLine.getInsets().top);
+		//System.out.println("Vertical line: " + verticalLine.getDividerLocation());
+		//System.out.println("Horizontal line: " + horizontalLine.getDividerLocation());
+		
 		
 		this.add(horizontalLine);
 
