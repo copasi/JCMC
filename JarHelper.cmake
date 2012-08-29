@@ -130,7 +130,7 @@ function(create_jar _TARGET_NAME)
     # create the manifest file for the jar file
     set(ManifestInfo 
 	"Manifest-Version: 1.0
-Class-Path: . ${ACGUI_SOURCE_DIR}/lib/jgraphx.jar
+Class-Path: . ../lib/jgraphx.jar
 Main-Class: acgui.AC_GUI
 "
 )
