@@ -1,22 +1,32 @@
 package acgui;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.ListIterator;
 
 import javax.swing.tree.DefaultMutableTreeNode;
+
+import com.mxgraph.util.mxRectangle;
 
 /**
  * The information for a module.
  * @author T.C. Jones
  * @version July 6, 2012
  */
-public class Module
+public class Module implements Serializable
 {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	private Module parent;
 	private String name;
 	private DefaultMutableTreeNode treeNode;
 	private Object drawingCell;
 	private ArrayList<Module> children;
+	private ArrayList<Port> ports;
+	private ArrayList<Connection> connections;
+	private mxRectangle submoduleBounds;
 
 	/**
 	 * Construct a module.
@@ -28,6 +38,8 @@ public class Module
 		treeNode = null;
 		drawingCell = null;
 		children = new ArrayList<Module>();
+		ports = new ArrayList<Port>();
+		connections = new ArrayList<Connection>();
 	}
 
 	/**
@@ -41,6 +53,8 @@ public class Module
 		treeNode = null;
 		drawingCell = null;
 		children = new ArrayList<Module>();
+		ports = new ArrayList<Port>();
+		connections = new ArrayList<Connection>();
 	}
 
 	/**
@@ -55,6 +69,8 @@ public class Module
 		treeNode = null;
 		drawingCell = null;
 		children = new ArrayList<Module>();
+		ports = new ArrayList<Port>();
+		connections = new ArrayList<Connection>();
 	}
 	
 	/**
@@ -69,6 +85,8 @@ public class Module
 		treeNode = tNode;
 		drawingCell = dCell;
 		children = new ArrayList<Module>();
+		ports = new ArrayList<Port>();
+		connections = new ArrayList<Connection>();
 	}
 
 	/**
@@ -165,6 +183,77 @@ public class Module
 		return children;
 	}
 	
+	/**
+	 * Add the given port to the module.
+	 * @param port the port to add
+	 */
+	public void addPort(Port port)
+	{
+		ports.add(port);
+	}
+	
+	/**
+	 * Remove the given port from the list of ports.
+	 * @param port the port to be removed
+	 */
+	public void removePort(Port port)
+	{
+		ports.remove(port);
+	}
+	
+	/**
+	 * Return the list of ports.
+	 * @return the list of ports
+	 */
+	public ArrayList<Port> getPorts()
+	{
+		return ports;
+	}
+	
+	/**
+	 * Add the given connection to the list of connections.
+	 * @param connection the connection to add
+	 */
+	public void addConnection(Connection connection)
+	{
+		connections.add(connection);
+	}
+	
+	/**
+	 * Remove the given connection from the list of connections.
+	 * @param connection the connection to be removed
+	 */
+	public void removeConnection(Connection connection)
+	{
+		connections.remove(connection);
+	}
+	
+	/**
+	 * Return the list of connections.
+	 * @return the list of connections
+	 */
+	public ArrayList<Connection> getConnections()
+	{
+		return connections;
+	}
+	
+	/**
+	 * Set the location for the submodule representation.
+	 * @param bounds the location of the submodule representation
+	 */
+	public void setSubmoduleBounds(mxRectangle bounds)
+	{
+		submoduleBounds = bounds;
+	}
+	
+	/**
+	 * Return the submodule bounds.
+	 * @return the submodule bounds
+	 */
+	public mxRectangle getSubmoduleBounds()
+	{
+		return submoduleBounds;
+	}
 	@Override
 	public String toString()
 	{

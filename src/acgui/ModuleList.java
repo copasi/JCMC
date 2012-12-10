@@ -95,6 +95,9 @@ public class ModuleList
 		return list.size();
 	}
 
+	/**
+	 * Print the current list of modules.
+	 */
 	public void printList()
 	{
 		Module current;

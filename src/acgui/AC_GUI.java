@@ -6,6 +6,7 @@ import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.util.ArrayList;
 import java.util.ListIterator;
 
 import javax.swing.JFrame;
@@ -20,6 +21,10 @@ import javax.swing.KeyStroke;
 import javax.swing.UIManager;
 import javax.swing.tree.DefaultMutableTreeNode;
 
+import com.mxgraph.model.mxCell;
+
+import org.COPASI.*;
+
 /**
  * Aggregation Connector. This tool is used to connect SBML models together.
  * 
@@ -29,20 +34,6 @@ import javax.swing.tree.DefaultMutableTreeNode;
 public class AC_GUI extends JFrame
 {
 	private static final long serialVersionUID = 1L;
-
-	protected final static String MENU_NEW = "New"; // a root model created
-	protected final static String MENU_OPEN = "Open"; // a root model opened from file
-	protected final static String MENU_RECENT = "Recent Files";
-	protected final static String MENU_SAVE = "Save";
-	protected final static String MENU_SAVE_AS = "Save As";
-	protected final static String MENU_CLOSE = "Close"; // close the model and get back to new
-	protected final static String MENU_EXIT = "Exit"; // exit application
-	// -------------------------------------------------------------------------------------
-	protected final static String MENU_ADD_SUBMODULE = "Add Submodule";
-	protected final static String MENU_REMOVE_SUBMODULE = "Remove Submodule";
-	// -------------------------------------------------------------------------------------
-	protected final static String MENU_HELP = "Help Contents";
-	protected final static String MENU_ABOUT = "About Aggregation Connector";
 
 	protected static AC_GUI currentGUI;
 	protected static DrawingBoard drawingBoard;
@@ -57,8 +48,13 @@ public class AC_GUI extends JFrame
 	public AC_GUI()
 	{
 		super("Aggregation Connector");
-		// System.out.println("AC_GUI constructor");
 		//moduleList = new ModuleList();
+		CCopasiRootContainer.init();
+		if (CCopasiRootContainer.getRoot() == null)
+		{
+			System.out.println("COPASI not setup correctly.");
+			System.exit(0);
+		}
 		initializeComponents();
 		isModuleOpen = false;
 		this.setVisible(true);
@@ -97,7 +93,6 @@ public class AC_GUI extends JFrame
 		Module mod = new Module(name);
 		masterModuleList.add(mod);
 		treeView.setup(mod);
-		//drawingBoard.setup(mod);
 		drawingBoard.createCell(mod);
 		drawingBoard.changeModule(mod);
 		
@@ -127,9 +122,87 @@ public class AC_GUI extends JFrame
 	{
 		setSelectedModule(mod.getParent());
 		treeView.removeNode(mod.getTreeNode());
+		
+		ArrayList<Port> ports;
+		//ListIterator<Port> ports;
+		
+		// get the list of ports
+		ports = mod.getPorts();
+		
+		if (ports.size() != 0)
+		{
+			for(int i = 0; i < ports.size(); i++)
+			{
+				removePort(ports.get(0));
+			}
+		}
+		/*
+		// loop through each port of the module
+		while (ports.hasNext())
+		{
+			removePort(ports.next());
+		}
+		*/
 		drawingBoard.removeCell(mod.getDrawingCell());
 		mod.getParent().removeChild(mod);
 		//moduleList.remove(mod);
+	}
+	
+	/**
+	 * Add a port to the given module.
+	 * @param mod the module to add the port
+	 * @param name the name of the port
+	 * @param type the type of the port
+	 */
+	public void addPort(Module parentMod, String name, PortType type)
+	{
+		Port newPort = new Port(parentMod, type, name);
+		drawingBoard.addPort(parentMod, newPort);
+		parentMod.addPort(newPort);
+	}
+	
+	/**
+	 * Remove the given port.
+	 * @param port the port to be removed
+	 */
+	public void removePort(Port port)
+	{
+		// get the parent module of the port
+		Module parentMod = port.getParent();
+		// remove any edges connected to the port
+		drawingBoard.removeEdges(port);
+		// remove the drawing cell representation from the drawing board
+		drawingBoard.removeCell(port.getDrawingCell());
+		// remove the port from the parent module
+		parentMod.removePort(port);	
+	}
+	
+	/**
+	 * Add a connection to the given module.
+	 * @param parentMod the module to add a connection
+	 * @param connectionCell the drawing cell representation of the connection
+	 */
+	public void addConnection(Module parentMod, Object connectionCell)
+	{
+		// make a connection object
+		Connection edge = new Connection(parentMod, connectionCell);
+		// set the connection as the user object of the drawing cell
+		((mxCell)connectionCell).setValue(edge);
+		// add the edge to the parent module
+		parentMod.addConnection(edge);
+	}
+	
+	/**
+	 * Remove the connection from the given module.
+	 * @param parentMod the module containing the connection
+	 * @param connectionCell the drawing cell representation of the connection to remove
+	 */
+	public void removeConnection(Connection edge)
+	{
+		// get the parent module of the connection
+		Module parentMod = edge.getParent();
+		// remove the connection object from the parent module
+		parentMod.removeConnection(edge);
 	}
 	
 	/**
@@ -153,7 +226,7 @@ public class AC_GUI extends JFrame
 	}
 	
 	/**
-	 * Select the module represented by the given drawing cell,
+	 * Select the module represented by the given drawing cell.
 	 * @param drawingCell the drawingBoard representation of the module to be selected
 	 */
 	public void setSelectedModule(Object drawingCell)
@@ -172,9 +245,6 @@ public class AC_GUI extends JFrame
 
 		// The aggregation window
 		drawingBoard = new DrawingBoard();
-		// drawingBoard.newModel();
-		// JScrollPane aggregationWindow = new JScrollPane(drawingBoard);
-		// aggregationWindow.setOpaque(true);
 
 		// The tree window
 		treeView = new TreeView();
@@ -183,7 +253,6 @@ public class AC_GUI extends JFrame
 
 		initializeMenuItems();
 
-		// JSplitPane verticalLine = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, treeWindow, aggregationWindow);
 		JSplitPane verticalLine = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, treeWindow, drawingBoard);
 		//verticalLine.setDividerLocation(180 + verticalLine.getInsets().left);
 		Dimension dim = new Dimension(180, 500);
@@ -205,35 +274,49 @@ public class AC_GUI extends JFrame
 	private void initializeMenuItems()
 	{
 		ACMenuListener menuListener = new ACMenuListener();
+		
 		// File
 		JMenu fileMenu = new JMenu("File");
-		fileMenu.add(makeMenuItem(MENU_NEW, menuListener, KeyEvent.VK_N));
-		fileMenu.add(makeMenuItem(MENU_OPEN, menuListener, KeyEvent.VK_O));
+		fileMenu.add(makeMenuItem(MenuItem.NEW, menuListener, KeyEvent.VK_N));
+		fileMenu.add(makeMenuItem(MenuItem.OPEN, menuListener, KeyEvent.VK_O));
 		// recentMenuItem = new JMenu("Recent Files");
 		// this.loadRecentFiles();
 		fileMenu.addSeparator();
-		fileMenu.add(makeMenuItem(MENU_SAVE, menuListener, KeyEvent.VK_S));
-		fileMenu.add(makeMenuItem(MENU_SAVE_AS, menuListener, -1));
+		fileMenu.add(makeMenuItem(MenuItem.SAVE, menuListener, KeyEvent.VK_S));
+		fileMenu.add(makeMenuItem(MenuItem.SAVE_AS, menuListener, -1));
 		fileMenu.addSeparator();
-		fileMenu.add(makeMenuItem(MENU_CLOSE, menuListener, -1));
+		fileMenu.add(makeMenuItem(MenuItem.CLOSE, menuListener, -1));
 		fileMenu.addSeparator();
-		fileMenu.add(makeMenuItem(MENU_EXIT, menuListener, -1));
+		fileMenu.add(makeMenuItem(MenuItem.EXIT, menuListener, -1));
 
 		// Module
 		JMenu moduleMenu = new JMenu("Module");
-		moduleMenu.add(makeMenuItem(MENU_ADD_SUBMODULE, menuListener, -1));
+		moduleMenu.add(makeMenuItem(MenuItem.ADD_SUBMODULE_NEW, menuListener, -1));
+		moduleMenu.add(makeMenuItem(MenuItem.ADD_SUBMODULE_TEMPLATE, menuListener, -1));
 		moduleMenu.addSeparator();
-		moduleMenu.add(makeMenuItem(MENU_REMOVE_SUBMODULE, menuListener, -1));
+		moduleMenu.add(makeMenuItem(MenuItem.SAVE_SUBMODULE_AS_TEMPLATE, menuListener, -1));
+		moduleMenu.addSeparator();
+		moduleMenu.add(makeMenuItem(MenuItem.REMOVE_SUBMODULE, menuListener, -1));
 
+		// Tools
+		JMenu toolsMenu = new JMenu("Tools");
+		toolsMenu.add(makeMenuItem(MenuItem.VALIDATE_MODEL, menuListener, -1));
+		toolsMenu.addSeparator();
+		toolsMenu.add(makeMenuItem(MenuItem.VIEW_MODEL, menuListener, -1));
+		toolsMenu.add(makeMenuItem(MenuItem.FLATTEN_MODEL, menuListener, -1));
+		toolsMenu.addSeparator();
+		toolsMenu.add(makeMenuItem(MenuItem.DECOMPOSE_INTO_MODULES, menuListener, -1));
+		
 		// Help
 		JMenu helpMenu = new JMenu("Help");
-		helpMenu.add(makeMenuItem(MENU_HELP, menuListener, -1));
-		helpMenu.add(makeMenuItem(MENU_ABOUT, menuListener, -1));
+		helpMenu.add(makeMenuItem(MenuItem.HELP_CONTENTS, menuListener, -1));
+		helpMenu.add(makeMenuItem(MenuItem.ABOUT_AGGREGATION_CONNECTOR, menuListener, -1));
 
 		// Add items to the menu bar
 		JMenuBar menuBar = new JMenuBar();
 		menuBar.add(fileMenu);
 		menuBar.add(moduleMenu);
+		menuBar.add(toolsMenu);
 		menuBar.add(helpMenu);
 
 		// Add the menu bar to the frame
@@ -248,17 +331,17 @@ public class AC_GUI extends JFrame
 	 * @param keyEvent the shortcut key pressed.
 	 * @return a new menu item
 	 */
-	private JMenuItem makeMenuItem(String name, ActionListener aListener, int keyEvent)
+	private JMenuItem makeMenuItem(MenuItem menuItem, ActionListener aListener, int keyEvent)
 	{
 		int defaultShortcutMask = Toolkit.getDefaultToolkit().getMenuShortcutKeyMask();
-		JMenuItem menuItem = new JMenuItem(name);
-		menuItem.setActionCommand(name);
-		menuItem.addActionListener(aListener);
+		JMenuItem item = new JMenuItem(menuItem.toString());
+		item.setActionCommand(menuItem.toString());
+		item.addActionListener(aListener);
 		if (keyEvent != -1)
 		{
-			menuItem.setMnemonic(keyEvent);
-			menuItem.setAccelerator(KeyStroke.getKeyStroke(keyEvent, defaultShortcutMask));
+			item.setMnemonic(keyEvent);
+			item.setAccelerator(KeyStroke.getKeyStroke(keyEvent, defaultShortcutMask));
 		}
-		return menuItem;
+		return item;
 	}
 }

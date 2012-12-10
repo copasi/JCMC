@@ -19,17 +19,18 @@ public class ACTreeModelListener implements TreeModelListener
 	@Override
 	public void treeNodesChanged(TreeModelEvent tme)
 	{
-		System.out.println("treeNodesChanged event");
 		DefaultMutableTreeNode node;
 		node = (DefaultMutableTreeNode)(tme.getTreePath().getLastPathComponent());
-		System.out.println(node);
 		/*
 		 * If the event lists children, then the changed node is the child of the node we've already gotten. Otherwise,
 		 * the changed node and the specified node are the same.
 		 */
-		int index = tme.getChildIndices()[0];
-		node = (DefaultMutableTreeNode)(node.getChildAt(index));
-
+		if (tme.getChildren() != null)
+		{
+			int index = tme.getChildIndices()[0];
+			node = (DefaultMutableTreeNode)(node.getChildAt(index));
+		}
+			
 		Module currentModule = AC_GUI.masterModuleList.findModule(node);
 		currentModule.setName((String)node.getUserObject());
 	}

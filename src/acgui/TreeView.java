@@ -2,14 +2,19 @@ package acgui;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Point;
+import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 
+import javax.swing.AbstractAction;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTree;
+import javax.swing.SwingUtilities;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -149,12 +154,52 @@ public class TreeView extends JPanel implements TreeSelectionListener
 		return currentNode;
 	}
 
+	/**
+	 * Set the highlighted node on the tree.
+	 * @param node the node to be highlighted
+	 */
 	public void setSelected(DefaultMutableTreeNode node)
 	{
 		TreePath path = new TreePath(node.getPath());
 		tree.setSelectionPath(path);
 	}
 
+	private JPopupMenu createPopupMenu(final Point pt, final Object cell) {
+		JPopupMenu menu = new JPopupMenu();
+		
+		menu.add(new AbstractAction("Rename") {
+			public void actionPerformed(ActionEvent e) {
+				
+			}
+		});
+		
+		if(AC_GUI.drawingBoard.getActiveModule() == AC_GUI.selectedModule)
+		{
+			menu.add(new AbstractAction("Save Module") {
+				public void actionPerformed(ActionEvent e) {
+					JOptionPane.showMessageDialog(null,
+							"User can save a module (in internal datastructure) anytime when the module is still loaded for editing (not yet implemented).");
+					}
+			});
+		}
+		else
+		{
+			menu.add(new AbstractAction("Load Module") {
+				public void actionPerformed(ActionEvent e) {
+					AC_GUI.drawingBoard.changeModule(AC_GUI.selectedModule);
+				}
+			});
+		}
+		
+		menu.add(new AbstractAction("Properties") {
+			public void actionPerformed(ActionEvent e) {
+				JOptionPane.showMessageDialog(null,
+					"Will show a message box containing some basic information about the module, for example, list of the ports (not yet implemented).");
+			}
+		});
+		
+		return menu;
+	}
 	/**
 	 * A tree node has been selected.
 	 * @see javax.swing.event.TreeSelectionListener#valueChanged(javax.swing.event.TreeSelectionEvent)
@@ -183,13 +228,22 @@ public class TreeView extends JPanel implements TreeSelectionListener
 				TreePath path = tree.getPathForLocation(e.getX(), e.getY());
 				if (selRow != -1)
 				{
-					if (e.getClickCount() == 2)
+					DefaultMutableTreeNode node = (DefaultMutableTreeNode)path.getLastPathComponent();
+					AC_GUI.currentGUI.setSelectedModule(node);
+					if(SwingUtilities.isRightMouseButton(e))
+					{
+						JPopupMenu menu = createPopupMenu(e.getPoint(), AC_GUI.selectedModule);
+						menu.show(tree, e.getX(), e.getY());
+						//System.out.println("Selected node: " + node.toString());
+					}
+					else if (e.getClickCount() == 2)
 					{
 						//DefaultMutableTreeNode node = (DefaultMutableTreeNode)(path.getLastPathComponent());
 						//Module mod = AC_GUI.moduleList.findModule(node);
 						//AC_GUI.drawingBoard.changeModule(mod);
-						AC_GUI.drawingBoard.changeModule(AC_GUI.selectedModule);
+						
 					}
+					
 				}
 			}
 		});
