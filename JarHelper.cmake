@@ -130,7 +130,7 @@ function(create_jar _TARGET_NAME)
     # create the manifest file for the jar file
     set(ManifestInfo 
 	"Manifest-Version: 1.0
-Class-Path: . ../lib/jgraphx.jar
+Class-Path: . ../lib/jgraphx.jar ../lib/copasi.jar ../lib/CopasiJava
 Main-Class: acgui.AC_GUI
 "
 )
