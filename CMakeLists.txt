@@ -12,6 +12,7 @@ set(SRC
 	${ACGUI_SOURCE_DIR}/src/acgui/ACGraphComponent.java
 	${ACGUI_SOURCE_DIR}/src/acgui/ACMenuListener.java
 	${ACGUI_SOURCE_DIR}/src/acgui/ACTreeModelListener.java
+	${ACGUI_SOURCE_DIR}/src/acgui/Connection.java
 	${ACGUI_SOURCE_DIR}/src/acgui/DrawingBoard.java
 	${ACGUI_SOURCE_DIR}/src/acgui/MenuItem.java
 	${ACGUI_SOURCE_DIR}/src/acgui/Module.java
