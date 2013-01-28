@@ -11,10 +11,13 @@ set(SRC
 	${ACGUI_SOURCE_DIR}/src/acgui/ACGraph.java
 	${ACGUI_SOURCE_DIR}/src/acgui/ACGraphComponent.java
 	${ACGUI_SOURCE_DIR}/src/acgui/ACMenuListener.java
+	${ACGUI_SOURCE_DIR}/src/acgui/ACTreeCellRenderer.java
 	${ACGUI_SOURCE_DIR}/src/acgui/ACTreeModelListener.java
 	${ACGUI_SOURCE_DIR}/src/acgui/Connection.java
+	${ACGUI_SOURCE_DIR}/src/acgui/CopasiUtility.java
 	${ACGUI_SOURCE_DIR}/src/acgui/DrawingBoard.java
 	${ACGUI_SOURCE_DIR}/src/acgui/MenuItem.java
+	${ACGUI_SOURCE_DIR}/src/acgui/ModelBuilder.java
 	${ACGUI_SOURCE_DIR}/src/acgui/Module.java
 	${ACGUI_SOURCE_DIR}/src/acgui/ModuleList.java
 	${ACGUI_SOURCE_DIR}/src/acgui/Port.java
@@ -36,6 +39,7 @@ set(SRC
 set(CMAKE_JAVA_INCLUDE_PATH 
 	${ACGUI_SOURCE_DIR}/lib/jgraphx.jar
 	${ACGUI_SOURCE_DIR}/lib/copasi.jar
+	${ACGUI_SOURCE_DIR}/lib/MSMB.jar
 )
 
 # create an executable jar
