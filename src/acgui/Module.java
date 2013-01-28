@@ -21,6 +21,7 @@ public class Module implements Serializable
 	private static final long serialVersionUID = 1L;
 	private Module parent;
 	private String name;
+	private String copasiDatamodelKey;
 	private DefaultMutableTreeNode treeNode;
 	private Object drawingCell;
 	private ArrayList<Module> children;
@@ -35,6 +36,7 @@ public class Module implements Serializable
 	{
 		parent = null;
 		name = "";
+		copasiDatamodelKey = "";
 		treeNode = null;
 		drawingCell = null;
 		children = new ArrayList<Module>();
@@ -50,6 +52,7 @@ public class Module implements Serializable
 	{
 		parent = null;
 		name = iName;
+		copasiDatamodelKey = "";
 		treeNode = null;
 		drawingCell = null;
 		children = new ArrayList<Module>();
@@ -60,12 +63,30 @@ public class Module implements Serializable
 	/**
 	 * Construct a module.
 	 * @param iName the name of the module
+	 * @param iKey the key of the copasi datamodel
+	 */
+	public Module(String iName, String iKey)
+	{
+		parent = null;
+		name = iName;
+		copasiDatamodelKey = iKey;
+		treeNode = null;
+		drawingCell = null;
+		children = new ArrayList<Module>();
+		ports = new ArrayList<Port>();
+		connections = new ArrayList<Connection>();
+	}
+	
+	/**
+	 * Construct a module.
+	 * @param iName the name of the module
 	 * @param iParent the parent to the module
 	 */
 	public Module(String iName, Module iParent)
 	{
 		parent = iParent;
 		name = iName;
+		copasiDatamodelKey = "";
 		treeNode = null;
 		drawingCell = null;
 		children = new ArrayList<Module>();
@@ -82,6 +103,7 @@ public class Module implements Serializable
 	public Module(String iName, DefaultMutableTreeNode tNode, Object dCell)
 	{
 		name = iName;
+		copasiDatamodelKey = "";
 		treeNode = tNode;
 		drawingCell = dCell;
 		children = new ArrayList<Module>();
@@ -108,6 +130,24 @@ public class Module implements Serializable
 		return name;
 	}
 
+	/**
+	 * Set the Copasi datamodel key of the module.
+	 * @param iKey the Copasi datamodel key of the module
+	 */
+	public void setKey(String iKey)
+	{
+		copasiDatamodelKey = iKey;
+	}
+
+	/**
+	 * Get the Copasi datamodel key of the module.
+	 * @return the Copasi datamodel key of the module
+	 */
+	public String getKey()
+	{
+		return copasiDatamodelKey;
+	}
+	
 	/**
 	 * Set the drawn object representing the module.
 	 * @param dCell the drawn object representing the module

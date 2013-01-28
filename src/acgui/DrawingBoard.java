@@ -794,8 +794,10 @@ public class DrawingBoard extends JPanel
 		
 		cell = new HashMap<String, Object>();
 		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
 		
-		styleSheet.putCellStyle("ConnectionCell", cell);
+		styleSheet.putCellStyle("ConnectionEdge", cell);
 	}
 
 	/**
@@ -918,7 +920,9 @@ public class DrawingBoard extends JPanel
 				{
 					// get the connection object from the drawing cell
 					Connection edge = (Connection)((mxCell)cell).getValue();
-					// call AC_GUI to fully remove the connection
+					// remove the drawing cell
+					removeCell(edge.getDrawingCell());
+					// remove the connection from the module
 					AC_GUI.currentGUI.removeConnection(edge);
 				}
 			});

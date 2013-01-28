@@ -33,6 +33,7 @@ public class ACTreeModelListener implements TreeModelListener
 			
 		Module currentModule = AC_GUI.masterModuleList.findModule(node);
 		currentModule.setName((String)node.getUserObject());
+		AC_GUI.treeView.getTree().setEditable(false);
 	}
 
 	/**

@@ -15,9 +15,13 @@ import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTree;
 import javax.swing.SwingUtilities;
+import javax.swing.event.CellEditorListener;
+import javax.swing.event.ChangeEvent;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeCellEditor;
+import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreePath;
@@ -44,15 +48,16 @@ public class TreeView extends JPanel implements TreeSelectionListener
 		treeModel = new DefaultTreeModel(rootNode);
 		tree = new JTree(treeModel);
 		tree.setRootVisible(false);
-		tree.setEditable(true);
-		tree.setToggleClickCount(0);
+		tree.setEditable(false);
+		tree.setToggleClickCount(2);
 		// tree.setBackground(Color.WHITE);
 		tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
 		tree.setShowsRootHandles(true);
 
+		tree.setCellRenderer(new ACTreeCellRenderer(tree.getFont()));
 		tree.addTreeSelectionListener(this);
 		treeModel.addTreeModelListener(new ACTreeModelListener());
-		installDoubleClickListener();
+		installListeners();
 		this.setLayout(new BorderLayout());
 		this.setVisible(true);
 		this.add(tree);
@@ -75,6 +80,11 @@ public class TreeView extends JPanel implements TreeSelectionListener
 		return tree;
 	}
 
+	public void refreshTree()
+	{
+		treeModel.reload();
+	}
+	
 	/**
 	 * Add a child to the currently selected node in the tree.
 	 * @param mod the submodule to add
@@ -169,7 +179,8 @@ public class TreeView extends JPanel implements TreeSelectionListener
 		
 		menu.add(new AbstractAction("Rename") {
 			public void actionPerformed(ActionEvent e) {
-				
+				tree.setEditable(true);
+				tree.startEditingAtPath(tree.getSelectionPath());
 			}
 		});
 		
@@ -187,6 +198,7 @@ public class TreeView extends JPanel implements TreeSelectionListener
 			menu.add(new AbstractAction("Load Module") {
 				public void actionPerformed(ActionEvent e) {
 					AC_GUI.drawingBoard.changeModule(AC_GUI.selectedModule);
+					refreshTree();
 				}
 			});
 		}
@@ -219,8 +231,9 @@ public class TreeView extends JPanel implements TreeSelectionListener
 		//System.out.println("Tree node " + node.toString() + " selected.");
 	}
 	
-	private void installDoubleClickListener()
+	private void installListeners()
 	{
+		// right-click listener
 		tree.addMouseListener( new MouseAdapter() {
 			public void mousePressed(MouseEvent e)
 			{
@@ -247,5 +260,12 @@ public class TreeView extends JPanel implements TreeSelectionListener
 				}
 			}
 		});
+		/*
+		DefaultTreeCellEditor cellEditor = new DefaultTreeCellEditor(tree, (DefaultTreeCellRenderer) tree.getCellRenderer());
+		cellEditor.addCellEditorListener(new CellEditorListener() {
+			public void editingCanceled(ChangeEvent event) {}
+			public void editingStopped(ChangeEvent event) {}
+		});
+		*/
 	}
 }

@@ -2,9 +2,13 @@ package acgui;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
 
+import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.tree.DefaultMutableTreeNode;
+
+import msmb.utility.Constants;
 
 /**
  * Listener for the AC_GUI menu.
@@ -52,9 +56,20 @@ public class ACMenuListener implements ActionListener
 			}
 			break;
 		case OPEN:
+			/*
 			JOptionPane.showMessageDialog(
 					null,
 					"An existing model will be opened from a SBML file and will load the three panels accordingly (not yet implemented).");
+			*/
+			JFileChooser fileChooser = new JFileChooser();
+    		
+    		int returnVal = fileChooser.showOpenDialog(null);
+            if (returnVal == JFileChooser.APPROVE_OPTION) 
+            {
+            	File file = fileChooser.getSelectedFile();
+                //inputFile = file.getName().substring(0,file.getName().lastIndexOf("."));
+                AC_GUI.currentGUI.load(file.getName());
+            }
 			break;
 		case RECENT:
 			JOptionPane.showMessageDialog(null,

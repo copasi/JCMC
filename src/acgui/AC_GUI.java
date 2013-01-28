@@ -6,7 +6,9 @@ import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.ListIterator;
 
 import javax.swing.JFrame;
@@ -41,6 +43,8 @@ public class AC_GUI extends JFrame
 	protected static ModuleList masterModuleList;
 	protected static Module selectedModule;
 	protected static boolean isModuleOpen;
+	private CopasiUtility copasiUtility;
+	private ModelBuilder modelBuilder;
 
 	/**
 	 * Construct the AC_GUI object.
@@ -49,12 +53,7 @@ public class AC_GUI extends JFrame
 	{
 		super("Aggregation Connector");
 		//moduleList = new ModuleList();
-		CCopasiRootContainer.init();
-		if (CCopasiRootContainer.getRoot() == null)
-		{
-			System.out.println("COPASI not setup correctly.");
-			System.exit(0);
-		}
+		copasiUtility = new CopasiUtility();
 		initializeComponents();
 		isModuleOpen = false;
 		this.setVisible(true);
@@ -70,6 +69,7 @@ public class AC_GUI extends JFrame
 		try
 		{
 			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+			addLibraryPath("..\\lib");
 		}
 		catch (Exception e1)
 		{
@@ -84,17 +84,68 @@ public class AC_GUI extends JFrame
 	}
 
 	/**
+	* Adds the specified path to the java library path
+	*
+	* @param pathToAdd the path to add
+	* @throws Exception
+	*/
+	public static void addLibraryPath(String pathToAdd) throws Exception{
+		final Field usrPathsField = ClassLoader.class.getDeclaredField("usr_paths");
+		usrPathsField.setAccessible(true);
+	 
+		//get array of paths
+		final String[] paths = (String[])usrPathsField.get(null);
+	 
+		//check if the path to add is already present
+		for(String path : paths) {
+			if(path.equals(pathToAdd)) {
+				return;
+			}
+		}
+	 
+		//add the new path
+		final String[] newPaths = Arrays.copyOf(paths, paths.length + 1);
+		newPaths[newPaths.length-1] = pathToAdd;
+		usrPathsField.set(null, newPaths);
+	}
+	public void load(String fileName)
+	{
+		CCopasiDataModel dataModel = copasiUtility.createDataModel();
+		try
+		{
+			dataModel.importSBML(fileName);
+			System.out.println("Number of models in the CCopasiRootContainer: " +CCopasiRootContainer.getDatamodelList().size());
+		}
+		catch (java.lang.Exception ex){
+			ex.printStackTrace();
+			System.err.println( "Error while importing the model from file named \"" + fileName + "\"." );
+		}
+		
+		Module mod = new Module(fileName, dataModel.getModel().getKey());
+		masterModuleList.add(mod);
+		treeView.setup(mod);
+		drawingBoard.createCell(mod);
+		drawingBoard.changeModule(mod);
+		
+		modelBuilder.loadModel(mod.getKey());
+		modelBuilder.setVisible(true);
+	}
+	
+	/**
 	 * Create a new module in the three panels.
 	 * @param name the name of the new module
 	 */
 	public void newModule(String name)
 	{
 		masterModuleList = new ModuleList();
-		Module mod = new Module(name);
+		CCopasiDataModel dataModel = copasiUtility.createDataModel();
+		Module mod = new Module(name, dataModel.getModel().getKey());
 		masterModuleList.add(mod);
 		treeView.setup(mod);
 		drawingBoard.createCell(mod);
 		drawingBoard.changeModule(mod);
+		modelBuilder.loadModel(mod.getKey());
+		modelBuilder.setVisible(true);		
 		
 		isModuleOpen = true;
 	}
@@ -240,8 +291,12 @@ public class AC_GUI extends JFrame
 	private void initializeComponents()
 	{
 		// The model builder window
+		modelBuilder = new ModelBuilder();
 		JPanel modelBuilderPanel = new JPanel();
-		JScrollPane modelBuilderWindow = new JScrollPane(modelBuilderPanel);
+		modelBuilderPanel.setLayout(new BorderLayout());
+		modelBuilderPanel.add(modelBuilder.getPanel(), BorderLayout.CENTER);
+		modelBuilder.setVisible(false);
+		//JScrollPane modelBuilderWindow = new JScrollPane(modelBuilderPanel);
 
 		// The aggregation window
 		drawingBoard = new DrawingBoard();
@@ -257,7 +312,8 @@ public class AC_GUI extends JFrame
 		//verticalLine.setDividerLocation(180 + verticalLine.getInsets().left);
 		Dimension dim = new Dimension(180, 500);
 		treeWindow.setMinimumSize(dim);
-		JSplitPane horizontalLine = new JSplitPane(JSplitPane.VERTICAL_SPLIT, verticalLine, modelBuilderWindow);
+		//JSplitPane horizontalLine = new JSplitPane(JSplitPane.VERTICAL_SPLIT, verticalLine, modelBuilderWindow);
+		JSplitPane horizontalLine = new JSplitPane(JSplitPane.VERTICAL_SPLIT, verticalLine, modelBuilderPanel);
 		//horizontalLine.setDividerLocation(610 + horizontalLine.getInsets().top);
 		//System.out.println("Vertical line: " + verticalLine.getDividerLocation());
 		//System.out.println("Horizontal line: " + horizontalLine.getDividerLocation());
