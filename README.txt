@@ -60,7 +60,7 @@ Setup CMake:
 		make
 		
 	10. To run the jar, type:
-		java -Djava.library.path=..\lib -jar ACGUI.jar
+		java -jar ACGUI.jar
 	
 	Note: After the initial setup with CMake(cmake-gui), CMake can be run from the command prompt. To do this:
 		1. Open a command prompt.
