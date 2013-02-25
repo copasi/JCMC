@@ -239,6 +239,12 @@ public class Module implements Serializable
 	public void removePort(Port port)
 	{
 		ports.remove(port);
+		if(port.getRowIndex() != ports.size())
+		{
+			//the deleted Port did not occupy the last row in the Port table,
+			//the indices of the Ports listed below it must be updated.
+			updatePortIndices(port);
+		}
 	}
 	
 	/**
@@ -294,9 +300,32 @@ public class Module implements Serializable
 	{
 		return submoduleBounds;
 	}
+	
+	/**
+	 * Return the name of the Module.
+	 * @return the name of the Module
+	 */
 	@Override
 	public String toString()
 	{
 		return name;
+	}
+	
+	/**
+	 * Update the indices of the Ports listed after the given port.
+	 * @param deletedPort the Port that was deleted
+	 */
+	private void updatePortIndices(Port deletedPort)
+	{		
+		int index = deletedPort.getRowIndex();
+		
+		//create a list iterator that starts at the index of the deleted Port
+		ListIterator<Port> portsIterator = ports.listIterator(index);
+		//reset the index of each Port that occur after the deleted Port
+		while(portsIterator.hasNext())
+		{
+			portsIterator.next().setRowIndex(index);
+			index++;
+		}
 	}
 }

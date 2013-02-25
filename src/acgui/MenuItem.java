@@ -6,6 +6,8 @@ package acgui;
  */
 public enum MenuItem
 {
+	PREFERENCES("Preferences..."),	
+	
 	NEW("New"), // a root model created
 	OPEN("Open"), // a root model opened from file
 	RECENT("Recent Files"),

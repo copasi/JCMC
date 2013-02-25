@@ -25,4 +25,20 @@ public class CopasiUtility
 	{
 		return CCopasiRootContainer.addDatamodel();
 	}
+	
+	/*
+	public void exportModel(String dataModelKey)
+	{
+		
+		try
+		{
+			dataModel.exportSBML("output.sbml");
+		}
+		catch (Exception e)
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	*/
 }

@@ -18,7 +18,9 @@ public class Port implements Serializable
 	//private String type;
 	private PortType type;
 	private String name;
+	private String refName;
 	private Object drawingCell;
+	private int rowIndex;
 	
 	/**
 	 * Construct the port object.
@@ -26,11 +28,13 @@ public class Port implements Serializable
 	 * @param iType the type of port
 	 * @param iName the name of the port
 	 */
-	public Port(Module iParent, PortType iType, String iName)
+	public Port(Module iParent, String iRefName, PortType iType, String iName, int iRowIndex)
 	{
 		parent = iParent;
+		refName = iRefName;
 		type = iType;
 		name = iName;
+		rowIndex = iRowIndex;
 	}
 	
 	/**
@@ -85,6 +89,25 @@ public class Port implements Serializable
 	public String getName()
 	{
 		return name;
+	}
+	
+	/**
+	 * Return the Ref Name corresponding to the port.
+	 * @return the Ref Name corresponding to the port
+	 */
+	public String getRefName()
+	{
+		return refName;
+	}
+	
+	public int getRowIndex()
+	{
+		return rowIndex;
+	}
+	
+	public void setRowIndex(int iRowIndex)
+	{
+		rowIndex = iRowIndex;
 	}
 	
 	/**

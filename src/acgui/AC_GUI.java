@@ -40,11 +40,11 @@ public class AC_GUI extends JFrame
 	protected static AC_GUI currentGUI;
 	protected static DrawingBoard drawingBoard;
 	protected static TreeView treeView;
+	protected static ModelBuilder modelBuilder;
 	protected static ModuleList masterModuleList;
 	protected static Module selectedModule;
 	protected static boolean isModuleOpen;
-	private CopasiUtility copasiUtility;
-	private ModelBuilder modelBuilder;
+	protected static CopasiUtility copasiUtility;
 
 	/**
 	 * Construct the AC_GUI object.
@@ -54,6 +54,7 @@ public class AC_GUI extends JFrame
 		super("Aggregation Connector");
 		//moduleList = new ModuleList();
 		copasiUtility = new CopasiUtility();
+		masterModuleList = new ModuleList();
 		initializeComponents();
 		isModuleOpen = false;
 		this.setVisible(true);
@@ -108,20 +109,31 @@ public class AC_GUI extends JFrame
 		newPaths[newPaths.length-1] = pathToAdd;
 		usrPathsField.set(null, newPaths);
 	}
+	
 	public void load(String fileName)
 	{
 		CCopasiDataModel dataModel = copasiUtility.createDataModel();
+		
+		String ext = fileName.substring(fileName.lastIndexOf("."));
+    	
 		try
 		{
-			dataModel.importSBML(fileName);
-			System.out.println("Number of models in the CCopasiRootContainer: " +CCopasiRootContainer.getDatamodelList().size());
+			if (ext.equals(".xml"))
+			{
+				dataModel.importSBML(fileName);
+			}
+			else if (ext.equals(".cps"))
+			{
+				dataModel.loadModel(fileName);
+			}
+				System.out.println("Number of models in the CCopasiRootContainer: " + CCopasiRootContainer.getDatamodelList().size());
 		}
 		catch (java.lang.Exception ex){
 			ex.printStackTrace();
 			System.err.println( "Error while importing the model from file named \"" + fileName + "\"." );
 		}
 		
-		Module mod = new Module(fileName, dataModel.getModel().getKey());
+		Module mod = new Module(dataModel.getModel().getObjectName(), dataModel.getModel().getKey());
 		masterModuleList.add(mod);
 		treeView.setup(mod);
 		drawingBoard.createCell(mod);
@@ -129,6 +141,15 @@ public class AC_GUI extends JFrame
 		
 		modelBuilder.loadModel(mod.getKey());
 		modelBuilder.setVisible(true);
+		try
+		{
+			dataModel.exportSBML("Output.sbml");
+		}
+		catch (Exception e)
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
 	/**
@@ -137,7 +158,6 @@ public class AC_GUI extends JFrame
 	 */
 	public void newModule(String name)
 	{
-		masterModuleList = new ModuleList();
 		CCopasiDataModel dataModel = copasiUtility.createDataModel();
 		Module mod = new Module(name, dataModel.getModel().getKey());
 		masterModuleList.add(mod);
@@ -205,10 +225,12 @@ public class AC_GUI extends JFrame
 	 * @param name the name of the port
 	 * @param type the type of the port
 	 */
-	public void addPort(Module parentMod, String name, PortType type)
+	public void addPort(Module parentMod, String refName, String name, PortType type)
 	{
-		Port newPort = new Port(parentMod, type, name);
+		int portCount = parentMod.getPorts().size();
+		Port newPort = new Port(parentMod, refName, type, name, portCount);
 		drawingBoard.addPort(parentMod, newPort);
+		modelBuilder.addPort(newPort);
 		parentMod.addPort(newPort);
 	}
 	
@@ -224,8 +246,10 @@ public class AC_GUI extends JFrame
 		drawingBoard.removeEdges(port);
 		// remove the drawing cell representation from the drawing board
 		drawingBoard.removeCell(port.getDrawingCell());
+		// remove the port from the model builder
+		modelBuilder.removePort(port);
 		// remove the port from the parent module
-		parentMod.removePort(port);	
+		parentMod.removePort(port);
 	}
 	
 	/**
@@ -343,6 +367,10 @@ public class AC_GUI extends JFrame
 		fileMenu.addSeparator();
 		fileMenu.add(makeMenuItem(MenuItem.CLOSE, menuListener, -1));
 		fileMenu.addSeparator();
+	
+		fileMenu.add(makeMenuItem(MenuItem.PREFERENCES, menuListener, -1));
+		fileMenu.addSeparator();
+		
 		fileMenu.add(makeMenuItem(MenuItem.EXIT, menuListener, -1));
 
 		// Module
@@ -399,5 +427,12 @@ public class AC_GUI extends JFrame
 			item.setAccelerator(KeyStroke.getKeyStroke(keyEvent, defaultShortcutMask));
 		}
 		return item;
+	}
+
+	/**
+	 * Open the Preferences display from MSMB.
+	 */
+	public static void openPreferencesMSMB() {
+		modelBuilder.openPreferencesMSMB();
 	}
 }

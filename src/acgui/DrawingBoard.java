@@ -957,7 +957,7 @@ public class DrawingBoard extends JPanel
 
 					public void actionPerformed(ActionEvent e)
 					{
-						PortAddEditor portAddEditor = new PortAddEditor(cell);
+						PortAddEditor portAddEditor = new PortAddEditor(cell, graphComponent);
 						portAddEditor.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 						portAddEditor.setModal(true);
 						portAddEditor.setVisible(true);
@@ -1031,88 +1031,5 @@ public class DrawingBoard extends JPanel
 		
 
 		return menu;
-	}
-
-	/**
-	 * A dialog box to help the user add a port.
-	 */
-	public class PortAddEditor extends JDialog
-	{
-
-		/**
-		 * 
-		 */
-		private static final long serialVersionUID = 1L;
-		private Component parent;
-		private Module module;
-		private JTextField textfield = null;
-		private JComboBox<PortType> comboBox = null;
-
-		/**
-		 * Constructs the object.
-		 * @param mod the module where the port will be added
-		 */
-		public PortAddEditor(Object cell)
-		{
-			super();
-			module = AC_GUI.masterModuleList.findModule(cell);
-			initComponents();
-		}
-
-		/**
-		 * Initialize and display the dialog box.
-		 */
-		private void initComponents()
-		{
-			JPanel upperPanel = new JPanel();
-			upperPanel.setLayout(new GridLayout(2, 1));
-
-			JPanel upperPanel1 = new JPanel();
-			upperPanel1.add(new Label("Port Name:"));
-			textfield = new JTextField(15);
-			textfield.setText("newPort");
-			upperPanel1.add(textfield);
-			upperPanel.add(upperPanel1);
-
-			JPanel upperPanel2 = new JPanel();
-			upperPanel2.setBorder(BorderFactory.createTitledBorder("Port Type: "));
-			upperPanel2.setLayout(new GridLayout(1, 1));
-			comboBox = new JComboBox<PortType>();
-			comboBox.addItem(PortType.INPUT);
-			comboBox.addItem(PortType.OUTPUT);
-			comboBox.addItem(PortType.EQUIVALENCE);
-			upperPanel2.add(comboBox);
-			upperPanel.add(upperPanel2);
-
-			JPanel lowerPanel = new JPanel();
-			lowerPanel.setLayout(new FlowLayout());
-			JButton addPort = new JButton("Add");
-			addPort.addActionListener(new ActionListener() {
-				public void actionPerformed(ActionEvent e)
-				{
-					dispose();
-					AC_GUI.currentGUI.addPort(module, textfield.getText(), (PortType) comboBox.getSelectedItem());
-					//addPort(module, textfield.getText(), (PortType) comboBox.getSelectedItem());
-				}
-			});
-			lowerPanel.add(addPort);
-			JButton cancel = new JButton("Cancel");
-			cancel.addActionListener(new ActionListener() {
-				public void actionPerformed(ActionEvent e)
-				{
-					dispose();
-				}
-			});
-			lowerPanel.add(cancel);
-
-			getContentPane().setLayout(new BorderLayout());
-			getContentPane().add(upperPanel, BorderLayout.CENTER);
-			getContentPane().add(lowerPanel, BorderLayout.SOUTH);
-
-			setTitle("Add a new port ...");
-			setSize(650, 500);
-			pack();
-			setLocationRelativeTo(graphComponent);
-		}
 	}
 }

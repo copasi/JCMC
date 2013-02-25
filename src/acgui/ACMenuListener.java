@@ -28,6 +28,7 @@ public class ACMenuListener implements ActionListener
 		String command = ae.getActionCommand();
 		command = command.replace("(", "");
 		command = command.replace(")", "");
+		command = command.replace(".", "");
 		command = command.replaceAll(" ", "_");
 		MenuItem selection = MenuItem.valueOf(command.toUpperCase());
 		String name;
@@ -67,8 +68,8 @@ public class ACMenuListener implements ActionListener
             if (returnVal == JFileChooser.APPROVE_OPTION) 
             {
             	File file = fileChooser.getSelectedFile();
-                //inputFile = file.getName().substring(0,file.getName().lastIndexOf("."));
-                AC_GUI.currentGUI.load(file.getName());
+                //inputFile = file.getName().substring(0,file.getName().lastIndexOf("."));           	
+                AC_GUI.currentGUI.load(file.getAbsolutePath());
             }
 			break;
 		case RECENT:
@@ -80,13 +81,18 @@ public class ACMenuListener implements ActionListener
 			JOptionPane.showMessageDialog(null,
 					"Will save the entire model in one SBML file (not yet implemented).");
 			*/
+			
 			Printer output = new Printer();
 			String fileName = output.print(AC_GUI.drawingBoard.getActiveModule());
 			JOptionPane.showMessageDialog(null, "The module has been saved in " + fileName + ".");
+			
 			break;
 		case SAVE_AS:
 			JOptionPane.showMessageDialog(null,
 					"Will save the entire model in one SBML file (not yet implemented).");
+			break;
+		case PREFERENCES:
+			AC_GUI.openPreferencesMSMB();
 			break;
 		case CLOSE:
 			JOptionPane.showMessageDialog(
