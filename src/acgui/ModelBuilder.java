@@ -16,6 +16,7 @@ import javax.swing.MenuElement;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.table.TableColumn;
+import javax.swing.text.JTextComponent;
 
 import msmb.commonUtilities.ChangedElement;
 import msmb.commonUtilities.MSMB_Element;
@@ -38,8 +39,9 @@ public class ModelBuilder
 
 	final MSMB_Interface msmb;
 	private static CustomJTable jTableCustom;
-	private static CustomTableModel cTableModel;
+	private static ACCustomTableModel tableModel;
 	private Vector<String> refNames;
+	
 	
 	/**
 	 * Construct the model builder object.
@@ -66,7 +68,7 @@ public class ModelBuilder
 			 //method declaration
 			 e.printStackTrace();
 		}
-		cTableModel.clearData();
+		tableModel.clearData();
 		updateRefNameColumn();
 	}
 	
@@ -109,16 +111,12 @@ public class ModelBuilder
 	
 	public void addPort(Port newPort)
 	{
-		Vector portInfo = new Vector();
-		portInfo.add(newPort.getRefName());
-		portInfo.add(newPort.getType());
-		portInfo.add(newPort.getName());
-		cTableModel.addRow(portInfo);
+		tableModel.addPort(newPort);
 	}
 	
 	public void removePort(Port port)
 	{
-		cTableModel.removeRow(port.getRowIndex());
+		tableModel.removePort(port);
 	}
 	
 	/**
@@ -140,13 +138,13 @@ public class ModelBuilder
 		col.add("Port Type");
 		col.add("Port Name");
 		
-		cTableModel = new CustomTableModel("PortsTableModel", false);
-		cTableModel.setColumnNames(col, new Vector());
-		cTableModel.initializeTableModel();
+		tableModel = new ACCustomTableModel("PortsTableModel", false);
+		tableModel.setColumnNames(col, new Vector());
+		tableModel.initializeTableModel();
 		
 		jTableCustom = new CustomJTable();
-		jTableCustom.initializeCustomTable(cTableModel);
-		jTableCustom.setModel(cTableModel);
+		jTableCustom.initializeCustomTable(tableModel);
+		jTableCustom.setModel(tableModel);
 		jTableCustom.getTableHeader().setFont(msmb.getCustomFont()); //font for the header
 		jTableCustom.setCustomFont(msmb.getCustomFont()); // font for the content
 			
@@ -234,6 +232,19 @@ public class ModelBuilder
 		JComboBox<String> comboBox = new JComboBox<String>(sortedModel);
 		TableColumn refNameColumn = jTableCustom.getColumnModel().getColumn(1);
 		refNameColumn.setCellEditor(new DefaultCellEditor(comboBox));
+		
+		/*
+		SortedComboBoxModel sortedModel = new SortedComboBoxModel(refNames, new RefNameComparator());
+		JComboBox<String> comboBox = new JComboBox<String>(sortedModel);
+		// has to be editable
+        comboBox.setEditable(true);
+        // get the combo boxes editor component
+        JTextComponent editor = (JTextComponent) comboBox.getEditor().getEditorComponent();
+        // change the editor's document
+        editor.setDocument(new ComboBoxFilter(comboBox));
+		TableColumn refNameColumn = jTableCustom.getColumnModel().getColumn(1);
+		refNameColumn.setCellEditor(new DefaultCellEditor(comboBox));
+		*/
 	}
 	
 	/**

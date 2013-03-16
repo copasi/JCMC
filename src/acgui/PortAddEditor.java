@@ -15,8 +15,10 @@ import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
+import javax.swing.text.JTextComponent;
 
 import com.mxgraph.swing.mxGraphComponent;
 
@@ -59,8 +61,14 @@ public class PortAddEditor extends JDialog
 
 		//create, fill, and add the Ref Name combo box
 		Vector<String> refNames = AC_GUI.modelBuilder.getRefNames();
-		SortedComboBoxModel sortedModel = new SortedComboBoxModel(refNames, null);
+		SortedComboBoxModel sortedModel = new SortedComboBoxModel(refNames, new RefNameComparator());
 		comboBox1 = new JComboBox<String>(sortedModel);
+		// has to be editable
+        comboBox1.setEditable(true);
+        // get the combo boxes editor component
+        JTextComponent editor = (JTextComponent) comboBox1.getEditor().getEditorComponent();
+        // change the editor's document
+        editor.setDocument(new ComboBoxFilter(comboBox1));
 		JPanel upperPanel1 = new JPanel();
 		//upperPanel1.setBorder(BorderFactory.createTitledBorder("Ref Name: "));
 		//upperPanel1.setLayout(new GridLayout(1, 1));
@@ -106,9 +114,30 @@ public class PortAddEditor extends JDialog
 		addButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e)
 			{
-				dispose();
-				AC_GUI.currentGUI.addPort(module, (String) comboBox1.getSelectedItem(), textfield.getText(), (PortType) comboBox2.getSelectedItem());
-				//addPort(module, textfield.getText(), (PortType) comboBox.getSelectedItem());
+				int checkPorts = AC_GUI.portValidation(textfield.getText(), (String)comboBox1.getSelectedItem());
+				//System.out.println("checkPorts = " + checkPorts);
+				String msg;
+				switch(checkPorts)
+				{
+				case 0:
+					dispose();
+					AC_GUI.currentGUI.addPort(module, (String) comboBox1.getSelectedItem(), textfield.getText(), (PortType) comboBox2.getSelectedItem());
+					break;
+				case 1:
+					msg = "\"" + (String)comboBox1.getSelectedItem() + "\"";
+					msg += " is already associated with a Port.";
+					msg += " Cannot associate the same Ref Name with multiple Ports.";
+					JOptionPane.showMessageDialog(null, msg);
+					break;
+				case 2:
+					msg = "\"" + textfield.getText() + "\"";
+					msg += " is already the name of a Port.";
+					msg += " Cannot assign the same Port Name to multiple Ports.";
+					JOptionPane.showMessageDialog(null, msg);
+					break;
+				default:
+					
+				}
 			}
 		});
 		lowerPanel.add(addButton);

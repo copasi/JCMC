@@ -92,12 +92,30 @@ public class Port implements Serializable
 	}
 	
 	/**
+	 * Set the port name.
+	 * @param newName the name of the port
+	 */
+	public void setName(String newName)
+	{
+		name = newName;
+	}
+	
+	/**
 	 * Return the Ref Name corresponding to the port.
 	 * @return the Ref Name corresponding to the port
 	 */
 	public String getRefName()
 	{
 		return refName;
+	}
+	
+	/**
+	 * Set the Ref Name corresponding to the port.
+	 * @param newName the new Ref Name of the port
+	 */
+	public void setRefName(String newName)
+	{
+		refName = newName;
 	}
 	
 	public int getRowIndex()

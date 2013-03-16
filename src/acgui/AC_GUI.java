@@ -42,8 +42,8 @@ public class AC_GUI extends JFrame
 	protected static TreeView treeView;
 	protected static ModelBuilder modelBuilder;
 	protected static ModuleList masterModuleList;
+	protected static Module activeModule;
 	protected static Module selectedModule;
-	protected static boolean isModuleOpen;
 	protected static CopasiUtility copasiUtility;
 
 	/**
@@ -55,8 +55,8 @@ public class AC_GUI extends JFrame
 		//moduleList = new ModuleList();
 		copasiUtility = new CopasiUtility();
 		masterModuleList = new ModuleList();
+		activeModule = null;
 		initializeComponents();
-		isModuleOpen = false;
 		this.setVisible(true);
 	}
 
@@ -141,15 +141,45 @@ public class AC_GUI extends JFrame
 		
 		modelBuilder.loadModel(mod.getKey());
 		modelBuilder.setVisible(true);
+		activeModule = mod;
+	}
+	
+	public void loadSubmodule(String fileName, Module parent)
+	{
+		CCopasiDataModel dataModel = copasiUtility.createDataModel();
+		
+		String ext = fileName.substring(fileName.lastIndexOf("."));
+    	
 		try
 		{
-			dataModel.exportSBML("Output.sbml");
+			if (ext.equals(".xml"))
+			{
+				dataModel.importSBML(fileName);
+			}
+			else if (ext.equals(".cps"))
+			{
+				dataModel.loadModel(fileName);
+			}
+				System.out.println("Number of models in the CCopasiRootContainer: " + CCopasiRootContainer.getDatamodelList().size());
 		}
-		catch (Exception e)
-		{
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		catch (java.lang.Exception ex){
+			ex.printStackTrace();
+			System.err.println( "Error while importing the model from file named \"" + fileName + "\"." );
 		}
+		
+		Module mod = new Module(dataModel.getModel().getObjectName(), dataModel.getModel().getKey(), parent);
+		parent.addChild(mod);
+		treeView.addNode(mod);
+		drawingBoard.createCell(mod);
+		drawingBoard.addCell(mod);
+	}
+	
+	public void save(String fileName)
+	{
+		SBMLParser sbmlParser = new SBMLParser();
+		String key = selectedModule.getKey();
+		sbmlParser.saveSBML(copasiUtility.getSBML(key), selectedModule, fileName);
+		//copasiUtility.exportModel(key);
 	}
 	
 	/**
@@ -159,7 +189,9 @@ public class AC_GUI extends JFrame
 	public void newModule(String name)
 	{
 		CCopasiDataModel dataModel = copasiUtility.createDataModel();
+		dataModel.getModel().setObjectName(name);
 		Module mod = new Module(name, dataModel.getModel().getKey());
+		//System.out.println(name + " key = " + mod.getKey());
 		masterModuleList.add(mod);
 		treeView.setup(mod);
 		drawingBoard.createCell(mod);
@@ -167,7 +199,7 @@ public class AC_GUI extends JFrame
 		modelBuilder.loadModel(mod.getKey());
 		modelBuilder.setVisible(true);		
 		
-		isModuleOpen = true;
+		activeModule = mod;
 	}
 	
 	/**
@@ -176,7 +208,10 @@ public class AC_GUI extends JFrame
 	 */
 	public void newSubmodule(String name, Module parent)
 	{
-		Module mod = new Module(name, parent);
+		CCopasiDataModel dataModel = copasiUtility.createDataModel();
+		dataModel.getModel().setObjectName(name);
+		Module mod = new Module(name, dataModel.getModel().getKey(), parent);
+		//System.out.println(name + " key = " + mod.getKey());
 		parent.addChild(mod);
 		treeView.addNode(mod);
 		drawingBoard.createCell(mod);
@@ -309,6 +344,33 @@ public class AC_GUI extends JFrame
 		setSelectedModule(masterModuleList.findModule(drawingCell));
 	}
 	
+	public static void changeActiveModule(Module mod)
+	{
+		drawingBoard.changeModule(mod);
+		treeView.refreshTree();
+		
+		modelBuilder.loadModel(mod.getKey());
+		activeModule = mod;
+		
+		//add activeModule's Ports
+		ListIterator<Port> portList = activeModule.getPorts().listIterator();
+		while (portList.hasNext())
+		{
+			modelBuilder.addPort(portList.next());
+		}
+		
+		//add activeModule's Children's Ports
+		ListIterator<Module> children = activeModule.getChildren().listIterator();
+		while(children.hasNext())
+		{
+			portList = children.next().getPorts().listIterator();
+			while (portList.hasNext())
+			{
+				modelBuilder.addPort(portList.next());
+			}
+		}
+		
+	}
 	/**
 	 * Initialize the components within the AC frame.
 	 */
@@ -434,5 +496,58 @@ public class AC_GUI extends JFrame
 	 */
 	public static void openPreferencesMSMB() {
 		modelBuilder.openPreferencesMSMB();
+	}
+	
+	/**
+	 * Return if a module is currently open.
+	 * @return true if a module is currently open,
+	 * false otherwise
+	 */
+	public static boolean isModuleOpen()
+	{
+		return (activeModule != null);
+	}
+	
+	public static void updatePort(Port port, String value, int col)
+	{
+		
+		if (col == 1)
+		{
+			port.setRefName(value);
+		}
+		else if (col == 2)
+		{
+			port.setType(PortType.valueOf(value.toUpperCase()));
+		}
+		else if (col == 3)
+		{
+			port.setName(value);
+		}
+		
+		drawingBoard.updatePort(port.getDrawingCell());
+	}
+	
+	public static int portValidation(String portName, String refName)
+	{
+		ListIterator<Port> ports = activeModule.getPorts().listIterator();
+		Port currentPort;
+		
+		while (ports.hasNext())
+		{
+			currentPort = ports.next();
+			
+			if (refName.compareToIgnoreCase(currentPort.getRefName()) == 0)
+			{
+				//System.out.println("comp refName: " + refName.compareToIgnoreCase(currentPort.getRefName()));
+				return 1;
+			}
+			
+			if (portName.compareToIgnoreCase(currentPort.getName()) == 0)
+			{
+				//System.out.println("comp portName: " + portName.compareToIgnoreCase(currentPort.getName()));
+				return 2;
+			}
+		}
+		return 0;
 	}
 }

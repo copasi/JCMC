@@ -6,9 +6,8 @@ import java.io.File;
 
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.tree.DefaultMutableTreeNode;
-
-import msmb.utility.Constants;
 
 /**
  * Listener for the AC_GUI menu.
@@ -18,6 +17,8 @@ import msmb.utility.Constants;
 public class ACMenuListener implements ActionListener
 {
 
+	JFileChooser fileChooser;
+	
 	/**
 	 * Detect which action occurred and perform the appropriate task.
 	 * @param ae the action event
@@ -42,7 +43,7 @@ public class ACMenuListener implements ActionListener
 		case NEW:
 			//JOptionPane.showMessageDialog(null, "An empty model will be created (not yet implemented).");
 			name = null;
-			if (AC_GUI.isModuleOpen == false)
+			if (AC_GUI.isModuleOpen() == false)
 			{
 				name = JOptionPane.showInputDialog("Name of the new module:", "Module");
 				if (name != null)
@@ -62,10 +63,9 @@ public class ACMenuListener implements ActionListener
 					null,
 					"An existing model will be opened from a SBML file and will load the three panels accordingly (not yet implemented).");
 			*/
-			JFileChooser fileChooser = new JFileChooser();
+			fileChooser = new JFileChooser(".");
     		
-    		int returnVal = fileChooser.showOpenDialog(null);
-            if (returnVal == JFileChooser.APPROVE_OPTION) 
+            if (fileChooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) 
             {
             	File file = fileChooser.getSelectedFile();
                 //inputFile = file.getName().substring(0,file.getName().lastIndexOf("."));           	
@@ -81,10 +81,24 @@ public class ACMenuListener implements ActionListener
 			JOptionPane.showMessageDialog(null,
 					"Will save the entire model in one SBML file (not yet implemented).");
 			*/
-			
-			Printer output = new Printer();
+			/*
+			SBMLParser output = new SBMLParser();
 			String fileName = output.print(AC_GUI.drawingBoard.getActiveModule());
 			JOptionPane.showMessageDialog(null, "The module has been saved in " + fileName + ".");
+			*/
+			String fileName = null;
+			fileChooser = new JFileChooser (new File ("."));
+			fileChooser.setFileFilter (new FileNameExtensionFilter("Model file","sbml"));
+			if (fileChooser.showSaveDialog(null) == JFileChooser.APPROVE_OPTION)
+			{
+				fileName = fileChooser.getSelectedFile().getAbsolutePath();
+				if (!fileName.endsWith (".sbml"))
+				{
+					fileName += ".sbml";
+				}
+				AC_GUI.currentGUI.save(fileName);
+				JOptionPane.showMessageDialog(null, "The module has been saved in " + fileName);
+			}
 			
 			break;
 		case SAVE_AS:
@@ -110,7 +124,7 @@ public class ACMenuListener implements ActionListener
 			//node = AC_GUI.selectedModule.getTreeNode();
 			parentMod = null;
 
-			if (AC_GUI.isModuleOpen != false)
+			if (AC_GUI.isModuleOpen())
 			{
 				if (AC_GUI.selectedModule != null)
 				{
@@ -144,8 +158,46 @@ public class ACMenuListener implements ActionListener
 			}
 			break;
 		case ADD_SUBMODULE_TEMPLATE:
-			JOptionPane.showMessageDialog(null,
-					"Will open up a file selection dialog box to select an already saved template model and will add that as a submodule under the selected module (not yet implemented).");
+			//JOptionPane.showMessageDialog(null,"Will open up a file selection dialog box to select an already saved template model and will add that as a submodule under the selected module (not yet implemented).");
+			name = null;
+			//node = AC_GUI.selectedModule.getTreeNode();
+			parentMod = null;
+
+			if (AC_GUI.isModuleOpen())
+			{
+				if (AC_GUI.selectedModule != null)
+				{
+					//parent = AC_GUI.moduleList.findModule(node);
+					parentMod = AC_GUI.selectedModule;
+					if (parentMod == AC_GUI.drawingBoard.getActiveModule())
+					{
+						fileChooser = new JFileChooser(".");
+			    		
+			            if (fileChooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) 
+			            {
+			            	File file = fileChooser.getSelectedFile();
+			                //inputFile = file.getName().substring(0,file.getName().lastIndexOf("."));           	
+			                AC_GUI.currentGUI.loadSubmodule(file.getAbsolutePath(), AC_GUI.selectedModule);
+			            }
+					}
+					else
+					{
+						JOptionPane.showMessageDialog(null,
+								"You can only add submodules to the active module.");
+					}
+				}
+				else
+				{
+					// no node was selected.
+					JOptionPane.showMessageDialog(null,
+							"Please select a module from the tree to add a submodule.");
+				}
+			}
+			else
+			{
+				JOptionPane.showMessageDialog(null,
+						"Please create a new module first.");
+			}
 			break;
 		case SAVE_SUBMODULE_AS_TEMPLATE:
 			break;
@@ -153,7 +205,7 @@ public class ACMenuListener implements ActionListener
 			//JOptionPane.showMessageDialog(null, "Will add an empty submodule under the module selected in the TreeView (not yet implemented).");
 			
 
-			if (AC_GUI.isModuleOpen != false)
+			if (AC_GUI.isModuleOpen())
 			{
 				if (AC_GUI.selectedModule != null)
 				{

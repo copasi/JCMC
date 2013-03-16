@@ -197,8 +197,9 @@ public class TreeView extends JPanel implements TreeSelectionListener
 		{
 			menu.add(new AbstractAction("Load Module") {
 				public void actionPerformed(ActionEvent e) {
-					AC_GUI.drawingBoard.changeModule(AC_GUI.selectedModule);
-					refreshTree();
+					AC_GUI.changeActiveModule(AC_GUI.selectedModule);
+					//AC_GUI.drawingBoard.changeModule(AC_GUI.selectedModule);
+					//refreshTree();
 				}
 			});
 		}

@@ -97,6 +97,23 @@ public class Module implements Serializable
 	/**
 	 * Construct a module.
 	 * @param iName the name of the module
+	 * @param iParent the parent to the module
+	 */
+	public Module(String iName, String iKey, Module iParent)
+	{
+		parent = iParent;
+		name = iName;
+		copasiDatamodelKey = iKey;
+		treeNode = null;
+		drawingCell = null;
+		children = new ArrayList<Module>();
+		ports = new ArrayList<Port>();
+		connections = new ArrayList<Connection>();
+	}
+	
+	/**
+	 * Construct a module.
+	 * @param iName the name of the module
 	 * @param tNode the tree node representing the module
 	 * @param dCell the drawn object representing the module
 	 */

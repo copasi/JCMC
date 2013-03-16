@@ -83,6 +83,7 @@ public class DrawingBoard extends JPanel
 		//new mxKeyboardHandler(graphComponent);
 		this.add(graphComponent);
 		graph.setConstrainChildren(true);
+		graphComponent.setToolTips(true);
 		installListeners();
 	}
 
@@ -316,6 +317,12 @@ public class DrawingBoard extends JPanel
 		 * graph.getModel().beginUpdate(); try { mxCellState state = graph.getView().getState(cell);
 		 * state.setLabel(newName); } finally { graph.getModel().endUpdate(); } graph.repaint();
 		 */
+	}
+	
+	public void updatePort(Object portCell)
+	{
+		graph.updatePortOrientation(portCell, ((mxCell)portCell).getGeometry());
+		graph.refresh();
 	}
 
 	/**
@@ -681,11 +688,11 @@ public class DrawingBoard extends JPanel
 		cell.put(mxConstants.STYLE_OPACITY, "50.0");
 		cell.put(mxConstants.STYLE_STROKEWIDTH, "3.0");
 		cell.put(mxConstants.STYLE_ALIGN, mxConstants.ALIGN_CENTER);
-		cell.put(mxConstants.STYLE_VERTICAL_ALIGN, mxConstants.ALIGN_TOP);
-		cell.put(mxConstants.STYLE_VERTICAL_LABEL_POSITION, mxConstants.ALIGN_MIDDLE);
-		cell.put(mxConstants.STYLE_LABEL_BACKGROUNDCOLOR, "white");
-		cell.put(mxConstants.STYLE_LABEL_BORDERCOLOR, "red");
-		cell.put(mxConstants.STYLE_SPACING_TOP, "-10");
+		//cell.put(mxConstants.STYLE_VERTICAL_ALIGN, mxConstants.ALIGN_TOP);
+		//cell.put(mxConstants.STYLE_VERTICAL_LABEL_POSITION, mxConstants.ALIGN_MIDDLE);
+		//cell.put(mxConstants.STYLE_LABEL_BACKGROUNDCOLOR, "white");
+		//cell.put(mxConstants.STYLE_LABEL_BORDERCOLOR, "red");
+		//cell.put(mxConstants.STYLE_SPACING_TOP, "-10");
 		cell.put(mxConstants.STYLE_FONTFAMILY, "Times New Roman");
 		cell.put(mxConstants.STYLE_FONTSIZE, "12");
 		cell.put(mxConstants.STYLE_FONTSTYLE, "1");
@@ -693,6 +700,7 @@ public class DrawingBoard extends JPanel
 		cell.put(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_RECTANGLE);
 		cell.put(mxConstants.STYLE_ROUNDED, "true");
 		cell.put(mxConstants.STYLE_FOLDABLE, "0");
+		cell.put(mxConstants.STYLE_WHITE_SPACE, "wrap");
 
 		styleSheet.putCellStyle("Submodule", cell);
 

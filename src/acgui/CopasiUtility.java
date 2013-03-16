@@ -2,6 +2,7 @@ package acgui;
 
 import org.COPASI.CCopasiDataModel;
 import org.COPASI.CCopasiRootContainer;
+import org.COPASI.DataModelVector;
 
 /**
  * A utility to handle all things Copasi.
@@ -26,19 +27,62 @@ public class CopasiUtility
 		return CCopasiRootContainer.addDatamodel();
 	}
 	
-	/*
-	public void exportModel(String dataModelKey)
+	public String getSBML(String dataModelKey)
 	{
+		String sbmlModel = "";
+		CCopasiDataModel dataModel = getCopasiModelFromKey(dataModelKey);
+
+		if(dataModel == null)
+		{
+			System.out.println("Error accessing Copasi Data Models.");
+			System.exit(0);
+		}
 		
 		try
 		{
-			dataModel.exportSBML("output.sbml");
+			sbmlModel = dataModel.exportSBMLToString();
 		}
 		catch (Exception e)
 		{
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		return sbmlModel;
 	}
-	*/
+	
+	
+	public void exportModel(String dataModelKey)
+	{
+		CCopasiDataModel dataModel = getCopasiModelFromKey(dataModelKey);
+
+		try
+		{
+			dataModel.exportSBML("DirectCopasiOutput.sbml");
+		}
+		catch (Exception e)
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		System.out.println("Key: " + dataModel.getModel().getKey());
+		System.out.println("SBMLID: " + dataModel.getModel().getSBMLId());
+	}
+	
+	
+	public CCopasiDataModel getCopasiModelFromKey(String dataModelKey)
+	{
+		//System.out.println("G key: " + dataModelKey);
+		DataModelVector modelList = CCopasiRootContainer.getDatamodelList();
+		CCopasiDataModel model = null;
+		for(long index = 0; index < modelList.size(); index++)
+		{
+			model = CCopasiRootContainer.get(index);
+			//System.out.println("F key: " + model.getModel().getKey());
+			if(dataModelKey.equals(model.getModel().getKey()))
+			{
+				return model;
+			}
+		}
+		return null;
+	}
 }
