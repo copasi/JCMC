@@ -56,6 +56,8 @@ public class DrawingBoard extends JPanel
 	private final int DEFAULT_SUBMODULE_WIDTH = 120;
 	private final int DEFAULT_PORT_HEIGHT = 60;
 	private final int DEFAULT_PORT_WIDTH = 60;
+	private final int DEFAULT_VISIBLEVARIABLE_HEIGHT = 50;
+	private final int DEFAULT_VISIBLEVARIABLE_WIDTH = 50;
 
 	private ACGraph graph;
 	private Object parent;
@@ -253,6 +255,59 @@ public class DrawingBoard extends JPanel
 		port.setDrawingCell(port1);
 	}
 
+	public void addVisibleVariable(Module parentMod, VisibleVariable var)
+	{
+		//System.out.println("Time to add a visible variable:");
+		//System.out.println("Variable Ref Name: " + var.getRefName());
+		Object cell = parentMod.getDrawingCell();
+		mxRectangle bounds = new mxRectangle();
+		double xPosition;
+		double yPosition;
+		double width = DEFAULT_VISIBLEVARIABLE_WIDTH;
+		double height = DEFAULT_VISIBLEVARIABLE_HEIGHT;
+		// System.out.println("Cell obj: " + ((mxCell) cell).getValue().toString());
+		// System.out.println("Parentmod obj: " + parentMod.getName());
+		
+		double offsetX = 0;
+		double offsetY = 0;
+
+		//offsetX = -width / 2;
+		//offsetY = -height / 2;
+
+		int varIndex = parentMod.getVisibleVariables().size();
+		mxCell var1 = null;
+		graph.getModel().beginUpdate();
+		try
+		{
+			//mxGeometry geo1 = new mxGeometry(0, 0, width, height);
+			//geo1.setOffset(new mxPoint(offsetX, offsetY));
+			//geo1.setRelative(true);
+			var1 = (mxCell)graph.createVertex(cell, null, var, 5, 5, 10, 10, "");
+			var1.setVertex(true);
+			var1.setConnectable(true);
+			graph.getModel().add(cell, var1, 0);
+			
+			bounds = new mxRectangle();
+			xPosition = 40 + (varIndex * 20);
+			yPosition = 40 + (varIndex * 20);
+			bounds.setX(xPosition);
+			bounds.setY(yPosition);
+			bounds.setWidth(DEFAULT_VISIBLEVARIABLE_WIDTH);
+			bounds.setHeight(DEFAULT_VISIBLEVARIABLE_HEIGHT);
+
+			graph.resizeCell(var1, bounds);
+			graph.getModel().setStyle(var1, "VisibleVariable");
+			// graph.updatePortOrientation(port1, geo1);
+			//graph.updatePortOrientation(port1, geo1);
+		}
+		finally
+		{
+			graph.getModel().endUpdate();
+		}
+
+		var.setDrawingCell((Object)var1);
+	}
+	
 	/**
 	 * Remove the given drawing cell, and its children, from the drawing board.
 	 * 
@@ -280,22 +335,22 @@ public class DrawingBoard extends JPanel
 	}
 	
 	/**
-	 * Remove any edges connected to the given port.
-	 * @param port the port whose edges will be removed
+	 * Remove any edges connected to the given drawing cell.
+	 * @param cell the drawing cell whose edges will be removed
 	 */
-	public void removeEdges(Port port)
+	public void removeEdges(Object cell)
 	{
-		// check if there are any connections to the port
-		int connectionCount = graph.getModel().getEdgeCount(port.getDrawingCell());
+		// check if there are any connections to the drawing cell
+		int connectionCount = graph.getModel().getEdgeCount(cell);
 		if (connectionCount != 0)
 		{
-			// remove the existing connections from the port
+			// remove the existing connections from the drawing cell
 			Connection edge;
 			for(int i = 0; i < connectionCount; i++)
 			{
 				// get the connection object from the drawing cell
-				edge = (Connection)((mxCell)graph.getModel().getEdgeAt(port.getDrawingCell(), 0)).getValue();
-				// remove the connection from the graph
+				edge = (Connection)((mxCell)graph.getModel().getEdgeAt(cell, 0)).getValue();
+				// remove the drawing cell from the graph
 				removeCell(edge.getDrawingCell());
 				// remove the connection from the module
 				AC_GUI.currentGUI.removeConnection(edge);
@@ -388,6 +443,7 @@ public class DrawingBoard extends JPanel
 		activeModule = mod;
 		drawPorts(mod);
 		drawChildren(mod);
+		drawVisibleVariables(mod);
 		drawConnections(mod);
 		// printCellCount(cell);
 		// printBoardStats();
@@ -432,6 +488,18 @@ public class DrawingBoard extends JPanel
 
 				bounds = graph.getBoundingBox(childCell);
 				child.setSubmoduleBounds(bounds);
+			}
+			
+			ListIterator<VisibleVariable> vars = activeModule.getVisibleVariables().listIterator();
+			VisibleVariable var;
+			Object varCell;
+			while (vars.hasNext())
+			{
+				var = vars.next();
+				varCell = var.getDrawingCell();
+				
+				bounds = graph.getBoundingBox(varCell);
+				var.setDrawingCellBounds(bounds);
 			}
 		}
 	}
@@ -563,6 +631,77 @@ public class DrawingBoard extends JPanel
 		}
 	}
 
+	private void drawVisibleVariables(Module mod)
+	{
+		ListIterator<VisibleVariable> vars;
+		Object cell;
+		Object varCell;
+		//mxGeometry geo;
+		double x;
+		double y;
+		double width;
+		double height;
+		double offsetX;
+		double offsetY;
+		VisibleVariable var;
+		int varIndex;
+		mxRectangle bounds;
+		double xPosition;
+		double yPosition;
+
+		// get the list of visible variables
+		vars = mod.getVisibleVariables().listIterator();
+
+		// get the drawing cell where the visible variables will be added
+		cell = mod.getDrawingCell();
+
+		// loop through each visible variable of the module
+		while (vars.hasNext())
+		{
+			// get the index of the next visible variable
+			varIndex = vars.nextIndex();
+			// get the next visible variable
+			var = vars.next();
+			// get the drawing cell of the current visible variable
+			varCell = var.getDrawingCell();
+
+			// draw the current visible variable
+			graph.getModel().beginUpdate();
+			try
+			{
+				/*
+				x = ((mxCell) varCell).getGeometry().getX();
+				y = ((mxCell) varCell).getGeometry().getY();
+				
+				//offsetX = -width / 2;
+				//offsetY = -height / 2;
+				geo = new mxGeometry(x, y, width, height);
+				geo.setOffset(new mxPoint(offsetX, offsetY));
+				geo.setRelative(true);
+				*/
+				graph.getModel().add(cell, varCell, 0);
+				bounds = var.getDrawingCellBounds();
+				if (bounds == null)
+				{
+					bounds = new mxRectangle();
+					xPosition = 40 + (varIndex * 20);
+					yPosition = 40 + (varIndex * 20);
+					bounds.setX(xPosition);
+					bounds.setY(yPosition);
+					bounds.setWidth(DEFAULT_VISIBLEVARIABLE_WIDTH);
+					bounds.setHeight(DEFAULT_VISIBLEVARIABLE_HEIGHT);
+				}
+				graph.resizeCell(varCell, bounds);
+				graph.getModel().setStyle(varCell, "VisibleVariable");
+				//graph.getModel().setGeometry(varCell, geo);
+			}
+			finally
+			{
+				graph.getModel().endUpdate();
+			}
+		}
+	}
+	
 	/**
 	 * Draw the connections of the given module.
 	 * @param mod the module whose connections will be drawn
@@ -704,6 +843,18 @@ public class DrawingBoard extends JPanel
 
 		styleSheet.putCellStyle("Submodule", cell);
 
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_ELLIPSE);
+		cell.put(mxConstants.STYLE_STROKECOLOR, "black");
+		cell.put(mxConstants.STYLE_FILLCOLOR, "white");
+		cell.put(mxConstants.STYLE_FONTFAMILY, "Times New Roman");
+		cell.put(mxConstants.STYLE_FONTSIZE, "12");
+		cell.put(mxConstants.STYLE_FONTSTYLE, "1");
+		cell.put(mxConstants.STYLE_FONTCOLOR, "black");
+		cell.put(mxConstants.STYLE_FOLDABLE, "0");
+
+		styleSheet.putCellStyle("VisibleVariable", cell);
+		
 		cell = new HashMap<String, Object>();
 		cell.put(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_TRIANGLE);
 		cell.put(mxConstants.STYLE_DIRECTION, mxConstants.DIRECTION_NORTH);
@@ -943,12 +1094,32 @@ public class DrawingBoard extends JPanel
 
 				public void actionPerformed(ActionEvent e)
 				{
-					String source = ((Port)((mxCell)cell).getSource().getValue()).getParent().getName();
-					source += "." + ((Port)((mxCell)cell).getSource().getValue()).getName();
-					String target = ((Port)((mxCell)cell).getTarget().getValue()).getParent().getName();
-					target += "." + ((Port)((mxCell)cell).getTarget().getValue()).getName();
+					String source = "";
+					String target = "";
 					
-					String msg = "Source port = " + source + "\nDestination port = " + target;
+					if (((mxCell)cell).getSource().getValue() instanceof Port)
+					{
+						source = "Port ";
+						source += ((Port)((mxCell)cell).getSource().getValue()).getParent().getName();
+						source += "." + ((Port)((mxCell)cell).getSource().getValue()).getName();
+					} else if (((mxCell)cell).getSource().getValue() instanceof VisibleVariable)
+					{
+						source = "Variable ";
+						source += ((VisibleVariable)((mxCell)cell).getSource().getValue()).getRefName();
+					}
+					
+					if (((mxCell)cell).getTarget().getValue() instanceof Port)
+					{
+						target = "Port ";
+						target += ((Port)((mxCell)cell).getTarget().getValue()).getParent().getName();
+						target += "." + ((Port)((mxCell)cell).getTarget().getValue()).getName();
+					} else if (((mxCell)cell).getTarget().getValue() instanceof VisibleVariable)
+					{
+						target = "Variable ";
+						target += ((VisibleVariable)((mxCell)cell).getTarget().getValue()).getRefName();
+					}
+					
+					String msg = "Source = " + source + "\nDestination = " + target;
 					JOptionPane.showMessageDialog(null, msg);
 				}
 			});
@@ -969,6 +1140,21 @@ public class DrawingBoard extends JPanel
 						portAddEditor.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 						portAddEditor.setModal(true);
 						portAddEditor.setVisible(true);
+					}
+				});
+				
+				menu.add(new AbstractAction("Show Variable") {
+					/**
+					 * 
+					 */
+					private static final long serialVersionUID = 1L;
+
+					public void actionPerformed(ActionEvent e)
+					{
+						VariableAddEditor varAddEditor = new VariableAddEditor(graphComponent);
+						varAddEditor.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+						varAddEditor.setModal(true);
+						varAddEditor.setVisible(true);
 					}
 				});
 			}
@@ -1032,6 +1218,26 @@ public class DrawingBoard extends JPanel
 					public void actionPerformed(ActionEvent e)
 					{
 
+					}
+				});
+			}
+			else if (((mxCell) cell).getValue() instanceof VisibleVariable)
+			{
+				menu.add(new AbstractAction("Remove") {
+					/**
+					 * 
+					 */
+					private static final long serialVersionUID = 1L;
+
+					public void actionPerformed(ActionEvent e)
+					{
+						// get the Visible Variable object from the drawing cell
+						VisibleVariable currentVar = (VisibleVariable) ((mxCell) cell).getValue();
+						String msg = "Number of edges connected to the variable: ";
+						msg += graph.getModel().getEdgeCount(cell) + ".";
+						//System.out.println(msg);
+						// call AC_GUI to fully remove the port
+						AC_GUI.removeVisibleVariable(currentVar);
 					}
 				});
 			}

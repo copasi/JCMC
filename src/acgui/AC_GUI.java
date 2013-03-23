@@ -220,6 +220,20 @@ public class AC_GUI extends JFrame
 		//printList();
 	}
 	
+	public static void addVisibleVariable(String refName)
+	{
+		VisibleVariable var = new VisibleVariable(activeModule, refName);
+		drawingBoard.addVisibleVariable(activeModule, var);
+		activeModule.addVisibleVariable(var);
+	}
+	
+	public static void removeVisibleVariable(VisibleVariable var)
+	{
+		drawingBoard.removeEdges(var.getDrawingCell());
+		drawingBoard.removeCell(var.getDrawingCell());
+		activeModule.removeVisibleVariable(var);
+	}
+	
 	/**
 	 * Remove the given module, and its children, from all three panels.
 	 * @param mod the module to be removed
@@ -278,7 +292,7 @@ public class AC_GUI extends JFrame
 		// get the parent module of the port
 		Module parentMod = port.getParent();
 		// remove any edges connected to the port
-		drawingBoard.removeEdges(port);
+		drawingBoard.removeEdges(port.getDrawingCell());
 		// remove the drawing cell representation from the drawing board
 		drawingBoard.removeCell(port.getDrawingCell());
 		// remove the port from the model builder
@@ -549,5 +563,23 @@ public class AC_GUI extends JFrame
 			}
 		}
 		return 0;
+	}
+	
+	public static boolean visibleVariableValidation(String refName)
+	{
+		ListIterator<VisibleVariable> vars = activeModule.getVisibleVariables().listIterator();
+		VisibleVariable currentVar;
+		
+		while (vars.hasNext())
+		{
+			currentVar = vars.next();
+			
+			if (refName.compareToIgnoreCase(currentVar.getRefName()) == 0)
+			{
+				//System.out.println("comp refName: " + refName.compareToIgnoreCase(currentPort.getRefName()));
+				return false;
+			}
+		}
+		return true;
 	}
 }

@@ -5,6 +5,8 @@ package acgui;
 
 import java.util.Vector;
 
+import javax.swing.JOptionPane;
+
 import msmb.commonUtilities.tables.CustomTableModel;
 
 /**
@@ -42,9 +44,17 @@ public class ACCustomTableModel extends CustomTableModel
 	
 	public void addPort(Port newPort)
 	{
-		String parentModName = newPort.getParent().getName();
+		String refName = "";
+		
+		refName = newPort.getRefName();
+		
+		if (newPort.getParent() != AC_GUI.activeModule)
+		{
+			refName += " - " + newPort.getParent().getName();
+		}
+		
 		Vector portInfo = new Vector();
-		portInfo.add(newPort.getRefName() + " - " + parentModName);
+		portInfo.add(refName);
 		portInfo.add(newPort.getType());
 		portInfo.add(newPort.getName());
 		this.addRow(portInfo);
@@ -71,7 +81,24 @@ public class ACCustomTableModel extends CustomTableModel
 	
 	@Override
 	public void setValueAt(Object value, int row, int col) {
-		super.setValueAt(value, row, col);
+		if(row < 0) return;
+		Port changed = portsListed.get(row);
+		//System.out.println("List Name: " + portName);
+		//System.out.println("Object Value: " + (String)value);
+		if ((changed.getParent() != AC_GUI.activeModule) && (col == 1))
+		{
+			String msg = "Cannot edit the Ref Name of a Submodule Port.";
+			JOptionPane.showMessageDialog(null, msg);
+			//fireTableDataChanged();
+			//fireTableCellUpdated(row, col);
+			return;
+		}
+		Vector r = (Vector)data.get(row);
+		Object old = r.get(col);
+		r.set(col, value);
+		data.set(row, r);
+		fireTableDataChanged();
+		fireTableCellUpdated(row, col);
 		//System.out.println("Row: " + row);
 		//System.out.println("Col: " + col);
 		//System.out.println("Value: " + value.toString());

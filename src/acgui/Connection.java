@@ -17,8 +17,8 @@ public class Connection implements Serializable
 	 */
 	private static final long serialVersionUID = 1L;
 	Module parent;
-	Port source;
-	Port target;
+	Object source;
+	Object target;
 	Object drawingCell;
 	
 	/**
@@ -41,8 +41,8 @@ public class Connection implements Serializable
 	public Connection(Module iParent, Object cell)
 	{
 		parent = iParent;
-		source = (Port)((mxCell)cell).getSource().getValue();
-		target = (Port)((mxCell)cell).getTarget().getValue();
+		source = ((mxCell)cell).getSource();
+		target = ((mxCell)cell).getTarget();
 		drawingCell = cell;
 	}
 	
@@ -77,7 +77,7 @@ public class Connection implements Serializable
 	 * Return the source port.
 	 * @return the source port
 	 */
-	public Port getSource()
+	public Object getSource()
 	{
 		return source;
 	}
@@ -86,7 +86,7 @@ public class Connection implements Serializable
 	 * Return the target port.
 	 * @return the target port
 	 */
-	public Port getTarget()
+	public Object getTarget()
 	{
 		return target;
 	}

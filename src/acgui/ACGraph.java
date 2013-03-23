@@ -309,102 +309,114 @@ public class ACGraph extends mxGraph
 	 */
 	public String validateEdge(Object edge, Object source, Object target)
 	{
-		Port sourcePort = (Port)((mxCell)source).getValue();
-		Port targetPort = (Port)((mxCell)target).getValue();
-		Module sourceModule = sourcePort.getParent();
-		Module targetModule = targetPort.getParent();
-		
-		//System.out.println("Source: " + ((mxCell)source).getValue().toString());
-		//System.out.println("Target: " + ((mxCell)target).getValue().toString());
-		PortType sourceType = ((Port)((mxCell)source).getValue()).getType();
-		PortType targetType = ((Port)((mxCell)target).getValue()).getType();
-		
-		if(sourceModule == targetModule.getParent())
+		/*
+		if (((mxCell)source).getValue() instanceof VisibleVariable)
 		{
-			// the targetModule is a submodule
-			switch(sourceType)
-			{
-			case INPUT:
-				if (targetType.compareTo(PortType.OUTPUT) == 0)
-				{
-					return "A Module input port cannot connect to a Submodule output port.";
-				}
-				break;
-			case OUTPUT:
-				if (targetType.compareTo(PortType.INPUT) == 0)
-				{
-					return "A Module output port cannot connect to a Submodule input port.";
-				}
-				break;
-			case EQUIVALENCE:
-				if (targetType.compareTo(PortType.OUTPUT) == 0)
-				{
-					return "A Module equivalence port cannot connect to a Submodule output port.";
-				}
-				break;
-			default:
-			}
+			System.out.println("Source is a Visible Variable.");
 		}
-		else if (sourceModule.getParent() == targetModule)
+		if (((mxCell)target).getValue() instanceof VisibleVariable)
 		{
-			// the sourceModule is a submodule
-			switch(sourceType)
+			System.out.println("Target is a Visible Variable.");
+		}
+		*/
+		if (((mxCell)source).getValue() instanceof Port && ((mxCell)target).getValue() instanceof Port)
+		{
+			Port sourcePort = (Port)((mxCell)source).getValue();
+			Port targetPort = (Port)((mxCell)target).getValue();
+			Module sourceModule = sourcePort.getParent();
+			Module targetModule = targetPort.getParent();
+			
+			//System.out.println("Source: " + ((mxCell)source).getValue().toString());
+			//System.out.println("Target: " + ((mxCell)target).getValue().toString());
+			PortType sourceType = ((Port)((mxCell)source).getValue()).getType();
+			PortType targetType = ((Port)((mxCell)target).getValue()).getType();
+			
+			if(sourceModule == targetModule.getParent())
 			{
-			case INPUT:
-				if (targetType.compareTo(PortType.OUTPUT) == 0)
-				{
-					return "A Submodule input port cannot connect to a Module output port.";
-				}
-				break;
-			case OUTPUT:
-				switch(targetType)
+				// the targetModule is a submodule
+				switch(sourceType)
 				{
 				case INPUT:
-					return "A Submodule output port cannot connect to a Module input port.";
+					if (targetType.compareTo(PortType.OUTPUT) == 0)
+					{
+						return "A Module input port cannot connect to a Submodule output port.";
+					}
+					break;
 				case OUTPUT:
+					if (targetType.compareTo(PortType.INPUT) == 0)
+					{
+						return "A Module output port cannot connect to a Submodule input port.";
+					}
 					break;
 				case EQUIVALENCE:
-					return "A Submodule output port cannot connect to a Module equivalence port.";
+					if (targetType.compareTo(PortType.OUTPUT) == 0)
+					{
+						return "A Module equivalence port cannot connect to a Submodule output port.";
+					}
+					break;
 				default:
 				}
-				break;
-			case EQUIVALENCE:
-				break;
-			default:
 			}
-		}
-		else
-		{
-			// both the sourceModule and the targetModule are submodules
-			switch(sourceType)
+			else if (sourceModule.getParent() == targetModule)
 			{
-			case INPUT:
-				switch(targetType)
+				// the sourceModule is a submodule
+				switch(sourceType)
 				{
 				case INPUT:
-					return "A Submodule input port cannot connect to another Submodule input port.";
+					if (targetType.compareTo(PortType.OUTPUT) == 0)
+					{
+						return "A Submodule input port cannot connect to a Module output port.";
+					}
+					break;
 				case OUTPUT:
-					return "A Submodule input port cannot connect to another Submodule output port.";
+					switch(targetType)
+					{
+					case INPUT:
+						return "A Submodule output port cannot connect to a Module input port.";
+					case OUTPUT:
+						break;
+					case EQUIVALENCE:
+						return "A Submodule output port cannot connect to a Module equivalence port.";
+					default:
+					}
+					break;
 				case EQUIVALENCE:
-					return "A Submodule input port cannot connect to another Submodule equivalence port.";
+					break;
 				default:
 				}
-			case OUTPUT:
-				if (targetType.compareTo(PortType.OUTPUT) == 0)
+			}
+			else
+			{
+				// both the sourceModule and the targetModule are submodules
+				switch(sourceType)
 				{
-					return "A Submodule output port cannot connect to another Submodule output port.";
+				case INPUT:
+					switch(targetType)
+					{
+					case INPUT:
+						return "A Submodule input port cannot connect to another Submodule input port.";
+					case OUTPUT:
+						return "A Submodule input port cannot connect to another Submodule output port.";
+					case EQUIVALENCE:
+						return "A Submodule input port cannot connect to another Submodule equivalence port.";
+					default:
+					}
+				case OUTPUT:
+					if (targetType.compareTo(PortType.OUTPUT) == 0)
+					{
+						return "A Submodule output port cannot connect to another Submodule output port.";
+					}
+					break;
+				case EQUIVALENCE:
+					if (targetType.compareTo(PortType.OUTPUT) == 0)
+					{
+						return "A Submodule equivalence port cannot connect to another Submodule output port.";
+					}
+					break;
+				default:
 				}
-				break;
-			case EQUIVALENCE:
-				if (targetType.compareTo(PortType.OUTPUT) == 0)
-				{
-					return "A Submodule equivalence port cannot connect to another Submodule output port.";
-				}
-				break;
-			default:
 			}
 		}
-		
 		/*
 		if ((sourceType.compareTo(PortType.OUTPUT) == 0) && (targetType.compareTo(PortType.INPUT) == 0))
 		{

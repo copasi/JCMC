@@ -27,6 +27,7 @@ public class Module implements Serializable
 	private ArrayList<Module> children;
 	private ArrayList<Port> ports;
 	private ArrayList<Connection> connections;
+	private ArrayList<VisibleVariable> visibleVariables;
 	private mxRectangle submoduleBounds;
 
 	/**
@@ -42,6 +43,7 @@ public class Module implements Serializable
 		children = new ArrayList<Module>();
 		ports = new ArrayList<Port>();
 		connections = new ArrayList<Connection>();
+		visibleVariables = new ArrayList<VisibleVariable>();
 	}
 
 	/**
@@ -58,6 +60,7 @@ public class Module implements Serializable
 		children = new ArrayList<Module>();
 		ports = new ArrayList<Port>();
 		connections = new ArrayList<Connection>();
+		visibleVariables = new ArrayList<VisibleVariable>();
 	}
 
 	/**
@@ -75,6 +78,7 @@ public class Module implements Serializable
 		children = new ArrayList<Module>();
 		ports = new ArrayList<Port>();
 		connections = new ArrayList<Connection>();
+		visibleVariables = new ArrayList<VisibleVariable>();
 	}
 	
 	/**
@@ -92,6 +96,7 @@ public class Module implements Serializable
 		children = new ArrayList<Module>();
 		ports = new ArrayList<Port>();
 		connections = new ArrayList<Connection>();
+		visibleVariables = new ArrayList<VisibleVariable>();
 	}
 	
 	/**
@@ -109,6 +114,7 @@ public class Module implements Serializable
 		children = new ArrayList<Module>();
 		ports = new ArrayList<Port>();
 		connections = new ArrayList<Connection>();
+		visibleVariables = new ArrayList<VisibleVariable>();
 	}
 	
 	/**
@@ -126,6 +132,7 @@ public class Module implements Serializable
 		children = new ArrayList<Module>();
 		ports = new ArrayList<Port>();
 		connections = new ArrayList<Connection>();
+		visibleVariables = new ArrayList<VisibleVariable>();
 	}
 
 	/**
@@ -298,6 +305,21 @@ public class Module implements Serializable
 	public ArrayList<Connection> getConnections()
 	{
 		return connections;
+	}
+	
+	public void addVisibleVariable(VisibleVariable var)
+	{
+		visibleVariables.add(var);
+	}
+	
+	public void removeVisibleVariable(VisibleVariable var)
+	{
+		visibleVariables.remove(var);
+	}
+	
+	public ArrayList<VisibleVariable> getVisibleVariables()
+	{
+		return visibleVariables;
 	}
 	
 	/**
