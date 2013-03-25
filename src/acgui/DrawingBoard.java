@@ -58,7 +58,9 @@ public class DrawingBoard extends JPanel
 	private final int DEFAULT_PORT_WIDTH = 60;
 	private final int DEFAULT_VISIBLEVARIABLE_HEIGHT = 50;
 	private final int DEFAULT_VISIBLEVARIABLE_WIDTH = 50;
-
+	private final int DEFAULT_AGGREGATOR_HEIGHT = 80;
+	private final int DEFAULT_AGGREGATOR_WIDTH = 90;
+	
 	private ACGraph graph;
 	private Object parent;
 	private Module activeModule;
@@ -196,13 +198,13 @@ public class DrawingBoard extends JPanel
 			bounds.setWidth(DEFAULT_SUBMODULE_WIDTH);
 			bounds.setHeight(DEFAULT_SUBMODULE_HEIGHT);
 			graph.resizeCell(childCell, bounds);
-			graph.getModel().setStyle(childCell, "Submodule");
+			graph.getModel().setStyle(childCell, mod.getDrawingCellStyle());
 		}
 		finally
 		{
 			graph.getModel().endUpdate();
 		}
-
+		mod.setDrawingCellBounds(bounds);
 		// printBoardStats();
 	}
 
@@ -308,6 +310,45 @@ public class DrawingBoard extends JPanel
 		var.setDrawingCell((Object)var1);
 	}
 	
+	public void addMathAggregator(MathematicalAggregator mathAgg)
+	{
+		createCell(mathAgg);
+		
+		Object parentCell = mathAgg.getParent().getDrawingCell();
+		Object childCell = mathAgg.getDrawingCell();
+		int childCount = mathAgg.getParent().getChildren().size();
+		mxRectangle bounds = new mxRectangle();
+		double xPosition;
+		double yPosition;
+		double width = DEFAULT_AGGREGATOR_WIDTH;
+		double height = (20 * (mathAgg.getPorts().size()-1));
+
+		graph.getModel().beginUpdate();
+		try
+		{
+			if (!graph.getModel().isVisible(childCell))
+			{
+				// System.out.println("Submodule not visible.");
+				graph.getModel().setVisible(childCell, true);
+			}
+			graph.getModel().add(parentCell, childCell, 0);
+			xPosition = 40 + (childCount * 20);
+			yPosition = 40 + (childCount * 20);
+			bounds.setX(xPosition);
+			bounds.setY(yPosition);
+			bounds.setWidth(width);
+			bounds.setHeight(height);
+			graph.resizeCell(childCell, bounds);
+			graph.getModel().setStyle(childCell, mathAgg.getDrawingCellStyle());
+		}
+		finally
+		{
+			graph.getModel().endUpdate();
+		}
+		mathAgg.setDrawingCellBounds(bounds);
+		addMathAggregatorPorts(mathAgg);
+	}
+	
 	/**
 	 * Remove the given drawing cell, and its children, from the drawing board.
 	 * 
@@ -408,7 +449,7 @@ public class DrawingBoard extends JPanel
 	{
 		return graph;
 	}
-
+ 
 	/**
 	 * Change the current module displayed.
 	 * 
@@ -487,7 +528,7 @@ public class DrawingBoard extends JPanel
 				childCell = child.getDrawingCell();
 
 				bounds = graph.getBoundingBox(childCell);
-				child.setSubmoduleBounds(bounds);
+				child.setDrawingCellBounds(bounds);
 			}
 			
 			ListIterator<VisibleVariable> vars = activeModule.getVisibleVariables().listIterator();
@@ -547,7 +588,7 @@ public class DrawingBoard extends JPanel
 			try
 			{
 				graph.getModel().add(parentCell, childCell, 0);
-				bounds = child.getSubmoduleBounds();
+				bounds = child.getDrawingCellBounds();
 				if (bounds == null)
 				{
 					bounds = new mxRectangle();
@@ -559,7 +600,7 @@ public class DrawingBoard extends JPanel
 					bounds.setHeight(DEFAULT_SUBMODULE_HEIGHT);
 				}
 				graph.resizeCell(childCell, bounds);
-				graph.getModel().setStyle(childCell, "Submodule");
+				graph.getModel().setStyle(childCell, child.getDrawingCellStyle());
 			}
 			finally
 			{
@@ -732,6 +773,76 @@ public class DrawingBoard extends JPanel
 		}
 	}
 	
+	private void addMathAggregatorPorts(MathematicalAggregator mathAgg)
+	{
+		ListIterator<Port> ports;
+		Port currentPort;
+		Object cell;
+		mxCell portCell;
+		mxGeometry geo;
+		double x;
+		double y;
+		double width;
+		double height;
+		double offsetX;
+		double offsetY;
+		double portSpacing;
+		int inputPortIndex; 
+		
+		width = DEFAULT_PORT_WIDTH/2;
+		height = DEFAULT_PORT_HEIGHT/2;
+
+		offsetX = -width / 2;
+		offsetY = -height / 2;
+		//portSpacing = 0.35;
+		portSpacing = 0.8 / (mathAgg.getPorts().size() - 2);
+		
+		inputPortIndex = 0;
+		cell = mathAgg.getDrawingCell();
+		ports = mathAgg.getPorts().listIterator();
+		while(ports.hasNext())
+		{
+			currentPort = ports.next();
+			graph.getModel().beginUpdate();
+			try
+			{
+				switch(currentPort.getType())
+				{
+				case INPUT:
+					x = 0;
+					y = (inputPortIndex * portSpacing) + 0.1;
+					inputPortIndex++;
+					break;
+				case OUTPUT:
+					x = 1.0;
+					y = 0.5;
+					break;
+				default:
+					x = 0.0;
+					y = 0.0;
+				}
+				
+				geo = new mxGeometry(x, y, width, height);
+				geo.setOffset(new mxPoint(offsetX, offsetY));
+				geo.setRelative(true);
+	
+				portCell = new mxCell(currentPort, geo, "Port");
+				portCell.setVertex(true);
+				portCell.setConnectable(true);
+	
+				graph.getModel().add(cell, portCell, 0);
+				// graph.updatePortOrientation(port1, geo1);
+				graph.updatePortOrientation(portCell, geo);
+			}
+			finally
+			{
+				graph.getModel().endUpdate();
+			}
+	
+			currentPort.setDrawingCell(portCell);
+		}
+	}
+	
 	/**
 	 * Remove the visible cells.
 	 */
@@ -854,6 +965,50 @@ public class DrawingBoard extends JPanel
 		cell.put(mxConstants.STYLE_FOLDABLE, "0");
 
 		styleSheet.putCellStyle("VisibleVariable", cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_STROKECOLOR, "blue");
+		cell.put(mxConstants.STYLE_FILLCOLOR, "orange");
+		cell.put(mxConstants.STYLE_OPACITY, "50.0");
+		cell.put(mxConstants.STYLE_STROKEWIDTH, "3.0");
+		cell.put(mxConstants.STYLE_ALIGN, mxConstants.ALIGN_CENTER);
+		//cell.put(mxConstants.STYLE_VERTICAL_ALIGN, mxConstants.ALIGN_TOP);
+		//cell.put(mxConstants.STYLE_VERTICAL_LABEL_POSITION, mxConstants.ALIGN_MIDDLE);
+		//cell.put(mxConstants.STYLE_LABEL_BACKGROUNDCOLOR, "white");
+		//cell.put(mxConstants.STYLE_LABEL_BORDERCOLOR, "red");
+		//cell.put(mxConstants.STYLE_SPACING_TOP, "-10");
+		cell.put(mxConstants.STYLE_FONTFAMILY, "Times New Roman");
+		cell.put(mxConstants.STYLE_FONTSIZE, "12");
+		cell.put(mxConstants.STYLE_FONTSTYLE, "1");
+		cell.put(mxConstants.STYLE_FONTCOLOR, "black");
+		cell.put(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_RECTANGLE);
+		cell.put(mxConstants.STYLE_ROUNDED, "true");
+		cell.put(mxConstants.STYLE_FOLDABLE, "0");
+		cell.put(mxConstants.STYLE_WHITE_SPACE, "wrap");
+
+		styleSheet.putCellStyle("Summation", cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_STROKECOLOR, "blue");
+		cell.put(mxConstants.STYLE_FILLCOLOR, "orange");
+		cell.put(mxConstants.STYLE_OPACITY, "50.0");
+		cell.put(mxConstants.STYLE_STROKEWIDTH, "3.0");
+		cell.put(mxConstants.STYLE_ALIGN, mxConstants.ALIGN_CENTER);
+		//cell.put(mxConstants.STYLE_VERTICAL_ALIGN, mxConstants.ALIGN_TOP);
+		//cell.put(mxConstants.STYLE_VERTICAL_LABEL_POSITION, mxConstants.ALIGN_MIDDLE);
+		//cell.put(mxConstants.STYLE_LABEL_BACKGROUNDCOLOR, "white");
+		//cell.put(mxConstants.STYLE_LABEL_BORDERCOLOR, "red");
+		//cell.put(mxConstants.STYLE_SPACING_TOP, "-10");
+		cell.put(mxConstants.STYLE_FONTFAMILY, "Times New Roman");
+		cell.put(mxConstants.STYLE_FONTSIZE, "12");
+		cell.put(mxConstants.STYLE_FONTSTYLE, "1");
+		cell.put(mxConstants.STYLE_FONTCOLOR, "black");
+		cell.put(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_RECTANGLE);
+		cell.put(mxConstants.STYLE_ROUNDED, "true");
+		cell.put(mxConstants.STYLE_FOLDABLE, "0");
+		cell.put(mxConstants.STYLE_WHITE_SPACE, "wrap");
+
+		styleSheet.putCellStyle("Product", cell);
 		
 		cell = new HashMap<String, Object>();
 		cell.put(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_TRIANGLE);

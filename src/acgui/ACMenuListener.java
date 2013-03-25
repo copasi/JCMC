@@ -4,6 +4,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 
+import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -198,6 +199,18 @@ public class ACMenuListener implements ActionListener
 				JOptionPane.showMessageDialog(null,
 						"Please create a new module first.");
 			}
+			break;
+		case ADD_SUMMATION_MODULE:
+			MathAggregatorAddEditor mathAdd1 = new MathAggregatorAddEditor(AC_GUI.drawingBoard.graphComponent, Operation.SUM);
+			mathAdd1.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+			mathAdd1.setModal(true);
+			mathAdd1.setVisible(true);
+			break;
+		case ADD_PRODUCT_MODULE:
+			MathAggregatorAddEditor mathAdd2 = new MathAggregatorAddEditor(AC_GUI.drawingBoard.graphComponent, Operation.PRODUCT);
+			mathAdd2.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+			mathAdd2.setModal(true);
+			mathAdd2.setVisible(true);
 			break;
 		case SAVE_SUBMODULE_AS_TEMPLATE:
 			break;

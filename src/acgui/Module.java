@@ -20,7 +20,7 @@ public class Module implements Serializable
 	 */
 	private static final long serialVersionUID = 1L;
 	private Module parent;
-	private String name;
+	protected String name;
 	private String copasiDatamodelKey;
 	private DefaultMutableTreeNode treeNode;
 	private Object drawingCell;
@@ -28,7 +28,8 @@ public class Module implements Serializable
 	private ArrayList<Port> ports;
 	private ArrayList<Connection> connections;
 	private ArrayList<VisibleVariable> visibleVariables;
-	private mxRectangle submoduleBounds;
+	private mxRectangle drawingCellBounds;
+	private String drawingCellStyle;
 
 	/**
 	 * Construct a module.
@@ -38,6 +39,7 @@ public class Module implements Serializable
 		parent = null;
 		name = "";
 		copasiDatamodelKey = "";
+		drawingCellStyle = "";
 		treeNode = null;
 		drawingCell = null;
 		children = new ArrayList<Module>();
@@ -55,6 +57,7 @@ public class Module implements Serializable
 		parent = null;
 		name = iName;
 		copasiDatamodelKey = "";
+		drawingCellStyle = "";
 		treeNode = null;
 		drawingCell = null;
 		children = new ArrayList<Module>();
@@ -73,6 +76,7 @@ public class Module implements Serializable
 		parent = null;
 		name = iName;
 		copasiDatamodelKey = iKey;
+		drawingCellStyle = "";
 		treeNode = null;
 		drawingCell = null;
 		children = new ArrayList<Module>();
@@ -91,6 +95,7 @@ public class Module implements Serializable
 		parent = iParent;
 		name = iName;
 		copasiDatamodelKey = "";
+		drawingCellStyle = "";
 		treeNode = null;
 		drawingCell = null;
 		children = new ArrayList<Module>();
@@ -109,6 +114,7 @@ public class Module implements Serializable
 		parent = iParent;
 		name = iName;
 		copasiDatamodelKey = iKey;
+		drawingCellStyle = "";
 		treeNode = null;
 		drawingCell = null;
 		children = new ArrayList<Module>();
@@ -127,6 +133,7 @@ public class Module implements Serializable
 	{
 		name = iName;
 		copasiDatamodelKey = "";
+		drawingCellStyle = "";
 		treeNode = tNode;
 		drawingCell = dCell;
 		children = new ArrayList<Module>();
@@ -191,6 +198,16 @@ public class Module implements Serializable
 		return drawingCell;
 	}
 
+	public void setDrawingCellStyle(String style)
+	{
+		drawingCellStyle = style;
+	}
+	
+	public String getDrawingCellStyle()
+	{
+		return drawingCellStyle;
+	}
+	
 	/**
 	 * Set the tree node representing the module.
 	 * @param tNode the tree node representing the module
@@ -326,18 +343,18 @@ public class Module implements Serializable
 	 * Set the location for the submodule representation.
 	 * @param bounds the location of the submodule representation
 	 */
-	public void setSubmoduleBounds(mxRectangle bounds)
+	public void setDrawingCellBounds(mxRectangle bounds)
 	{
-		submoduleBounds = bounds;
+		drawingCellBounds = bounds;
 	}
 	
 	/**
 	 * Return the submodule bounds.
 	 * @return the submodule bounds
 	 */
-	public mxRectangle getSubmoduleBounds()
+	public mxRectangle getDrawingCellBounds()
 	{
-		return submoduleBounds;
+		return drawingCellBounds;
 	}
 	
 	/**

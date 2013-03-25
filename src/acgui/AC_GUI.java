@@ -191,6 +191,7 @@ public class AC_GUI extends JFrame
 		CCopasiDataModel dataModel = copasiUtility.createDataModel();
 		dataModel.getModel().setObjectName(name);
 		Module mod = new Module(name, dataModel.getModel().getKey());
+		mod.setDrawingCellStyle("Module");
 		//System.out.println(name + " key = " + mod.getKey());
 		masterModuleList.add(mod);
 		treeView.setup(mod);
@@ -211,6 +212,7 @@ public class AC_GUI extends JFrame
 		CCopasiDataModel dataModel = copasiUtility.createDataModel();
 		dataModel.getModel().setObjectName(name);
 		Module mod = new Module(name, dataModel.getModel().getKey(), parent);
+		mod.setDrawingCellStyle("Submodule");
 		//System.out.println(name + " key = " + mod.getKey());
 		parent.addChild(mod);
 		treeView.addNode(mod);
@@ -327,6 +329,26 @@ public class AC_GUI extends JFrame
 		Module parentMod = edge.getParent();
 		// remove the connection object from the parent module
 		parentMod.removeConnection(edge);
+	}
+	
+	public static void addMathAggregator(String name, int inputs, Operation op)
+	{
+		CCopasiDataModel dataModel = copasiUtility.createDataModel();
+		dataModel.getModel().setObjectName(name);
+		MathematicalAggregator mathAgg = new MathematicalAggregator(name, dataModel.getModel().getKey(), inputs, op, activeModule);
+		if(op == Operation.SUM)
+		{
+			mathAgg.setDrawingCellStyle("Summation");
+		}
+		else
+		{
+			mathAgg.setDrawingCellStyle("Product");
+		}
+		//System.out.println(name + " key = " + mod.getKey());
+		addMathAggPorts(mathAgg);
+		activeModule.addChild(mathAgg);
+		treeView.addNode(mathAgg);
+		drawingBoard.addMathAggregator(mathAgg);
 	}
 	
 	/**
@@ -454,6 +476,9 @@ public class AC_GUI extends JFrame
 		moduleMenu.add(makeMenuItem(MenuItem.ADD_SUBMODULE_NEW, menuListener, -1));
 		moduleMenu.add(makeMenuItem(MenuItem.ADD_SUBMODULE_TEMPLATE, menuListener, -1));
 		moduleMenu.addSeparator();
+		moduleMenu.add(makeMenuItem(MenuItem.ADD_SUMMATION_MODULE, menuListener, -1));
+		moduleMenu.add(makeMenuItem(MenuItem.ADD_PRODUCT_MODULE, menuListener, -1));
+		moduleMenu.addSeparator();
 		moduleMenu.add(makeMenuItem(MenuItem.SAVE_SUBMODULE_AS_TEMPLATE, menuListener, -1));
 		moduleMenu.addSeparator();
 		moduleMenu.add(makeMenuItem(MenuItem.REMOVE_SUBMODULE, menuListener, -1));
@@ -505,6 +530,28 @@ public class AC_GUI extends JFrame
 		return item;
 	}
 
+	private static void addMathAggPorts(MathematicalAggregator mathAgg)
+	{
+		int inputs = mathAgg.getNumberofInputs();
+		String inputPrefix = mathAgg.getInputPrefix();
+		String outputName = mathAgg.getOutputName();
+
+		Port newPort;
+		
+		// create the input ports
+		for(int i = 0; i < inputs; i++)
+		{
+			newPort = new Port(mathAgg, inputPrefix+i, PortType.INPUT, ""+i, i);
+			modelBuilder.addPort(newPort);
+			mathAgg.addPort(newPort);
+		}
+		
+		// create the output port
+		newPort = new Port(mathAgg, outputName, PortType.OUTPUT, "Total", mathAgg.getPorts().size());
+		modelBuilder.addPort(newPort);
+		mathAgg.addPort(newPort);
+	}
+	
 	/**
 	 * Open the Preferences display from MSMB.
 	 */

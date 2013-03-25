@@ -18,6 +18,8 @@ public enum MenuItem
 	// -------------------------------------------------------------------------------------
 	ADD_SUBMODULE_NEW("Add Submodule (New)"),
 	ADD_SUBMODULE_TEMPLATE("Add Submodule (Template)"),
+	ADD_SUMMATION_MODULE("Add Summation Module"),
+	ADD_PRODUCT_MODULE("Add Product Module"),
 	SAVE_SUBMODULE_AS_TEMPLATE("Save Submodule (As Template)"),
 	REMOVE_SUBMODULE("Remove Submodule"),
 	// -------------------------------------------------------------------------------------
