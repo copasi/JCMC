@@ -2,6 +2,7 @@ package acgui;
 
 import java.io.Serializable;
 
+import com.mxgraph.model.mxGeometry;
 import com.mxgraph.util.mxRectangle;
 
 /**
@@ -19,6 +20,7 @@ public class VisibleVariable implements Serializable
 	private String refName;
 	private Object drawingCell;
 	private mxRectangle drawingCellBounds;
+	private mxGeometry drawingCellGeometry;
 	
 	/**
 	 * 
@@ -28,7 +30,21 @@ public class VisibleVariable implements Serializable
 		parent = iParent;
 		refName = iRefName;
 	}
+	
+	public VisibleVariable(Module iParent, String iRefName, Object iDrawingCell, mxRectangle iCellBounds, mxGeometry iCellGeo)
+	{
+		parent = iParent;
+		refName = iRefName;
+		drawingCell = iDrawingCell;
+		drawingCellBounds = iCellBounds;
+		drawingCellGeometry = iCellGeo;
+	}
 
+	public Module getParent()
+	{
+		return parent;
+	}
+	
 	public void setDrawingCell(Object cell)
 	{
 		drawingCell = cell;
@@ -62,6 +78,15 @@ public class VisibleVariable implements Serializable
 		return drawingCellBounds;
 	}
 	
+	public void setDrawingCellGeometry(mxGeometry geo)
+	{
+		drawingCellGeometry = geo;
+	}
+	
+	public mxGeometry getDrawingCellGeometry()
+	{
+		return drawingCellGeometry;
+	}
 	public String toString()
 	{
 		return refName;

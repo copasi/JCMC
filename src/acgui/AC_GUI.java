@@ -113,7 +113,7 @@ public class AC_GUI extends JFrame
 	public void load(String fileName)
 	{
 		CCopasiDataModel dataModel = copasiUtility.createDataModel();
-		
+		Module mod = null;
 		String ext = fileName.substring(fileName.lastIndexOf("."));
     	
 		try
@@ -126,6 +126,10 @@ public class AC_GUI extends JFrame
 			{
 				dataModel.loadModel(fileName);
 			}
+			else if (ext.equals(".ac"))
+			{
+				mod = AC_IO.loadModule(fileName);
+			}
 				System.out.println("Number of models in the CCopasiRootContainer: " + CCopasiRootContainer.getDatamodelList().size());
 		}
 		catch (java.lang.Exception ex){
@@ -133,32 +137,43 @@ public class AC_GUI extends JFrame
 			System.err.println( "Error while importing the model from file named \"" + fileName + "\"." );
 		}
 		
-		Module mod = new Module(dataModel.getModel().getObjectName(), dataModel.getModel().getKey());
-		masterModuleList.add(mod);
-		treeView.setup(mod);
-		drawingBoard.createCell(mod);
-		drawingBoard.changeModule(mod);
+		if (ext.equals(".xml") || ext.equals(".cps"))
+		{
+			mod = new Module(dataModel.getModel().getObjectName(), dataModel.getModel().getKey());
+			masterModuleList.add(mod);
+			treeView.addNode(mod);
+			drawingBoard.createCell(mod);
+		}
 		
-		modelBuilder.loadModel(mod.getKey());
+		//drawingBoard.changeModule(mod);
+		
+		changeActiveModule(mod);
+		//modelBuilder.loadModel(mod.getKey());
 		modelBuilder.setVisible(true);
 		activeModule = mod;
 	}
 	
 	public void loadSubmodule(String fileName, Module parent)
 	{
-		CCopasiDataModel dataModel = copasiUtility.createDataModel();
-		
+		CCopasiDataModel dataModel = null;
+		Module mod = null;
 		String ext = fileName.substring(fileName.lastIndexOf("."));
     	
 		try
 		{
 			if (ext.equals(".xml"))
 			{
+				dataModel = copasiUtility.createDataModel();
 				dataModel.importSBML(fileName);
 			}
 			else if (ext.equals(".cps"))
 			{
+				dataModel = copasiUtility.createDataModel();
 				dataModel.loadModel(fileName);
+			}
+			else if (ext.equals(".ac"))
+			{
+				mod = AC_IO.loadModule(fileName, parent);
 			}
 				System.out.println("Number of models in the CCopasiRootContainer: " + CCopasiRootContainer.getDatamodelList().size());
 		}
@@ -167,21 +182,49 @@ public class AC_GUI extends JFrame
 			System.err.println( "Error while importing the model from file named \"" + fileName + "\"." );
 		}
 		
-		Module mod = new Module(dataModel.getModel().getObjectName(), dataModel.getModel().getKey(), parent);
+		if (ext.equals(".xml") || ext.equals(".cps"))
+		{
+			mod = new Module(dataModel.getModel().getObjectName(), dataModel.getModel().getKey(), parent);
+			mod.setDrawingCellStyle("Submodule");
+			treeView.addNode(mod);
+			drawingBoard.createCell(mod);
+			drawingBoard.addCell(mod);
+		}
+		
 		parent.addChild(mod);
-		treeView.addNode(mod);
-		drawingBoard.createCell(mod);
-		drawingBoard.addCell(mod);
+		changeActiveModule(activeModule);
 	}
 	
 	public void save(String fileName)
 	{
+		/*
 		SBMLParser sbmlParser = new SBMLParser();
 		String key = selectedModule.getKey();
 		sbmlParser.saveSBML(copasiUtility.getSBML(key), selectedModule, fileName);
+		*/
 		//copasiUtility.exportModel(key);
+		String code = new String(modelBuilder.saveModel());
+		activeModule.setMSMBData(code);
+		drawingBoard.saveCurrentPositions();
+		AC_IO.saveModule(activeModule, fileName);
 	}
 	
+	public void loadTest(String fileName, Module parent)
+	{
+		Module mod = AC_IO.loadModule(fileName, parent);
+		parent.addChild(mod);
+		//CCopasiDataModel dataModel = copasiUtility.createDataModel();
+		//dataModel.getModel().setObjectName(mod.getName());
+		//mod.setKey(dataModel.getModel().getKey());
+		//byte[] data = mod.getMSMBData().getBytes();
+		//modelBuilder.loadModel(data);
+		//treeView.addNode(mod);
+		//drawingBoard.changeModule(mod);	
+		//System.out.println(modelBuilder.saveToCK(mod.getKey()));
+		changeActiveModule(activeModule);
+		modelBuilder.setVisible(true);
+		//activeModule = mod;
+	}
 	/**
 	 * Create a new module in the three panels.
 	 * @param name the name of the new module
@@ -194,7 +237,9 @@ public class AC_GUI extends JFrame
 		mod.setDrawingCellStyle("Module");
 		//System.out.println(name + " key = " + mod.getKey());
 		masterModuleList.add(mod);
-		treeView.setup(mod);
+		//treeView.setup(mod);
+		//treeView.setup();
+		treeView.addNode(mod);
 		drawingBoard.createCell(mod);
 		drawingBoard.changeModule(mod);
 		modelBuilder.loadModel(mod.getKey());
@@ -218,6 +263,7 @@ public class AC_GUI extends JFrame
 		treeView.addNode(mod);
 		drawingBoard.createCell(mod);
 		drawingBoard.addCell(mod);
+		drawingBoard.changeModule(parent);
 		//moduleList.add(mod);
 		//printList();
 	}
@@ -251,12 +297,18 @@ public class AC_GUI extends JFrame
 		// get the list of ports
 		ports = mod.getPorts();
 		
+		/*
 		if (ports.size() != 0)
 		{
 			for(int i = 0; i < ports.size(); i++)
 			{
 				removePort(ports.get(0));
 			}
+		}
+		*/
+		while(ports.size() > 0)
+		{
+			removePort(ports.get(0));
 		}
 		/*
 		// loop through each port of the module
@@ -355,7 +407,7 @@ public class AC_GUI extends JFrame
 	 * Select the representation of the given module on the treeView and drawingBoard.
 	 * @param mod the module to be selected
 	 */
-	public void setSelectedModule(Module mod)
+	public static void setSelectedModule(Module mod)
 	{
 		selectedModule = mod;
 		treeView.setSelected(mod.getTreeNode());
@@ -382,10 +434,26 @@ public class AC_GUI extends JFrame
 	
 	public static void changeActiveModule(Module mod)
 	{
+		if (activeModule != null)
+		{
+			String code = new String(modelBuilder.saveModel());
+			activeModule.setMSMBData(code);
+		}
+			
 		drawingBoard.changeModule(mod);
 		treeView.refreshTree();
 		
-		modelBuilder.loadModel(mod.getKey());
+		//modelBuilder.loadModel(mod.getKey());
+		String newCode = mod.getMSMBData();
+		if (newCode != null)
+		{
+			byte[] data = mod.getMSMBData().getBytes();
+			modelBuilder.loadModel(data);
+		}
+		else
+		{
+			modelBuilder.loadModel(mod.getKey());
+		}		
 		activeModule = mod;
 		
 		//add activeModule's Ports
@@ -406,6 +474,7 @@ public class AC_GUI extends JFrame
 			}
 		}
 		
+		setSelectedModule(mod);
 	}
 	/**
 	 * Initialize the components within the AC frame.

@@ -17,8 +17,6 @@ public class Connection implements Serializable
 	 */
 	private static final long serialVersionUID = 1L;
 	Module parent;
-	Object source;
-	Object target;
 	Object drawingCell;
 	
 	/**
@@ -27,22 +25,27 @@ public class Connection implements Serializable
 	public Connection()
 	{
 		parent = null;
-		source = null;
-		target = null;
+		drawingCell = null;
+	}
+	
+	/**
+	 * Construct the object with the initial given value.
+	 * @param iParent the parent module
+	 */
+	public Connection(Module iParent)
+	{
+		parent = iParent;
 		drawingCell = null;
 	}
 	
 	/**
 	 * Construct the object with the initial given values.
-	 * @param iSource the source port
-	 * @param iTarget the target port
+	 * @param iParent the parent module
 	 * @param cell the drawing cell
 	 */
 	public Connection(Module iParent, Object cell)
 	{
 		parent = iParent;
-		source = ((mxCell)cell).getSource();
-		target = ((mxCell)cell).getTarget();
 		drawingCell = cell;
 	}
 	
@@ -79,7 +82,7 @@ public class Connection implements Serializable
 	 */
 	public Object getSource()
 	{
-		return source;
+		return ((mxCell)drawingCell).getSource();
 	}
 	
 	/**
@@ -88,6 +91,6 @@ public class Connection implements Serializable
 	 */
 	public Object getTarget()
 	{
-		return target;
+		return ((mxCell)drawingCell).getTarget();
 	}
 }

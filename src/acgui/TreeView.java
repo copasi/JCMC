@@ -52,7 +52,7 @@ public class TreeView extends JPanel implements TreeSelectionListener
 		tree.setToggleClickCount(2);
 		// tree.setBackground(Color.WHITE);
 		tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
-		tree.setShowsRootHandles(true);
+		tree.setShowsRootHandles(false);
 
 		tree.setCellRenderer(new ACTreeCellRenderer(tree.getFont()));
 		tree.addTreeSelectionListener(this);
@@ -61,14 +61,6 @@ public class TreeView extends JPanel implements TreeSelectionListener
 		this.setLayout(new BorderLayout());
 		this.setVisible(true);
 		this.add(tree);
-	}
-
-	public void setup(Module mod)
-	{
-		rootNode = new DefaultMutableTreeNode(mod);
-		treeModel.setRoot(rootNode);
-		tree.setRootVisible(true);
-		mod.setTreeNode(rootNode);
 	}
 
 	/**
@@ -108,6 +100,38 @@ public class TreeView extends JPanel implements TreeSelectionListener
 					parent = (DefaultMutableTreeNode)(parentPath.getLastPathComponent());
 				}
 		*/
+		/*
+		if(AC_GUI.activeModule == null)
+		{
+			if(mod.getTreeNode() == null)
+			{
+				child = new DefaultMutableTreeNode(mod);
+				mod.setTreeNode(child);
+			}
+			else
+			{
+				child = mod.getTreeNode();
+			}
+			
+			//treeModel.setRoot(rootNode);
+			//tree.setRootVisible(true);
+			treeModel.insertNodeInto(child, rootNode, rootNode.getChildCount());
+			refreshTree();
+			return;
+		}
+		*/
+		if (mod.getParent() == null)
+		{
+			parent = rootNode;
+		} else if (mod.getParent().getTreeNode() == null)
+		{
+			parent = rootNode;
+		}
+		else
+		{
+			parent = mod.getParent().getTreeNode();
+		}
+		/*
 		// find the parent tree node
 		parent = mod.getParent().getTreeNode();
 		if (parent == null)
@@ -115,9 +139,11 @@ public class TreeView extends JPanel implements TreeSelectionListener
 			// no node is selected, choose the root by default
 			parent = rootNode;
 		}
-
-		// create new child node
+		*/
 		child = new DefaultMutableTreeNode(mod);
+		mod.setTreeNode(child);
+		// create new child node
+		//child = new DefaultMutableTreeNode(mod);
 
 		// insert the child node under the parent
 		treeModel.insertNodeInto(child, parent, parent.getChildCount());
@@ -126,7 +152,7 @@ public class TreeView extends JPanel implements TreeSelectionListener
 		// make the new node the currently selected node
 		//tree.setSelectionPath(new TreePath(child.getPath()));
 
-		mod.setTreeNode(child);
+		//mod.setTreeNode(child);
 	}
 
 	/**

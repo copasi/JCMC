@@ -71,6 +71,7 @@ public class ACMenuListener implements ActionListener
             	File file = fileChooser.getSelectedFile();
                 //inputFile = file.getName().substring(0,file.getName().lastIndexOf("."));           	
                 AC_GUI.currentGUI.load(file.getAbsolutePath());
+                //AC_GUI.currentGUI.loadTest(file.getAbsolutePath());
             }
 			break;
 		case RECENT:
@@ -89,13 +90,13 @@ public class ACMenuListener implements ActionListener
 			*/
 			String fileName = null;
 			fileChooser = new JFileChooser (new File ("."));
-			fileChooser.setFileFilter (new FileNameExtensionFilter("Model file","sbml"));
+			fileChooser.setFileFilter (new FileNameExtensionFilter("Model file","ac"));
 			if (fileChooser.showSaveDialog(null) == JFileChooser.APPROVE_OPTION)
 			{
 				fileName = fileChooser.getSelectedFile().getAbsolutePath();
-				if (!fileName.endsWith (".sbml"))
+				if (!fileName.endsWith (".ac"))
 				{
-					fileName += ".sbml";
+					fileName += ".ac";
 				}
 				AC_GUI.currentGUI.save(fileName);
 				JOptionPane.showMessageDialog(null, "The module has been saved in " + fileName);
@@ -179,6 +180,7 @@ public class ACMenuListener implements ActionListener
 			            	File file = fileChooser.getSelectedFile();
 			                //inputFile = file.getName().substring(0,file.getName().lastIndexOf("."));           	
 			                AC_GUI.currentGUI.loadSubmodule(file.getAbsolutePath(), AC_GUI.selectedModule);
+			            	//AC_GUI.currentGUI.loadTest(file.getAbsolutePath(), AC_GUI.selectedModule);
 			            }
 					}
 					else

@@ -72,6 +72,23 @@ public class ModelBuilder
 		updateRefNameColumn();
 	}
 	
+	public void loadModel(byte[] msmbCode)
+	{
+		msmb.loadFromMSMB(msmbCode);
+		tableModel.clearData();
+		updateRefNameColumn();
+	}
+	
+	public byte[] saveModel()
+	{
+		return msmb.saveToMSMB();
+	}
+	
+	public boolean saveToCK(String key)
+	{
+		return msmb.saveToCopasiKey(key);
+		
+	}
 	/**
 	 * Return the MSMB panel.
 	 * @return the MSMB panel

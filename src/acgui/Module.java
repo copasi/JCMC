@@ -6,6 +6,7 @@ import java.util.ListIterator;
 
 import javax.swing.tree.DefaultMutableTreeNode;
 
+import com.mxgraph.model.mxGeometry;
 import com.mxgraph.util.mxRectangle;
 
 /**
@@ -29,7 +30,9 @@ public class Module implements Serializable
 	private ArrayList<Connection> connections;
 	private ArrayList<VisibleVariable> visibleVariables;
 	private mxRectangle drawingCellBounds;
+	private mxGeometry drawingCellGeometry;
 	private String drawingCellStyle;
+	private String msmbData;
 
 	/**
 	 * Construct a module.
@@ -134,6 +137,34 @@ public class Module implements Serializable
 		name = iName;
 		copasiDatamodelKey = "";
 		drawingCellStyle = "";
+		treeNode = tNode;
+		drawingCell = dCell;
+		children = new ArrayList<Module>();
+		ports = new ArrayList<Port>();
+		connections = new ArrayList<Connection>();
+		visibleVariables = new ArrayList<VisibleVariable>();
+	}
+	
+	/**
+	 * Construct a module.
+	 * @param iName the name of the module
+	 * @param iKey the Copasi datamodel key
+	 * @param imsmbData the msmb data representing the module
+	 * @param tNode the tree node representing the module
+	 * @param dCell the drawn object representing the module
+	 * @param iCellBounds the drawing cell bounds
+	 * @param iCellStyle the drawing cell style
+	 * @param iParent the parent to the module
+	 */
+	public Module(String iName, String iKey, String imsmbData, DefaultMutableTreeNode tNode, Object dCell, mxRectangle iCellBounds, mxGeometry iCellGeometry, String iCellStyle, Module iParent)
+	{
+		parent = iParent;
+		name = iName;
+		msmbData = imsmbData;
+		copasiDatamodelKey = iKey;
+		drawingCellStyle = iCellStyle;
+		drawingCellBounds = iCellBounds;
+		drawingCellGeometry = iCellGeometry;
 		treeNode = tNode;
 		drawingCell = dCell;
 		children = new ArrayList<Module>();
@@ -355,6 +386,26 @@ public class Module implements Serializable
 	public mxRectangle getDrawingCellBounds()
 	{
 		return drawingCellBounds;
+	}
+	
+	public void setDrawingCellGeometry(mxGeometry geo)
+	{
+		drawingCellGeometry = geo;
+	}
+	
+	public mxGeometry getDrawingCellGeometry()
+	{
+		return drawingCellGeometry;
+	}
+	
+	public void setMSMBData(String data)
+	{
+		msmbData = data;
+	}
+	
+	public String getMSMBData()
+	{
+		return msmbData;
 	}
 	
 	/**

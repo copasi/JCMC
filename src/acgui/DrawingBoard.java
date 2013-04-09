@@ -179,6 +179,7 @@ public class DrawingBoard extends JPanel
 		Object childCell = mod.getDrawingCell();
 		int childCount = mod.getParent().getChildren().size();
 		mxRectangle bounds = new mxRectangle();
+		mxGeometry geo = new mxGeometry();
 		double xPosition;
 		double yPosition;
 
@@ -190,24 +191,40 @@ public class DrawingBoard extends JPanel
 				// System.out.println("Submodule not visible.");
 				graph.getModel().setVisible(childCell, true);
 			}
-			graph.getModel().add(parentCell, childCell, 0);
+			
 			xPosition = 40 + (childCount * 20);
 			yPosition = 40 + (childCount * 20);
-			bounds.setX(xPosition);
-			bounds.setY(yPosition);
-			bounds.setWidth(DEFAULT_SUBMODULE_WIDTH);
-			bounds.setHeight(DEFAULT_SUBMODULE_HEIGHT);
-			graph.resizeCell(childCell, bounds);
+			geo.setX(xPosition);
+			geo.setY(yPosition);
+			geo.setWidth(DEFAULT_SUBMODULE_WIDTH);
+			geo.setHeight(DEFAULT_SUBMODULE_HEIGHT);
+			((mxCell)childCell).setGeometry(geo);
+			//graph.resizeCell(childCell, bounds);
+			graph.getModel().add(parentCell, childCell, 0);
 			graph.getModel().setStyle(childCell, mod.getDrawingCellStyle());
 		}
 		finally
 		{
 			graph.getModel().endUpdate();
 		}
-		mod.setDrawingCellBounds(bounds);
+		//mod.setDrawingCellBounds(bounds);
+		mod.setDrawingCellGeometry(geo);
 		// printBoardStats();
 	}
 
+	public void createPort(Port port, mxGeometry geo)
+	{
+		mxCell port1 = null;
+		mxGeometry geo1 = new mxGeometry(geo.getX(), geo.getY(), geo.getWidth(), geo.getHeight());
+		geo1.setRelative(true);
+
+		port1 = new mxCell(port, geo1, "Port");
+		port1.setVertex(true);
+		port1.setConnectable(true);
+		
+		port.setDrawingCell(port1);
+	}
+	
 	/**
 	 * Add a drawing cell representation of the given port to the 
 	 * drawing cell representation of the given module.
@@ -257,6 +274,19 @@ public class DrawingBoard extends JPanel
 		port.setDrawingCell(port1);
 	}
 
+	public void createVisibleVariable(VisibleVariable var)
+	{
+		Object parentCell = var.getParent().getDrawingCell();
+		mxCell var1 = null;
+		var1 = (mxCell)graph.createVertex(parentCell, null, var, 5, 5, 10, 10, "");
+		//var1 = new mxCell(var);
+		var1.setGeometry(var.getDrawingCellGeometry());
+		var1.setVertex(true);
+		var1.setConnectable(true);
+		
+		var.setDrawingCell(var1);
+	}
+	
 	public void addVisibleVariable(Module parentMod, VisibleVariable var)
 	{
 		//System.out.println("Time to add a visible variable:");
@@ -287,7 +317,8 @@ public class DrawingBoard extends JPanel
 			var1 = (mxCell)graph.createVertex(cell, null, var, 5, 5, 10, 10, "");
 			var1.setVertex(true);
 			var1.setConnectable(true);
-			graph.getModel().add(cell, var1, 0);
+			//graph.getModel().add(cell, var1, 0);
+			
 			
 			bounds = new mxRectangle();
 			xPosition = 40 + (varIndex * 20);
@@ -297,7 +328,10 @@ public class DrawingBoard extends JPanel
 			bounds.setWidth(DEFAULT_VISIBLEVARIABLE_WIDTH);
 			bounds.setHeight(DEFAULT_VISIBLEVARIABLE_HEIGHT);
 
-			graph.resizeCell(var1, bounds);
+			mxGeometry geo = new mxGeometry(xPosition, yPosition, DEFAULT_VISIBLEVARIABLE_WIDTH, DEFAULT_VISIBLEVARIABLE_HEIGHT);
+			var1.setGeometry(geo);
+			graph.getModel().add(cell, var1, 0);
+			//graph.resizeCell(var1, bounds);
 			graph.getModel().setStyle(var1, "VisibleVariable");
 			// graph.updatePortOrientation(port1, geo1);
 			//graph.updatePortOrientation(port1, geo1);
@@ -308,6 +342,8 @@ public class DrawingBoard extends JPanel
 		}
 
 		var.setDrawingCell((Object)var1);
+		//var.setDrawingCellBounds(bounds);
+		var.setDrawingCellGeometry(var1.getGeometry());
 	}
 	
 	public void addMathAggregator(MathematicalAggregator mathAgg)
@@ -318,6 +354,7 @@ public class DrawingBoard extends JPanel
 		Object childCell = mathAgg.getDrawingCell();
 		int childCount = mathAgg.getParent().getChildren().size();
 		mxRectangle bounds = new mxRectangle();
+		mxGeometry geo = new mxGeometry();
 		double xPosition;
 		double yPosition;
 		double width = DEFAULT_AGGREGATOR_WIDTH;
@@ -331,22 +368,33 @@ public class DrawingBoard extends JPanel
 				// System.out.println("Submodule not visible.");
 				graph.getModel().setVisible(childCell, true);
 			}
-			graph.getModel().add(parentCell, childCell, 0);
+			
 			xPosition = 40 + (childCount * 20);
 			yPosition = 40 + (childCount * 20);
-			bounds.setX(xPosition);
-			bounds.setY(yPosition);
-			bounds.setWidth(width);
-			bounds.setHeight(height);
-			graph.resizeCell(childCell, bounds);
+			geo.setX(xPosition);
+			geo.setY(yPosition);
+			geo.setWidth(width);
+			geo.setHeight(height);
+			//graph.resizeCell(childCell, bounds);
+			((mxCell)childCell).setGeometry(geo);
+			graph.getModel().add(parentCell, childCell, 0);
 			graph.getModel().setStyle(childCell, mathAgg.getDrawingCellStyle());
 		}
 		finally
 		{
 			graph.getModel().endUpdate();
 		}
-		mathAgg.setDrawingCellBounds(bounds);
+		//mathAgg.setDrawingCellBounds(bounds);
+		mathAgg.setDrawingCellGeometry(geo);
 		addMathAggregatorPorts(mathAgg);
+	}
+	
+	public void createConnection(Connection edge, Object source, Object target)
+	{
+		Object parentCell = edge.getParent().getDrawingCell();
+		//Object edgeCell = graph.createEdge(parentCell, null, edge, source, target, "ConnectionEdge");
+		Object edgeCell = graph.insertEdge(parentCell, null, edge, source, target, "ConnectionEdge");
+		edge.setDrawingCell(edgeCell);
 	}
 	
 	/**
@@ -450,6 +498,7 @@ public class DrawingBoard extends JPanel
 		return graph;
 	}
  
+	
 	/**
 	 * Change the current module displayed.
 	 * 
@@ -460,7 +509,9 @@ public class DrawingBoard extends JPanel
 		saveCurrentPositions();
 		double width = graphComponent.getVisibleRect().getWidth() - 50;
 		double height = graphComponent.getVisibleRect().getHeight() - 50;
-		mxRectangle bounds = new mxRectangle(25, 25, width, height);
+		//mxRectangle bounds = new mxRectangle(25, 25, width, height);
+		mxGeometry geo = new mxGeometry(25, 25, width, height);
+		//mod.setDrawingCellGeometry(geo);
 		Object cell = mod.getDrawingCell();
 		if (activeModule != null)
 		{
@@ -473,8 +524,9 @@ public class DrawingBoard extends JPanel
 			 * if (!graph.getModel().isVisible(cell)) { //System.out.println("Module not visible.");
 			 * graph.getModel().setVisible(cell, true); }
 			 */
+			((mxCell)cell).setGeometry(geo);
 			graph.getModel().add(parent, cell, 0);
-			graph.resizeCell(cell, bounds);
+			//graph.resizeCell(cell, bounds);
 			graph.getModel().setStyle(cell, "Module");
 		}
 		finally
@@ -513,7 +565,7 @@ public class DrawingBoard extends JPanel
 	/**
 	 * Save the submodule positions within the active module.
 	 */
-	private void saveCurrentPositions()
+	public void saveCurrentPositions()
 	{
 		if (activeModule != null)
 		{
@@ -521,14 +573,17 @@ public class DrawingBoard extends JPanel
 			Module child;
 			Object childCell;
 			mxRectangle bounds;
+			mxGeometry geo;
 
 			while (children.hasNext())
 			{
 				child = children.next();
 				childCell = child.getDrawingCell();
 
-				bounds = graph.getBoundingBox(childCell);
-				child.setDrawingCellBounds(bounds);
+				//bounds = graph.getBoundingBox(childCell);
+				//child.setDrawingCellBounds(bounds);
+				geo = ((mxCell)childCell).getGeometry();
+				child.setDrawingCellGeometry(geo);
 			}
 			
 			ListIterator<VisibleVariable> vars = activeModule.getVisibleVariables().listIterator();
@@ -539,8 +594,11 @@ public class DrawingBoard extends JPanel
 				var = vars.next();
 				varCell = var.getDrawingCell();
 				
-				bounds = graph.getBoundingBox(varCell);
-				var.setDrawingCellBounds(bounds);
+				//bounds = graph.getBoundingBox(varCell);
+				//var.setDrawingCellBounds(bounds);
+				geo = ((mxCell)varCell).getGeometry();
+				var.setDrawingCellGeometry(geo);
+				//var.setDrawingCellGeometry(((mxCell)varCell).getGeometry());
 			}
 		}
 	}
@@ -566,6 +624,7 @@ public class DrawingBoard extends JPanel
 		Object parentCell;
 		Object childCell;
 		mxRectangle bounds;
+		mxGeometry geo;
 		double xPosition;
 		double yPosition;
 		int childIndex;
@@ -586,28 +645,42 @@ public class DrawingBoard extends JPanel
 			// draw the current child cell
 			graph.getModel().beginUpdate();
 			try
-			{
-				graph.getModel().add(parentCell, childCell, 0);
-				bounds = child.getDrawingCellBounds();
-				if (bounds == null)
+			{				
+				geo = child.getDrawingCellGeometry();
+				//bounds = child.getDrawingCellBounds();
+				if (geo == null)
 				{
-					bounds = new mxRectangle();
+					//bounds = new mxRectangle();
+					geo = new mxGeometry();
 					xPosition = 40 + (childIndex * 20);
 					yPosition = 40 + (childIndex * 20);
-					bounds.setX(xPosition);
-					bounds.setY(yPosition);
-					bounds.setWidth(DEFAULT_SUBMODULE_WIDTH);
-					bounds.setHeight(DEFAULT_SUBMODULE_HEIGHT);
+					geo.setX(xPosition);
+					geo.setY(yPosition);
+					geo.setWidth(DEFAULT_SUBMODULE_WIDTH);
+					geo.setHeight(DEFAULT_SUBMODULE_HEIGHT);
 				}
-				graph.resizeCell(childCell, bounds);
+				((mxCell)childCell).setGeometry(geo);
+				//graph.resizeCell(childCell, bounds);
+				graph.getModel().add(parentCell, childCell, 0);
 				graph.getModel().setStyle(childCell, child.getDrawingCellStyle());
 			}
 			finally
 			{
 				graph.getModel().endUpdate();
 			}
+			//child.setDrawingCellBounds(bounds);
 			// draw the ports of the current child
 			drawPorts(child);
+			/*
+			if (child instanceof MathematicalAggregator)
+			{
+				drawMathAggregatorPorts((MathematicalAggregator)child);
+			}
+			else
+			{
+				drawPorts(child);
+			}
+			*/
 		}
 	}
 
@@ -687,6 +760,7 @@ public class DrawingBoard extends JPanel
 		VisibleVariable var;
 		int varIndex;
 		mxRectangle bounds;
+		mxGeometry geo;
 		double xPosition;
 		double yPosition;
 
@@ -720,19 +794,23 @@ public class DrawingBoard extends JPanel
 				geo.setOffset(new mxPoint(offsetX, offsetY));
 				geo.setRelative(true);
 				*/
-				graph.getModel().add(cell, varCell, 0);
-				bounds = var.getDrawingCellBounds();
-				if (bounds == null)
+				
+				geo = var.getDrawingCellGeometry();
+				//bounds = var.getDrawingCellBounds();
+				if (geo == null)
 				{
-					bounds = new mxRectangle();
+					//bounds = new mxRectangle();
+					geo = new mxGeometry();
 					xPosition = 40 + (varIndex * 20);
 					yPosition = 40 + (varIndex * 20);
-					bounds.setX(xPosition);
-					bounds.setY(yPosition);
-					bounds.setWidth(DEFAULT_VISIBLEVARIABLE_WIDTH);
-					bounds.setHeight(DEFAULT_VISIBLEVARIABLE_HEIGHT);
+					geo.setX(xPosition);
+					geo.setY(yPosition);
+					geo.setWidth(DEFAULT_VISIBLEVARIABLE_WIDTH);
+					geo.setHeight(DEFAULT_VISIBLEVARIABLE_HEIGHT);
 				}
-				graph.resizeCell(varCell, bounds);
+				((mxCell)varCell).setGeometry(geo);
+				//graph.resizeCell(varCell, bounds);
+				graph.getModel().add(cell, varCell, 0);
 				graph.getModel().setStyle(varCell, "VisibleVariable");
 				//graph.getModel().setGeometry(varCell, geo);
 			}
@@ -770,6 +848,94 @@ public class DrawingBoard extends JPanel
 			{
 				graph.getModel().endUpdate();
 			}
+		}
+	}
+	
+	private void drawMathAggregatorPorts(MathematicalAggregator mathAgg)
+	{
+		ListIterator<Port> ports;
+		Port currentPort;
+		Object cell;
+		mxCell portCell;
+		mxGeometry geo;
+		double x;
+		double y;
+		double width;
+		double height;
+		double offsetX;
+		double offsetY;
+		double portSpacing;
+		int inputPortIndex; 
+		
+		/*
+		width = DEFAULT_PORT_WIDTH/2;
+		height = DEFAULT_PORT_HEIGHT/2;
+
+		offsetX = -width / 2;
+		offsetY = -height / 2;
+		*/
+		if (mathAgg == activeModule)
+		{
+			width = DEFAULT_PORT_WIDTH;
+			height = DEFAULT_PORT_HEIGHT;
+		}
+		else
+		{
+			width = DEFAULT_PORT_WIDTH / 2;
+			height = DEFAULT_PORT_HEIGHT / 2;
+		}
+		offsetX = -width / 2;
+		offsetY = -height / 2;
+		//portSpacing = 0.35;
+		portSpacing = 0.8 / (mathAgg.getPorts().size() - 2);
+		
+		inputPortIndex = 0;
+		cell = mathAgg.getDrawingCell();
+		ports = mathAgg.getPorts().listIterator();
+		while(ports.hasNext())
+		{
+			currentPort = ports.next();
+			portCell = (mxCell)currentPort.getDrawingCell();
+			
+			graph.getModel().beginUpdate();
+			try
+			{
+				switch(currentPort.getType())
+				{
+				case INPUT:
+					x = 0;
+					y = (inputPortIndex * portSpacing) + 0.1;
+					inputPortIndex++;
+					break;
+				case OUTPUT:
+					x = 1.0;
+					y = 0.5;
+					break;
+				default:
+					x = 0.0;
+					y = 0.0;
+					x = ((mxCell) portCell).getGeometry().getX();
+					y = ((mxCell) portCell).getGeometry().getY();
+				}
+				
+				geo = new mxGeometry(x, y, width, height);
+				geo.setOffset(new mxPoint(offsetX, offsetY));
+				geo.setRelative(true);
+	
+				
+				portCell.setVertex(true);
+				portCell.setConnectable(true);
+	
+				graph.getModel().add(cell, portCell, 0);
+				graph.getModel().setGeometry(portCell, geo);
+				graph.updatePortOrientation(portCell, geo);
+			}
+			finally
+			{
+				graph.getModel().endUpdate();
+			}
+	
+			currentPort.setDrawingCell(portCell);
 		}
 	}
 	
@@ -1185,7 +1351,7 @@ public class DrawingBoard extends JPanel
 				//System.out.println("Target port: " + targetPort.getName());
 				Object cell = evt.getProperty("cell");
 				AC_GUI.currentGUI.addConnection(activeModule, evt.getProperty("cell"));
-				
+				//Object cell1 = graph.createEdge(cell, null, "val", "s", "t", "");
 				// set the connection edge style
 				graph.getModel().beginUpdate();
 				try
