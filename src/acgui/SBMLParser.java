@@ -40,11 +40,13 @@ public class SBMLParser {
 			
 			e.printStackTrace();
 		}
+		String output;
 		
 		//print header
 		printModelCompHeader();
 		
-		out.println(addSpace(2) + "<model id=\"" + rootModule.getName() + "\">");
+		output = addSpace(2) + "<model id=\"" + rootModule.getName() + "\">";
+		out.println(output);
 		if (!rootModule.getChildren().isEmpty())
 		{
 			printSubmodelInformation(rootModule);
@@ -54,8 +56,9 @@ public class SBMLParser {
 		{
 			printPortInformation(rootModule);
 		}
-		out.println(addSpace(2) + "</model>");
 		*/
+		output = addSpace(2) + "</model>";
+		out.println(output);
 		
 		printModelDefinitions(rootModule);
 		
@@ -85,12 +88,8 @@ public class SBMLParser {
 			
 			e.printStackTrace();
 		}
-		modelSBML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
-		modelSBML += "<sbml xmlns=\"http://www.sbml.org/sbml/level3/version1/core\" level=\"3\" version=\"1\" " +
-				"      xmlns:comp=\"http://www.sbml.org/sbml/level3/version1/comp/version1\" comp:required=\"true\">";
-		out.println(modelSBML);
 
-		printModelDefinitions(mod);
+		printModelCompHeader();
 		
 		modelSBML = "<model id=\"" + mod.getName() + "\">";
 		out.println(modelSBML);
@@ -99,13 +98,18 @@ public class SBMLParser {
 			printSubmodelInformation(mod);
 		}
 		
+		/*
 		if (!mod.getPorts().isEmpty())
 		{
 			printPortInformation(mod);
 		}
+		*/
 		modelSBML = "</model>\n";
 		modelSBML += "</sbml>\n";
 		out.println(modelSBML);
+		
+		//printModelDefinitions(mod);
+		
 		out.close();
 		return fileName;
 	}
@@ -130,6 +134,7 @@ public class SBMLParser {
 			dataModel = AC_GUI.copasiUtility.getCopasiModelFromKey(child.getKey());
 			System.out.println(child.getName() + " key = " + child.getKey());
 			System.out.println(child.getName() + " dataModel key = " + dataModel.getModel().getKey());
+			System.out.println(child.getName() + " dataModel name = " + dataModel.getObjectName());
 			
 			/*
 			if (!child.getPorts().isEmpty())
@@ -152,7 +157,7 @@ public class SBMLParser {
 				//System.out.println();
 				//System.out.println(dataModel.exportSBMLToString(3, 1));
 				//modelSBML = dataModel.exportSBMLToString(3, 1);
-				modelSBML = dataModel.exportSBMLToString();
+				modelSBML = dataModel.exportSBMLToString(3, 1);
 				modelSBML = modelSBML.substring(modelSBML.indexOf("<model"));
 				modelSBML = modelSBML.replaceAll("<model", "<comp:modelDefinition");
 				modelSBML = modelSBML.replaceAll("</model>", "</comp:modelDefinition>");
@@ -225,21 +230,25 @@ public class SBMLParser {
 	{
 		ListIterator<Module> children = mod.getChildren().listIterator();
 		Module child;
-		
+	
+		String output;
+		String space = addSpace(4);
 		String id = "";
 		String modelRef = "";
 		
-		out.println(addSpace(4) + "<comp:listOfSubmodels>");
+		out.println(space + "<comp:listOfSubmodels>");
+		space = addSpace(6);
 		while(children.hasNext())
 		{
 			//<comp:submodel id="subMod1" modelRef="Module_1_1_1"/>
 			child = children.next();
-			modelRef = child.getKey();
 			id = child.getName();
+			modelRef = child.getKey();
 			
-			out.println(addSpace(6) + "<comp:submodel id=\"" + id + "\" modelRef=\"" + modelRef + "\"/>");
+			out.println(space + "<comp:submodel comp:id=\"" + id + "\" comp:modelRef=\"" + modelRef + "\"/>");
 		}
-		out.println(addSpace(4) + "</comp:listOfSubmodels>");
+		space = addSpace(4);
+		out.println(space + "</comp:listOfSubmodels>");
 	}
 	
 	/**
@@ -333,8 +342,12 @@ public class SBMLParser {
 	
 	private void printModelCompHeader()
 	{
+		String space = addSpace(6);
 		out.println("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
 		out.println("<sbml xmlns=\"http://www.sbml.org/sbml/level3/version1/core\" level=\"3\" version=\"1\" ");
-		out.println(addSpace(6) + "      xmlns:comp=\"http://www.sbml.org/sbml/level3/version1/comp/version1\" comp:required=\"true\">");
+		out.println(space + "xmlns:comp=\"http://www.sbml.org/sbml/level3/version1/comp/version1\" comp:required=\"true\">");
+		out.println(space + "xmlns:html=\"http://www.w3.org/1999/xhtml\"");
+		out.println(space + "xmlns:jigcell=\"http://www.sbml.org/2001/ns/jigcell\"");
+		out.println(space + "xmlns:math=\"http://www.w3.org/1998/Math/MathML\">\n");
 	}
 }

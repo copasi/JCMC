@@ -51,6 +51,7 @@ public class ModelBuilder
 		msmb = new MainGui();
 		refNames = new Vector<String>();
 		addPortTab();
+		installListeners();
 	}
 	
 	/**
@@ -77,6 +78,7 @@ public class ModelBuilder
 		msmb.loadFromMSMB(msmbCode);
 		tableModel.clearData();
 		updateRefNameColumn();
+		//installListeners();
 	}
 	
 	public byte[] saveModel()
@@ -126,6 +128,26 @@ public class ModelBuilder
 		return refNames;
 	}
 	
+	public String getValue(String name)
+	{
+		Object msmbRef = null;
+		
+		msmbRef = msmb.getMSMB_getSpecies(name);
+		if (msmbRef != null)
+		{
+			return msmb.getMSMB_getSpecies(name).getInitialQuantity_listString();
+		}
+		
+		msmbRef = msmb.getMSMB_getGlobalQuantity(name);
+		if (msmbRef != null)
+		{
+			return msmb.getMSMB_getGlobalQuantity(name).getInitialValue();
+		}
+		
+		return name;
+		
+	}
+	
 	public void addPort(Port newPort)
 	{
 		tableModel.addPort(newPort);
@@ -134,6 +156,22 @@ public class ModelBuilder
 	public void removePort(Port port)
 	{
 		tableModel.removePort(port);
+	}
+	
+	public void addSpecies(String speciesName)
+	{
+		String speciesQuantity =  msmb.getDefault_SpeciesInitialQuantity();
+		String compartment = msmb.getDefault_CompartmentName();
+		try 
+		{
+			msmb.addSpecies(speciesName, speciesQuantity, compartment);
+		} 
+		catch (Exception e) 
+		{
+			//something went wrong (e.g. the species already existed or some other error that I cannot think about now)
+			//you can popup an error message or something similar.
+			e.printStackTrace();
+		}
 	}
 	
 	/**
@@ -314,6 +352,34 @@ public class ModelBuilder
 			}
 		}
 		
+	private void installListeners()
+	{
+		msmb.addChangeListener(
+				new ChangeListener() {
+					@Override
+					public void stateChanged(ChangeEvent e) {
+						ChangedElement before = (((MSMB_InterfaceChange)e.getSource()).getElementBefore());
+						ChangedElement after = (((MSMB_InterfaceChange)e.getSource()).getElementAfter());
+						if(before!=null) System.out.println("Species before1 = " + before.getName());
+						if(after!=null)  System.out.println("Species after1 = " + after.getName());
+						AC_GUI.changeName(before, after);
+					}
+				}, 
+				MSMB_Element.SPECIES);
+		
+		msmb.addChangeListener(
+				new ChangeListener() {
+					@Override
+					public void stateChanged(ChangeEvent e) {
+						ChangedElement before = (((MSMB_InterfaceChange)e.getSource()).getElementBefore());
+						ChangedElement after = (((MSMB_InterfaceChange)e.getSource()).getElementAfter());
+						if(before!=null) System.out.println("Global Quantity before1 = " + before.getName());
+						if(after!=null)  System.out.println("Global Quantity after1 = " + after.getName());
+						AC_GUI.changeName(before, after);
+					}
+				}, 
+				MSMB_Element.GLOBAL_QUANTITY);
+	}
 		
 	}
 

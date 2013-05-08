@@ -142,7 +142,22 @@ public class AC_IO
 		}
 		
 		data.put("visibleVariables", packedList);
-				
+		
+		// pack the equivalence nodes
+		packedList = null;
+		int equivalenceNodeCount = mod.getEquivalenceNodes().size();
+		if(equivalenceNodeCount != 0)
+		{
+			packedList = new ArrayList<Map<String, Object>>(equivalenceNodeCount);
+			ListIterator<EquivalenceNode> eNodes = mod.getEquivalenceNodes().listIterator();
+			while(eNodes.hasNext())
+			{
+				packedList.add(packEquivalenceNode(eNodes.next()));
+			}
+		}
+		
+		data.put("equivalenceNodes", packedList);
+		
 		// pack the connections
 		packedList = null;
 		int connectionCount = mod.getConnections().size();
@@ -235,6 +250,16 @@ public class AC_IO
 			while(packedListIterator.hasNext())
 			{
 				mod.addVisibleVariable(unpackVisibleVariable(packedListIterator.next(), mod));
+			}
+		}
+		if(data.get("equivalenceNodes") != null)
+		{
+			System.out.println("Found " + mod.getName() + "'s equivalence nodes.");
+			packedList = (ArrayList<Map<String, Object>>)data.get("equivalenceNodes");
+			packedListIterator = packedList.listIterator();
+			while(packedListIterator.hasNext())
+			{
+				mod.addEquivalenceNode(unpackEquivalenceNode(packedListIterator.next(), mod));
 			}
 		}
 		if(data.get("connections") != null)
@@ -330,6 +355,36 @@ public class AC_IO
 		return var;
 	}
 	
+	private static Map<String, Object> packEquivalenceNode(EquivalenceNode eNode)
+	{
+		Map<String, Object> data = new HashMap<String, Object>();
+		data.put("refName", eNode.getRefName());
+		data.put("drawingCell", eNode.getDrawingCell());
+		//data.put("drawingCellBounds", eNode.getDrawingCellBounds());
+		data.put("drawingCellGeometry", eNode.getDrawingCellGeometry());
+		
+		return data;
+	}
+	
+	private static EquivalenceNode unpackEquivalenceNode(Map<String, Object> data, Module parent)
+	{
+		String refName = (String)data.get("refName");
+		Object drawingCell = data.get("drawingCell");
+		mxGeometry oldGeo = (mxGeometry)data.get("drawingCellGeometry");
+		
+		mxGeometry newGeo = null;
+		if(oldGeo != null)
+		{
+			newGeo = new mxGeometry(oldGeo.getX(), oldGeo.getY(), oldGeo.getWidth(), oldGeo.getHeight());
+		}
+		
+		EquivalenceNode eNode = new EquivalenceNode(parent, refName);
+		eNode.setDrawingCellGeometry(newGeo);
+		AC_GUI.drawingBoard.createEquivalenceNode(eNode);
+		
+		return eNode;
+	}
+	
 	private static Map<String, Object> packConnection(Connection edge)
 	{
 		Map<String, Object> data = new HashMap<String, Object>();
@@ -352,6 +407,11 @@ public class AC_IO
 			VisibleVariable source = (VisibleVariable)((mxCell)edge.getSource()).getValue();
 			sourceID = source.getParent().getName() + "." + source.getRefName();
 			sourceType = "visiblevariable";
+		} else if (((mxCell)edge.getSource()).getValue() instanceof EquivalenceNode)
+		{
+			EquivalenceNode source = (EquivalenceNode)((mxCell)edge.getSource()).getValue();
+			sourceID = source.getParent().getName() + "." + source.getRefName();
+			sourceType = "equivalencenode";
 		}
 		
 		if (((mxCell)edge.getTarget()).getValue() instanceof Port)
@@ -364,6 +424,11 @@ public class AC_IO
 			VisibleVariable target = (VisibleVariable)((mxCell)edge.getTarget()).getValue();
 			targetID = target.getParent().getName() + "." + target.getRefName();
 			targetType = "visiblevariable";
+		} else if (((mxCell)edge.getTarget()).getValue() instanceof EquivalenceNode)
+		{
+			EquivalenceNode target = (EquivalenceNode)((mxCell)edge.getTarget()).getValue();
+			targetID = target.getParent().getName() + "." + target.getRefName();
+			targetType = "equivalencenode";
 		}
 
 		data.put("source", sourceID);
@@ -400,6 +465,9 @@ public class AC_IO
 		}else if (source instanceof VisibleVariable)
 		{
 			sourceCell = ((VisibleVariable)source).getDrawingCell();
+		}else if (source instanceof EquivalenceNode)
+		{
+			sourceCell = ((EquivalenceNode)source).getDrawingCell();
 		}
 		else
 		{
@@ -413,6 +481,9 @@ public class AC_IO
 		}else if (target instanceof VisibleVariable)
 		{
 			targetCell = ((VisibleVariable)target).getDrawingCell();
+		}else if (target instanceof EquivalenceNode)
+		{
+			targetCell = ((EquivalenceNode)target).getDrawingCell();
 		}
 		else
 		{
@@ -520,6 +591,19 @@ public class AC_IO
 					if (terminalName.equals(var.getRefName()))
 					{
 						return var;
+					}
+				}
+			}
+			else if (type.equals("equivalencenode"))
+			{
+				ListIterator<EquivalenceNode> eNodes = parent.getEquivalenceNodes().listIterator();
+				EquivalenceNode eNode = null;
+				while(eNodes.hasNext())
+				{
+					eNode = eNodes.next();
+					if (terminalName.equals(eNode.getRefName()))
+					{
+						return eNode;
 					}
 				}
 			}

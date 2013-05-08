@@ -120,6 +120,11 @@ public class ModuleList
 		return list.listIterator();
 	}
 
+	public void clearList()
+	{
+		list.clear();
+	}
+	
 	private void removeChildren(Module mod)
 	{
 		Module child;

@@ -25,6 +25,8 @@ import javax.swing.tree.DefaultMutableTreeNode;
 
 import com.mxgraph.model.mxCell;
 
+import msmb.commonUtilities.ChangedElement;
+
 import org.COPASI.*;
 
 /**
@@ -110,7 +112,7 @@ public class AC_GUI extends JFrame
 		usrPathsField.set(null, newPaths);
 	}
 	
-	public void load(String fileName)
+	public void load(String fileName, String optName)
 	{
 		CCopasiDataModel dataModel = copasiUtility.createDataModel();
 		Module mod = null;
@@ -139,6 +141,7 @@ public class AC_GUI extends JFrame
 		
 		if (ext.equals(".xml") || ext.equals(".cps"))
 		{
+			dataModel.getModel().setObjectName(optName);
 			mod = new Module(dataModel.getModel().getObjectName(), dataModel.getModel().getKey());
 			masterModuleList.add(mod);
 			treeView.addNode(mod);
@@ -153,7 +156,7 @@ public class AC_GUI extends JFrame
 		activeModule = mod;
 	}
 	
-	public void loadSubmodule(String fileName, Module parent)
+	public void loadSubmodule(String fileName, Module parent, String optName)
 	{
 		CCopasiDataModel dataModel = null;
 		Module mod = null;
@@ -184,6 +187,7 @@ public class AC_GUI extends JFrame
 		
 		if (ext.equals(".xml") || ext.equals(".cps"))
 		{
+			dataModel.getModel().setObjectName(optName);
 			mod = new Module(dataModel.getModel().getObjectName(), dataModel.getModel().getKey(), parent);
 			mod.setDrawingCellStyle("Submodule");
 			treeView.addNode(mod);
@@ -225,6 +229,13 @@ public class AC_GUI extends JFrame
 		modelBuilder.setVisible(true);
 		//activeModule = mod;
 	}
+	
+	public static void exportSBML(String fileName)
+	{
+		SBMLParser output = new SBMLParser();
+		output.saveSBML("", activeModule, fileName);
+	}
+	
 	/**
 	 * Create a new module in the three panels.
 	 * @param name the name of the new module
@@ -403,6 +414,28 @@ public class AC_GUI extends JFrame
 		drawingBoard.addMathAggregator(mathAgg);
 	}
 	
+	public static void addEquivalenceNode(Module parentMod, Object cell)
+	{
+		//Port sourcePort = (Port)((mxCell)cell).getSource().getValue();
+		//Port targetPort = (Port)((mxCell)cell).getTarget().getValue();
+		String refName = ((Port)((mxCell)cell).getSource().getValue()).getRefName();
+		EquivalenceNode eNode = new EquivalenceNode(parentMod, refName);
+		drawingBoard.addEquivalenceNode(eNode, cell);
+		parentMod.addEquivalenceNode(eNode);
+		
+		//create the two connections for the equivalence node
+		Connection edge1 = new Connection(parentMod);
+		drawingBoard.createConnection(edge1, ((mxCell)cell).getSource(), eNode.getDrawingCell());
+		parentMod.addConnection(edge1);
+		
+		Connection edge2 = new Connection(parentMod);
+		drawingBoard.createConnection(edge2, ((mxCell)cell).getTarget(), eNode.getDrawingCell());
+		parentMod.addConnection(edge2);
+		
+		//add a new species to msmb
+		modelBuilder.addSpecies(refName);
+	}
+	
 	/**
 	 * Select the representation of the given module on the treeView and drawingBoard.
 	 * @param mod the module to be selected
@@ -438,6 +471,8 @@ public class AC_GUI extends JFrame
 		{
 			String code = new String(modelBuilder.saveModel());
 			activeModule.setMSMBData(code);
+			
+			System.out.println(activeModule.getName() + " saved to COPASI: " + modelBuilder.saveToCK(activeModule.getKey()));
 		}
 			
 		drawingBoard.changeModule(mod);
@@ -502,15 +537,17 @@ public class AC_GUI extends JFrame
 		JSplitPane verticalLine = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, treeWindow, drawingBoard);
 		//verticalLine.setDividerLocation(180 + verticalLine.getInsets().left);
 		Dimension dim = new Dimension(180, 500);
-		treeWindow.setMinimumSize(dim);
+		//treeWindow.setMinimumSize(dim);
+		treeWindow.setPreferredSize(dim);
 		//JSplitPane horizontalLine = new JSplitPane(JSplitPane.VERTICAL_SPLIT, verticalLine, modelBuilderWindow);
 		JSplitPane horizontalLine = new JSplitPane(JSplitPane.VERTICAL_SPLIT, verticalLine, modelBuilderPanel);
 		//horizontalLine.setDividerLocation(610 + horizontalLine.getInsets().top);
 		//System.out.println("Vertical line: " + verticalLine.getDividerLocation());
 		//System.out.println("Horizontal line: " + horizontalLine.getDividerLocation());
 		
-		
-		this.add(horizontalLine);
+		JScrollPane window = new JScrollPane(horizontalLine);
+		this.add(window);
+		//this.add(horizontalLine);
 
 		this.pack();
 	}
@@ -531,6 +568,7 @@ public class AC_GUI extends JFrame
 		fileMenu.addSeparator();
 		fileMenu.add(makeMenuItem(MenuItem.SAVE, menuListener, KeyEvent.VK_S));
 		fileMenu.add(makeMenuItem(MenuItem.SAVE_AS, menuListener, -1));
+		fileMenu.add(makeMenuItem(MenuItem.EXPORT_SMBL, menuListener, -1));
 		fileMenu.addSeparator();
 		fileMenu.add(makeMenuItem(MenuItem.CLOSE, menuListener, -1));
 		fileMenu.addSeparator();
@@ -697,5 +735,69 @@ public class AC_GUI extends JFrame
 			}
 		}
 		return true;
+	}
+	
+	public static void changeName(ChangedElement beforeE, ChangedElement afterE)
+	{
+		if (beforeE == null || afterE == null)
+		{
+			return;
+		}
+		
+		boolean changeRequired = false;
+		String before = beforeE.getName();
+		String after = afterE.getName();
+		
+		ListIterator<Port> ports = activeModule.getPorts().listIterator();
+		Port currentPort;
+		while(ports.hasNext())
+		{
+			currentPort = ports.next();
+			if (before.equalsIgnoreCase(currentPort.getRefName()))
+			{
+				currentPort.setRefName(after);
+				changeRequired = true;
+			}
+		}
+		
+		ListIterator<VisibleVariable> vars = activeModule.getVisibleVariables().listIterator();
+		VisibleVariable currentVar;
+		while(vars.hasNext())
+		{
+			currentVar = vars.next();
+			if (before.equalsIgnoreCase(currentVar.getRefName()))
+			{
+				currentVar.setRefName(after);
+				changeRequired = true;
+			}
+		}
+		
+		ListIterator<EquivalenceNode> eNodes = activeModule.getEquivalenceNodes().listIterator();
+		EquivalenceNode currenteNode;
+		while(eNodes.hasNext())
+		{
+			currenteNode = eNodes.next();
+			if (before.equalsIgnoreCase(currenteNode.getRefName()))
+			{
+				currenteNode.setRefName(after);
+				changeRequired = true;
+			}
+		}
+		
+		if(changeRequired)
+		{
+			//changeActiveModule(activeModule);
+			drawingBoard.changeModule(activeModule);
+		}
+	}
+	
+	public static void close()
+	{
+		masterModuleList.clearList();
+		treeView.clear();
+		drawingBoard.clear();
+		copasiUtility.clear();
+		modelBuilder.setVisible(false);
+		activeModule = null;
 	}
 }

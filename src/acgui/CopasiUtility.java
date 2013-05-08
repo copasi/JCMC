@@ -22,6 +22,12 @@ public class CopasiUtility
 		}
 	}
 	
+	public void clear()
+	{
+		CCopasiRootContainer.getDatamodelList().clear();
+		System.out.println("Number of models in the CCopasiRootContainer: " + CCopasiRootContainer.getDatamodelList().size());
+	}
+	
 	public CCopasiDataModel createDataModel()
 	{
 		return CCopasiRootContainer.addDatamodel();
@@ -40,7 +46,7 @@ public class CopasiUtility
 		
 		try
 		{
-			sbmlModel = dataModel.exportSBMLToString();
+			sbmlModel = dataModel.exportSBMLToString(3, 1);
 		}
 		catch (Exception e)
 		{

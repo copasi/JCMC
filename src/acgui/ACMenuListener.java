@@ -69,9 +69,20 @@ public class ACMenuListener implements ActionListener
             if (fileChooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) 
             {
             	File file = fileChooser.getSelectedFile();
-                //inputFile = file.getName().substring(0,file.getName().lastIndexOf("."));           	
-                AC_GUI.currentGUI.load(file.getAbsolutePath());
-                //AC_GUI.currentGUI.loadTest(file.getAbsolutePath());
+                //inputFile = file.getName().substring(0,file.getName().lastIndexOf("."));
+            	String ext = file.getAbsolutePath().substring(file.getAbsolutePath().lastIndexOf("."));
+            	if (ext.equals(".xml") || ext.equals(".cps"))
+        		{
+            		String iName = JOptionPane.showInputDialog("Name of the loaded module:", "Module");
+    				if (iName != null)
+    				{
+    					AC_GUI.currentGUI.load(file.getAbsolutePath(), iName);
+    				}
+        		}
+            	else{
+            		AC_GUI.currentGUI.load(file.getAbsolutePath(), "");
+            	}
+            	//AC_GUI.currentGUI.loadTest(file.getAbsolutePath());
             }
 			break;
 		case RECENT:
@@ -88,9 +99,11 @@ public class ACMenuListener implements ActionListener
 			String fileName = output.print(AC_GUI.drawingBoard.getActiveModule());
 			JOptionPane.showMessageDialog(null, "The module has been saved in " + fileName + ".");
 			*/
+			//return;
+			
 			String fileName = null;
 			fileChooser = new JFileChooser (new File ("."));
-			fileChooser.setFileFilter (new FileNameExtensionFilter("Model file","ac"));
+			fileChooser.setFileFilter (new FileNameExtensionFilter("Model file (.ac)","ac"));
 			if (fileChooser.showSaveDialog(null) == JFileChooser.APPROVE_OPTION)
 			{
 				fileName = fileChooser.getSelectedFile().getAbsolutePath();
@@ -102,18 +115,38 @@ public class ACMenuListener implements ActionListener
 				JOptionPane.showMessageDialog(null, "The module has been saved in " + fileName);
 			}
 			
+			
 			break;
 		case SAVE_AS:
 			JOptionPane.showMessageDialog(null,
 					"Will save the entire model in one SBML file (not yet implemented).");
 			break;
+		case EXPORT_SMBL:
+			String fileName2 = null;
+			fileChooser = new JFileChooser (new File ("."));
+			fileChooser.setFileFilter (new FileNameExtensionFilter("SBML file (.sbml)","sbml"));
+			if (fileChooser.showSaveDialog(null) == JFileChooser.APPROVE_OPTION)
+			{
+				fileName2 = fileChooser.getSelectedFile().getAbsolutePath();
+				if (!fileName2.endsWith (".sbml"))
+				{
+					fileName2 += ".sbml";
+				}
+				//AC_GUI.currentGUI.save(fileName2);
+				AC_GUI.exportSBML(fileName2);
+				JOptionPane.showMessageDialog(null, "The module has been saved in " + fileName2);
+			}
+			break;
 		case PREFERENCES:
 			AC_GUI.openPreferencesMSMB();
 			break;
 		case CLOSE:
+			/*
 			JOptionPane.showMessageDialog(
 					null,
 					"Will give the option to save the model as a SBML file, unload/clear all three panels, and go back to the empty screen (not yet implemented).");
+			*/
+			AC_GUI.close();
 			break;
 		case EXIT:
 			JOptionPane.showMessageDialog(
@@ -178,8 +211,20 @@ public class ACMenuListener implements ActionListener
 			            if (fileChooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) 
 			            {
 			            	File file = fileChooser.getSelectedFile();
-			                //inputFile = file.getName().substring(0,file.getName().lastIndexOf("."));           	
-			                AC_GUI.currentGUI.loadSubmodule(file.getAbsolutePath(), AC_GUI.selectedModule);
+			                //inputFile = file.getName().substring(0,file.getName().lastIndexOf(".")); 
+			            	String ext = file.getAbsolutePath().substring(file.getAbsolutePath().lastIndexOf("."));
+			            	if (ext.equals(".xml") || ext.equals(".cps"))
+			        		{
+			            		String iName = JOptionPane.showInputDialog("Name of the loaded module:", "Module");
+			    				if (iName != null)
+			    				{
+			    					AC_GUI.currentGUI.loadSubmodule(file.getAbsolutePath(), AC_GUI.selectedModule, iName);
+			    				}
+			        		}
+			            	else{
+			            		AC_GUI.currentGUI.loadSubmodule(file.getAbsolutePath(), AC_GUI.selectedModule, "");
+			            	}
+			                
 			            	//AC_GUI.currentGUI.loadTest(file.getAbsolutePath(), AC_GUI.selectedModule);
 			            }
 					}

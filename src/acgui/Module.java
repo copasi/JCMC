@@ -29,6 +29,7 @@ public class Module implements Serializable
 	private ArrayList<Port> ports;
 	private ArrayList<Connection> connections;
 	private ArrayList<VisibleVariable> visibleVariables;
+	private ArrayList<EquivalenceNode> equivalenceNodes;
 	private mxRectangle drawingCellBounds;
 	private mxGeometry drawingCellGeometry;
 	private String drawingCellStyle;
@@ -49,6 +50,7 @@ public class Module implements Serializable
 		ports = new ArrayList<Port>();
 		connections = new ArrayList<Connection>();
 		visibleVariables = new ArrayList<VisibleVariable>();
+		equivalenceNodes = new ArrayList<EquivalenceNode>();
 	}
 
 	/**
@@ -67,6 +69,7 @@ public class Module implements Serializable
 		ports = new ArrayList<Port>();
 		connections = new ArrayList<Connection>();
 		visibleVariables = new ArrayList<VisibleVariable>();
+		equivalenceNodes = new ArrayList<EquivalenceNode>();
 	}
 
 	/**
@@ -86,6 +89,7 @@ public class Module implements Serializable
 		ports = new ArrayList<Port>();
 		connections = new ArrayList<Connection>();
 		visibleVariables = new ArrayList<VisibleVariable>();
+		equivalenceNodes = new ArrayList<EquivalenceNode>();
 	}
 	
 	/**
@@ -105,6 +109,7 @@ public class Module implements Serializable
 		ports = new ArrayList<Port>();
 		connections = new ArrayList<Connection>();
 		visibleVariables = new ArrayList<VisibleVariable>();
+		equivalenceNodes = new ArrayList<EquivalenceNode>();
 	}
 	
 	/**
@@ -124,6 +129,7 @@ public class Module implements Serializable
 		ports = new ArrayList<Port>();
 		connections = new ArrayList<Connection>();
 		visibleVariables = new ArrayList<VisibleVariable>();
+		equivalenceNodes = new ArrayList<EquivalenceNode>();
 	}
 	
 	/**
@@ -143,6 +149,7 @@ public class Module implements Serializable
 		ports = new ArrayList<Port>();
 		connections = new ArrayList<Connection>();
 		visibleVariables = new ArrayList<VisibleVariable>();
+		equivalenceNodes = new ArrayList<EquivalenceNode>();
 	}
 	
 	/**
@@ -171,6 +178,7 @@ public class Module implements Serializable
 		ports = new ArrayList<Port>();
 		connections = new ArrayList<Connection>();
 		visibleVariables = new ArrayList<VisibleVariable>();
+		equivalenceNodes = new ArrayList<EquivalenceNode>();
 	}
 
 	/**
@@ -368,6 +376,21 @@ public class Module implements Serializable
 	public ArrayList<VisibleVariable> getVisibleVariables()
 	{
 		return visibleVariables;
+	}
+	
+	public void addEquivalenceNode(EquivalenceNode eNode)
+	{
+		equivalenceNodes.add(eNode);
+	}
+	
+	public void removeEquivalenceNode(EquivalenceNode eNode)
+	{
+		equivalenceNodes.remove(eNode);
+	}
+	
+	public ArrayList<EquivalenceNode> getEquivalenceNodes()
+	{
+		return equivalenceNodes;
 	}
 	
 	/**

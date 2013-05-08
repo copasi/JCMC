@@ -55,6 +55,11 @@ public class VisibleVariable implements Serializable
 		return drawingCell;
 	}
 	
+	public void setRefName(String iRefName)
+	{
+		refName = iRefName;
+	}
+	
 	public String getRefName()
 	{
 		return refName;
@@ -87,6 +92,7 @@ public class VisibleVariable implements Serializable
 	{
 		return drawingCellGeometry;
 	}
+	
 	public String toString()
 	{
 		return refName;

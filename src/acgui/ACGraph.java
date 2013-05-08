@@ -4,6 +4,7 @@ import java.util.Map;
 
 import com.mxgraph.model.mxCell;
 import com.mxgraph.model.mxGeometry;
+import com.mxgraph.model.mxGraphModel;
 import com.mxgraph.model.mxIGraphModel;
 import com.mxgraph.util.mxConstants;
 import com.mxgraph.util.mxUtils;
@@ -67,6 +68,14 @@ public class ACGraph extends mxGraph
 					+ convertValueToString(model.getTerminal(cell, false));
 		}
 
+		if(((mxCell)cell).getValue() instanceof Port)
+		{
+			if(((Port)((mxCell)cell).getValue()).getParent() == AC_GUI.activeModule)
+			{
+				return ((Port)((mxCell)cell).getValue()).getRefName() + " = " + AC_GUI.modelBuilder.getValue(((Port)((mxCell)cell).getValue()).getRefName());
+			}
+		}
+		
 		return super.getToolTipForCell(cell);
 	}
 
@@ -319,6 +328,23 @@ public class ACGraph extends mxGraph
 			System.out.println("Target is a Visible Variable.");
 		}
 		*/
+		if (((mxCell)target).getValue() instanceof Port)
+		{
+			PortType targetType = ((Port)((mxCell)target).getValue()).getType();
+			
+			if((targetType.compareTo(PortType.INPUT) == 0) && (mxGraphModel.getDirectedEdgeCount(model, target,
+					false, edge) != 0))
+			{
+				return "An input port cannot have more than one incoming connection.";
+			}
+			
+			if((targetType.compareTo(PortType.OUTPUT) == 0) && (mxGraphModel.getDirectedEdgeCount(model, target,
+					false, edge) != 0))
+			{
+				return "An output port cannot have more than one incoming connection.";
+			}
+		}
+		
 		if (((mxCell)source).getValue() instanceof Port && ((mxCell)target).getValue() instanceof Port)
 		{
 			Port sourcePort = (Port)((mxCell)source).getValue();
@@ -330,6 +356,11 @@ public class ACGraph extends mxGraph
 			//System.out.println("Target: " + ((mxCell)target).getValue().toString());
 			PortType sourceType = ((Port)((mxCell)source).getValue()).getType();
 			PortType targetType = ((Port)((mxCell)target).getValue()).getType();
+			
+			if(sourceModule == targetModule)
+			{
+				return "Two ports of the same Module cannot be connected.";
+			}
 			
 			if(sourceModule == targetModule.getParent())
 			{

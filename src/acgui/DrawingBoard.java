@@ -60,6 +60,8 @@ public class DrawingBoard extends JPanel
 	private final int DEFAULT_VISIBLEVARIABLE_WIDTH = 50;
 	private final int DEFAULT_AGGREGATOR_HEIGHT = 80;
 	private final int DEFAULT_AGGREGATOR_WIDTH = 90;
+	private final int DEFAULT_EQUIVALENCENODE_HEIGHT = 60;
+	private final int DEFAULT_EQUIVALENCENODE_WIDTH = 60;
 	
 	private ACGraph graph;
 	private Object parent;
@@ -128,6 +130,11 @@ public class DrawingBoard extends JPanel
 		 */
 	}
 
+	public void clear()
+	{
+		((mxGraphModel)graph.getModel()).clear();
+		parent = graph.getDefaultParent();
+	}
 	/**
 	 * Create a drawing cell representation of the module.
 	 * 
@@ -151,7 +158,7 @@ public class DrawingBoard extends JPanel
 
 		// Create the cell
 
-		Object cell = graph.createVertex(parentCell, null, mod, 5, 5, 10, 10, "");
+		Object cell = graph.createVertex(parentCell, null, mod, 5, 5, 1, 1, "");
 		((mxCell) cell).setConnectable(false);
 
 		/*
@@ -287,6 +294,18 @@ public class DrawingBoard extends JPanel
 		var.setDrawingCell(var1);
 	}
 	
+	public void createEquivalenceNode(EquivalenceNode eNode)
+	{
+		Object parentCell = eNode.getParent().getDrawingCell();
+		mxCell eNodeCell = null;
+		eNodeCell = (mxCell)graph.createVertex(parentCell, null, eNode, 5, 5, 10, 10, "");
+		eNodeCell.setGeometry(eNode.getDrawingCellGeometry());
+		eNodeCell.setVertex(true);
+		eNodeCell.setConnectable(true);
+		
+		eNode.setDrawingCell(eNodeCell);
+	}
+	
 	public void addVisibleVariable(Module parentMod, VisibleVariable var)
 	{
 		//System.out.println("Time to add a visible variable:");
@@ -387,6 +406,65 @@ public class DrawingBoard extends JPanel
 		//mathAgg.setDrawingCellBounds(bounds);
 		mathAgg.setDrawingCellGeometry(geo);
 		addMathAggregatorPorts(mathAgg);
+	}
+	
+	public void addEquivalenceNode(EquivalenceNode eNode, Object formerEdge)
+	{
+		Module parentMod = eNode.getParent();
+		Object cell = parentMod.getDrawingCell();
+		//mxRectangle bounds = new mxRectangle();
+		mxGeometry formerGeo = ((mxCell)formerEdge).getGeometry();
+		double xPosition;
+		double yPosition;
+		double width = DEFAULT_EQUIVALENCENODE_WIDTH;
+		double height = DEFAULT_EQUIVALENCENODE_HEIGHT;
+		double offsetX;
+		double offsetY;
+		// System.out.println("Cell obj: " + ((mxCell) cell).getValue().toString());
+		// System.out.println("Parentmod obj: " + parentMod.getName());
+		
+		offsetX = -width;
+		offsetY = -height;
+
+		int equivIndex = parentMod.getEquivalenceNodes().size();
+		mxCell eNodeCell = null;
+		graph.getModel().beginUpdate();
+		try
+		{
+			//mxGeometry geo1 = new mxGeometry(0, 0, width, height);
+			//geo1.setOffset(new mxPoint(offsetX, offsetY));
+			//geo1.setRelative(true);
+			eNodeCell = (mxCell)graph.createVertex(cell, null, eNode, 5, 5, 10, 10, "");
+			eNodeCell.setVertex(true);
+			eNodeCell.setConnectable(true);
+			//graph.getModel().add(cell, var1, 0);
+			
+			
+			//bounds = new mxRectangle();
+			xPosition = (formerGeo.getSourcePoint().getX() + formerGeo.getTargetPoint().getX()) / 2 - (width/2);
+			yPosition = (formerGeo.getSourcePoint().getY() + formerGeo.getTargetPoint().getY()) / 2 - (height/2);
+			//bounds.setX(xPosition);
+			//bounds.setY(yPosition);
+			//bounds.setWidth(DEFAULT_VISIBLEVARIABLE_WIDTH);
+			//bounds.setHeight(DEFAULT_VISIBLEVARIABLE_HEIGHT);
+
+			mxGeometry geo = new mxGeometry(xPosition, yPosition, width, height);
+			//geo.setOffset(new mxPoint(offsetX, offsetY));
+			eNodeCell.setGeometry(geo);
+			graph.getModel().add(cell, eNodeCell, 0);
+			//graph.resizeCell(var1, bounds);
+			graph.getModel().setStyle(eNodeCell, "EquivalenceNode");
+			// graph.updatePortOrientation(port1, geo1);
+			//graph.updatePortOrientation(port1, geo1);
+		}
+		finally
+		{
+			graph.getModel().endUpdate();
+		}
+
+		eNode.setDrawingCell((Object)eNodeCell);
+		//var.setDrawingCellBounds(bounds);
+		eNode.setDrawingCellGeometry(eNodeCell.getGeometry());
 	}
 	
 	public void createConnection(Connection edge, Object source, Object target)
@@ -537,6 +615,7 @@ public class DrawingBoard extends JPanel
 		drawPorts(mod);
 		drawChildren(mod);
 		drawVisibleVariables(mod);
+		drawEquivalenceNodes(mod);
 		drawConnections(mod);
 		// printCellCount(cell);
 		// printBoardStats();
@@ -600,6 +679,18 @@ public class DrawingBoard extends JPanel
 				var.setDrawingCellGeometry(geo);
 				//var.setDrawingCellGeometry(((mxCell)varCell).getGeometry());
 			}
+			
+			ListIterator<EquivalenceNode> eNodes = activeModule.getEquivalenceNodes().listIterator();
+			EquivalenceNode eNode;
+			Object eNodeCell;
+			while(eNodes.hasNext())
+			{
+				eNode = eNodes.next();
+				eNodeCell = eNode.getDrawingCell();
+				
+				geo = ((mxCell)eNodeCell).getGeometry();
+				eNode.setDrawingCellGeometry(geo);
+			}
 		}
 	}
 
@@ -648,7 +739,7 @@ public class DrawingBoard extends JPanel
 			{				
 				geo = child.getDrawingCellGeometry();
 				//bounds = child.getDrawingCellBounds();
-				if (geo == null)
+				if (geo == null || (geo.getHeight() <= 10))
 				{
 					//bounds = new mxRectangle();
 					geo = new mxGeometry();
@@ -662,6 +753,10 @@ public class DrawingBoard extends JPanel
 				((mxCell)childCell).setGeometry(geo);
 				//graph.resizeCell(childCell, bounds);
 				graph.getModel().add(parentCell, childCell, 0);
+				if(child.getDrawingCellStyle().equals(""))
+				{
+					child.setDrawingCellStyle("Submodule");
+				}
 				graph.getModel().setStyle(childCell, child.getDrawingCellStyle());
 			}
 			finally
@@ -818,6 +913,74 @@ public class DrawingBoard extends JPanel
 			{
 				graph.getModel().endUpdate();
 			}
+		}
+	}
+	
+	/**
+	 * Draw the equivalence nodes of the given module
+	 * @param mod the module whose equivalence nodes will be drawn
+	 */
+	private void drawEquivalenceNodes(Module mod)
+	{
+		ListIterator<EquivalenceNode> eNodes;
+		Object cell;
+		Object eNodeCell;
+		//mxGeometry geo;
+		double x;
+		double y;
+		double width;
+		double height;
+		double offsetX;
+		double offsetY;
+		EquivalenceNode eNode;
+		int eNodeIndex;
+		mxRectangle bounds;
+		mxGeometry geo;
+		double xPosition;
+		double yPosition;
+		
+		// get the list of equivalence nodes
+		eNodes = mod.getEquivalenceNodes().listIterator();
+		
+		// get the drawing cell where the equivalence nodes will be added
+		cell = mod.getDrawingCell();
+		
+		// loop through each visible variable of the module
+		while (eNodes.hasNext())
+		{
+			// get the index of the next visible variable
+			eNodeIndex = eNodes.nextIndex();
+			// get the next visible variable
+			eNode = eNodes.next();
+			// get the drawing cell of the current visible variable
+			eNodeCell = eNode.getDrawingCell();
+			graph.getModel().beginUpdate();
+			try
+			{				
+				geo = eNode.getDrawingCellGeometry();
+				//bounds = var.getDrawingCellBounds();
+				if (geo == null)
+				{
+					//bounds = new mxRectangle();
+					geo = new mxGeometry();
+					xPosition = 40 + (eNodeIndex * 20);
+					yPosition = 40 + (eNodeIndex * 20);
+					geo.setX(xPosition);
+					geo.setY(yPosition);
+					geo.setWidth(DEFAULT_EQUIVALENCENODE_WIDTH);
+					geo.setHeight(DEFAULT_EQUIVALENCENODE_HEIGHT);
+				}
+				((mxCell)eNodeCell).setGeometry(geo);
+				//graph.resizeCell(eNodeCell, bounds);
+				graph.getModel().add(cell, eNodeCell, 0);
+				graph.getModel().setStyle(eNodeCell, "EquivalenceNode");
+				//graph.getModel().setGeometry(eNodeCell, geo);
+			}
+			finally
+			{
+				graph.getModel().endUpdate();
+			}
+			
 		}
 	}
 	
@@ -1129,6 +1292,7 @@ public class DrawingBoard extends JPanel
 		cell.put(mxConstants.STYLE_FONTSTYLE, "1");
 		cell.put(mxConstants.STYLE_FONTCOLOR, "black");
 		cell.put(mxConstants.STYLE_FOLDABLE, "0");
+		cell.put(mxConstants.STYLE_PERIMETER, "ellipsePerimeter");
 
 		styleSheet.putCellStyle("VisibleVariable", cell);
 		
@@ -1177,9 +1341,18 @@ public class DrawingBoard extends JPanel
 		styleSheet.putCellStyle("Product", cell);
 		
 		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_RHOMBUS);
+		cell.put(mxConstants.STYLE_FILLCOLOR, "yellow");
+		cell.put(mxConstants.STYLE_PERIMETER, "rhombusPerimeter");
+		// cell.put(mxConstants.STYLE_OPACITY, "75.0");
+
+		styleSheet.putCellStyle("EquivalenceNode", cell);
+		
+		cell = new HashMap<String, Object>();
 		cell.put(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_TRIANGLE);
 		cell.put(mxConstants.STYLE_DIRECTION, mxConstants.DIRECTION_NORTH);
 		cell.put(mxConstants.STYLE_FILLCOLOR, "red");
+		cell.put(mxConstants.STYLE_PERIMETER, "trianglePerimeter");
 		// cell.put(mxConstants.STYLE_OPACITY, "75.0");
 
 		styleSheet.putCellStyle("InputPort_North", cell);
@@ -1188,6 +1361,7 @@ public class DrawingBoard extends JPanel
 		cell.put(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_TRIANGLE);
 		cell.put(mxConstants.STYLE_DIRECTION, mxConstants.DIRECTION_SOUTH);
 		cell.put(mxConstants.STYLE_FILLCOLOR, "red");
+		cell.put(mxConstants.STYLE_PERIMETER, "trianglePerimeter");
 		// cell.put(mxConstants.STYLE_OPACITY, "75.0");
 
 		styleSheet.putCellStyle("InputPort_South", cell);
@@ -1196,6 +1370,7 @@ public class DrawingBoard extends JPanel
 		cell.put(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_TRIANGLE);
 		cell.put(mxConstants.STYLE_DIRECTION, mxConstants.DIRECTION_EAST);
 		cell.put(mxConstants.STYLE_FILLCOLOR, "red");
+		cell.put(mxConstants.STYLE_PERIMETER, "trianglePerimeter");
 		// cell.put(mxConstants.STYLE_OPACITY, "75.0");
 
 		styleSheet.putCellStyle("InputPort_East", cell);
@@ -1204,6 +1379,7 @@ public class DrawingBoard extends JPanel
 		cell.put(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_TRIANGLE);
 		cell.put(mxConstants.STYLE_DIRECTION, mxConstants.DIRECTION_WEST);
 		cell.put(mxConstants.STYLE_FILLCOLOR, "red");
+		cell.put(mxConstants.STYLE_PERIMETER, "trianglePerimeter");
 		// cell.put(mxConstants.STYLE_OPACITY, "75.0");
 
 		styleSheet.putCellStyle("InputPort_West", cell);
@@ -1212,6 +1388,7 @@ public class DrawingBoard extends JPanel
 		cell.put(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_TRIANGLE);
 		cell.put(mxConstants.STYLE_DIRECTION, mxConstants.DIRECTION_NORTH);
 		cell.put(mxConstants.STYLE_FILLCOLOR, "blue");
+		cell.put(mxConstants.STYLE_PERIMETER, "trianglePerimeter");
 		// cell.put(mxConstants.STYLE_OPACITY, "75.0");
 
 		styleSheet.putCellStyle("OutputPort_North", cell);
@@ -1220,6 +1397,7 @@ public class DrawingBoard extends JPanel
 		cell.put(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_TRIANGLE);
 		cell.put(mxConstants.STYLE_DIRECTION, mxConstants.DIRECTION_SOUTH);
 		cell.put(mxConstants.STYLE_FILLCOLOR, "blue");
+		cell.put(mxConstants.STYLE_PERIMETER, "trianglePerimeter");
 		// cell.put(mxConstants.STYLE_OPACITY, "75.0");
 
 		styleSheet.putCellStyle("OutputPort_South", cell);
@@ -1228,6 +1406,7 @@ public class DrawingBoard extends JPanel
 		cell.put(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_TRIANGLE);
 		cell.put(mxConstants.STYLE_DIRECTION, mxConstants.DIRECTION_EAST);
 		cell.put(mxConstants.STYLE_FILLCOLOR, "blue");
+		cell.put(mxConstants.STYLE_PERIMETER, "trianglePerimeter");
 		// cell.put(mxConstants.STYLE_OPACITY, "75.0");
 
 		styleSheet.putCellStyle("OutputPort_East", cell);
@@ -1236,6 +1415,7 @@ public class DrawingBoard extends JPanel
 		cell.put(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_TRIANGLE);
 		cell.put(mxConstants.STYLE_DIRECTION, mxConstants.DIRECTION_WEST);
 		cell.put(mxConstants.STYLE_FILLCOLOR, "blue");
+		cell.put(mxConstants.STYLE_PERIMETER, "trianglePerimeter");
 		// cell.put(mxConstants.STYLE_OPACITY, "75.0");
 
 		styleSheet.putCellStyle("OutputPort_West", cell);
@@ -1244,6 +1424,7 @@ public class DrawingBoard extends JPanel
 		cell.put(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_RHOMBUS);
 		cell.put(mxConstants.STYLE_DIRECTION, mxConstants.DIRECTION_NORTH);
 		cell.put(mxConstants.STYLE_FILLCOLOR, "yellow");
+		cell.put(mxConstants.STYLE_PERIMETER, "rhombusPerimeter");
 		// cell.put(mxConstants.STYLE_OPACITY, "75.0");
 
 		styleSheet.putCellStyle("EquivalencePort_North", cell);
@@ -1252,6 +1433,7 @@ public class DrawingBoard extends JPanel
 		cell.put(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_RHOMBUS);
 		cell.put(mxConstants.STYLE_DIRECTION, mxConstants.DIRECTION_SOUTH);
 		cell.put(mxConstants.STYLE_FILLCOLOR, "yellow");
+		cell.put(mxConstants.STYLE_PERIMETER, "rhombusPerimeter");
 		// cell.put(mxConstants.STYLE_OPACITY, "75.0");
 
 		styleSheet.putCellStyle("EquivalencePort_South", cell);
@@ -1260,6 +1442,7 @@ public class DrawingBoard extends JPanel
 		cell.put(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_RHOMBUS);
 		cell.put(mxConstants.STYLE_DIRECTION, mxConstants.DIRECTION_EAST);
 		cell.put(mxConstants.STYLE_FILLCOLOR, "yellow");
+		cell.put(mxConstants.STYLE_PERIMETER, "rhombusPerimeter");
 		// cell.put(mxConstants.STYLE_OPACITY, "75.0");
 
 		styleSheet.putCellStyle("EquivalencePort_East", cell);
@@ -1268,6 +1451,7 @@ public class DrawingBoard extends JPanel
 		cell.put(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_RHOMBUS);
 		cell.put(mxConstants.STYLE_DIRECTION, mxConstants.DIRECTION_WEST);
 		cell.put(mxConstants.STYLE_FILLCOLOR, "yellow");
+		cell.put(mxConstants.STYLE_PERIMETER, "rhombusPerimeter");
 		// cell.put(mxConstants.STYLE_OPACITY, "75.0");
 
 		styleSheet.putCellStyle("EquivalencePort_West", cell);
@@ -1349,7 +1533,21 @@ public class DrawingBoard extends JPanel
 				
 				//System.out.println("Source port: " + sourcePort.getName());
 				//System.out.println("Target port: " + targetPort.getName());
-				Object cell = evt.getProperty("cell");
+				mxCell cell = (mxCell)evt.getProperty("cell");
+				//check if the edge is connecting two equivalence ports
+				if (cell.getSource().getValue() instanceof Port && cell.getTarget().getValue() instanceof Port)
+				{
+					if (((Port)cell.getSource().getValue()).getType() == PortType.EQUIVALENCE 
+							&& ((Port)cell.getTarget().getValue()).getType() == PortType.EQUIVALENCE)
+					{
+						//the edge is connecting two equivalence ports
+						System.out.println("Time to create an equivalence node.");
+						AC_GUI.addEquivalenceNode(activeModule, cell);
+						graph.getModel().remove(cell);
+						return;
+					}
+				}
+				
 				AC_GUI.currentGUI.addConnection(activeModule, evt.getProperty("cell"));
 				//Object cell1 = graph.createEdge(cell, null, "val", "s", "t", "");
 				// set the connection edge style

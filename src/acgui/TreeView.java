@@ -72,6 +72,16 @@ public class TreeView extends JPanel implements TreeSelectionListener
 		return tree;
 	}
 
+	public void clear()
+	{
+		DefaultMutableTreeNode node;
+		while(treeModel.getChildCount(rootNode) > 0)
+		{
+			node = (DefaultMutableTreeNode)treeModel.getChild(rootNode, 0);
+			treeModel.removeNodeFromParent(node);
+		}
+	}
+	
 	public void refreshTree()
 	{
 		treeModel.reload();
