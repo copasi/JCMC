@@ -391,6 +391,7 @@ public class AC_IO
 		//data.put("target", edge.getTarget());
 		//data.put("source", edge.getSource());
 		data.put("drawingCell", edge.getDrawingCell());
+		data.put("drawingCellStyle", edge.getDrawingCellStyle());
 		
 		String sourceType = "";
 		String targetType = "";
@@ -446,6 +447,7 @@ public class AC_IO
 		String sourceID = (String)data.get("source");
 		String targetID = (String)data.get("target");
 		Object drawingCell = data.get("drawingCell");
+		String drawingCellSyle = (String)data.get("drawingCellStyle");
 		
 		Connection edge = null;
 		Object source = findTerminal(sourceType, sourceID, parent);
@@ -492,6 +494,7 @@ public class AC_IO
 		}
 		
 		edge = new Connection(parent);
+		edge.setDrawingCellStyle(drawingCellSyle);
 		AC_GUI.drawingBoard.createConnection(edge, sourceCell, targetCell);
 		
 		//((mxCell)drawingCell).setValue(edge);

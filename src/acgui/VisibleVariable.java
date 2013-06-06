@@ -31,6 +31,13 @@ public class VisibleVariable implements Serializable
 		refName = iRefName;
 	}
 	
+	public VisibleVariable(Module iParent, String iRefName, Object iDrawingCell)
+	{
+		parent = iParent;
+		refName = iRefName;
+		drawingCell = iDrawingCell;
+	}
+	
 	public VisibleVariable(Module iParent, String iRefName, Object iDrawingCell, mxRectangle iCellBounds, mxGeometry iCellGeo)
 	{
 		parent = iParent;

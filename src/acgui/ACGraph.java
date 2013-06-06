@@ -328,34 +328,483 @@ public class ACGraph extends mxGraph
 			System.out.println("Target is a Visible Variable.");
 		}
 		*/
-		if (((mxCell)target).getValue() instanceof Port)
+		Object sourceObject = ((mxCell)source).getValue();
+		Object targetObject = ((mxCell)target).getValue();
+		
+		/*
+		if (targetObject instanceof EquivalenceNode)
 		{
-			PortType targetType = ((Port)((mxCell)target).getValue()).getType();
+			return "An equivalence node cannot have an incoming connection.";
+		}
+		
+		if (targetObject instanceof Port)
+		{
+			PortType targetPortType = ((Port)targetObject).getType();
 			
-			if((targetType.compareTo(PortType.INPUT) == 0) && (mxGraphModel.getDirectedEdgeCount(model, target,
+			if((targetPortType.compareTo(PortType.INPUT) == 0) && (mxGraphModel.getDirectedEdgeCount(model, target,
 					false, edge) != 0))
 			{
 				return "An input port cannot have more than one incoming connection.";
 			}
 			
-			if((targetType.compareTo(PortType.OUTPUT) == 0) && (mxGraphModel.getDirectedEdgeCount(model, target,
+			if((targetPortType.compareTo(PortType.OUTPUT) == 0) && (mxGraphModel.getDirectedEdgeCount(model, target,
 					false, edge) != 0))
 			{
 				return "An output port cannot have more than one incoming connection.";
 			}
 		}
-		
-		if (((mxCell)source).getValue() instanceof Port && ((mxCell)target).getValue() instanceof Port)
+		*/
+		if (sourceObject instanceof VisibleVariable)
 		{
-			Port sourcePort = (Port)((mxCell)source).getValue();
-			Port targetPort = (Port)((mxCell)target).getValue();
+			// the source is a visible variable
+			VisibleVariable sourceVisibleVariable = (VisibleVariable)sourceObject;
+			
+			if (targetObject instanceof VisibleVariable)
+			{
+				// the source is a visible variable
+				// the target is a visible variable
+				return "A variable cannot connect to another variable.";
+			}
+			else if (targetObject instanceof EquivalenceNode)
+			{
+				// the source is a visible variable
+				// the target is an equivalence node
+				return "A variable cannot connect to an equivalence node.";
+			}
+			else if (targetObject instanceof Port)
+			{
+				// the source is a visible variable
+				// the target is a port
+				Port targetPort = (Port)targetObject;
+				PortType targetPortType = ((Port)targetObject).getType();
+				Module targetModule = targetPort.getParent();
+				
+				if(targetModule == AC_GUI.activeModule)
+				{
+					// the source is a visible variable
+					// the target is a port
+					// the targetModule is the active module
+					switch(targetPortType)
+					{
+					case INPUT:
+						return "A variable cannot connect to a module input port.";
+					case OUTPUT:
+						if (mxGraphModel.getDirectedEdgeCount(model, target, false, edge) != 0)
+						{
+							return "An output port cannot have more than one incoming connection.";
+						}
+						return null;
+					case EQUIVALENCE:
+						return "A variable cannot connect to a module equivalence port.";
+					default:
+							
+					}
+				}
+				else
+				{
+					// the source is a visible variable
+					// the target is a port
+					// the targetModule is a submodule
+					switch(targetPortType)
+					{
+					case INPUT:
+						if (mxGraphModel.getDirectedEdgeCount(model, target, false, edge) != 0)
+						{
+							return "An input port cannot have more than one incoming connection.";
+						}
+						return null;
+					case OUTPUT:
+						return "A variable cannot connect to a submodule output port.";
+					case EQUIVALENCE:
+						return "A variable cannot connect to a submodule equivalence port.";
+					default:
+							
+					}
+				}
+			}
+		}
+		else if (sourceObject instanceof EquivalenceNode)
+		{
+			// the source is an equivalence node
+			EquivalenceNode sourceENode = (EquivalenceNode)sourceObject;
+			
+			if (targetObject instanceof EquivalenceNode)
+			{
+				// the source is an equivalence node
+				// the target is an equivalence node
+				return "An equivalence node cannot connect to another equivalence node.";
+			}
+			if (targetObject instanceof VisibleVariable)
+			{
+				// the source is an equivalence node
+				// the target is a visible variable
+				if (mxGraphModel.getDirectedEdgeCount(model, target, false, edge) != 0)
+				{
+					return "A variable cannot have more than one incoming connection.";
+				}
+				return null;
+			}
+			else if (targetObject instanceof Port)
+			{
+				// the source is an equivalence node
+				// the target is a port
+				Port targetPort = (Port)targetObject;
+				PortType targetPortType = ((Port)targetObject).getType();
+				Module targetModule = targetPort.getParent();
+				
+				if (targetModule == AC_GUI.activeModule)
+				{
+					// the source is an equivalence node
+					// the target is a port
+					// the targetModule is the active module
+					switch(targetPortType)
+					{
+					case INPUT:
+						return "An equivalence node cannot connect to a module input port.";
+					case OUTPUT:
+						if (mxGraphModel.getDirectedEdgeCount(model, target, false, edge) != 0)
+						{
+							return "An output port cannot have more than one incoming connection.";
+						}
+						return null;
+					case EQUIVALENCE:
+						if (mxGraphModel.getDirectedEdgeCount(model, target, false, edge) != 0)
+						{
+							return "An equivalence port cannot have more than one incoming connection.";
+						}
+						return null;
+					default:
+							
+					}
+				}
+				else
+				{
+					// the source is an equivalence node
+					// the target is a port
+					// the targetModule is a submodule
+					switch(targetPortType)
+					{
+					case INPUT:
+						if (mxGraphModel.getDirectedEdgeCount(model, target, false, edge) != 0)
+						{
+							return "An input port cannot have more than one incoming connection.";
+						}
+						return null;
+					case OUTPUT:
+						return "An equivalence node cannot connect to a submodule output port.";
+					case EQUIVALENCE:
+						if (mxGraphModel.getDirectedEdgeCount(model, target, false, edge) != 0)
+						{
+							return "An equivalence port cannot have more than one incoming connection.";
+						}
+						return null;
+					default:
+							
+					}
+				}
+			}
+		}
+		else if (sourceObject instanceof Port)
+		{
+			// the source is a port
+			Port sourcePort = (Port)sourceObject;
+			PortType sourcePortType = sourcePort.getType();
+			Module sourceModule = sourcePort.getParent();
+			
+			if (sourceModule == AC_GUI.activeModule)
+			{
+				// the source is a port
+				// the sourceModule is the active module
+				if (targetObject instanceof EquivalenceNode)
+				{
+					// the source is a port
+					// the sourceModule is the active module
+					// the target is an equivalence node
+					return "A module port cannot connect to an equivalence node.";
+				}
+				else if (targetObject instanceof VisibleVariable)
+				{
+					// the source is a port
+					// the sourceModule is the active module
+					// the target is a visible variable
+					switch(sourcePortType)
+					{
+					case INPUT:
+						if (mxGraphModel.getDirectedEdgeCount(model, target, false, edge) != 0)
+						{
+							return "A variable cannot have more than one incoming connection.";
+						}
+						return null;
+					case OUTPUT:
+						return "A module output port cannot connect to a variable.";
+					case EQUIVALENCE:
+						if (mxGraphModel.getDirectedEdgeCount(model, target, false, edge) != 0)
+						{
+							return "A variable cannot have more than one incoming connection.";
+						}
+						return null;
+					default:
+							
+					}
+				}
+				else if (targetObject instanceof Port)
+				{
+					// the source is a port
+					// the sourceModule is the active module
+					// the target is a port
+					Port targetPort = (Port)targetObject;
+					PortType targetPortType = targetPort.getType();
+					Module targetModule = targetPort.getParent();
+					
+					if (sourceModule == targetModule)
+					{
+						// the source and target ports belong to the same module
+						return "Ports of the same module cannot share a connection.";
+					}
+					
+					// since the sourceModule is the active module,
+					// the targetModule must be a submodule
+					switch(sourcePortType)
+					{
+					case INPUT:
+						switch(targetPortType)
+						{
+						case INPUT:
+							if (mxGraphModel.getDirectedEdgeCount(model, target, false, edge) != 0)
+							{
+								return "An input port cannot have more than one incoming connection.";
+							}
+							return null;
+						case OUTPUT:
+							return "A module input port cannot connect to a submodule output port.";
+						case EQUIVALENCE:
+							return "A module input port cannot connect to a submodule equivalence port.";
+						default:
+						}
+						break;
+					case OUTPUT:
+						switch(targetPortType)
+						{
+						case INPUT:
+							return "A module output port cannot connect to a submodule input port.";
+						case OUTPUT:
+							return "A module output port cannot connect to a submodule output port.";
+						case EQUIVALENCE:
+							return "A module output port cannot connect to a submodule equivalence port.";
+						default:
+						}
+						break;
+					case EQUIVALENCE:
+						switch(targetPortType)
+						{
+						case INPUT:
+							if (mxGraphModel.getDirectedEdgeCount(model, target, false, edge) != 0)
+							{
+								return "An input port cannot have more than one incoming connection.";
+							}
+							return null;
+						case OUTPUT:
+							return "A module equivalence port cannot connect to a submodule output port.";
+						case EQUIVALENCE:
+							/*
+							if (mxGraphModel.getDirectedEdgeCount(model, target, false, edge) != 0)
+							{
+								return "An equivalence port cannot have more than one incoming connection.";
+							}
+							*/
+							return null;
+						default:
+						}
+						break;
+					default:
+					}
+				}
+			}
+			else
+			{
+				// the source is a port
+				// the sourceModule is a submodule
+				if (targetObject instanceof EquivalenceNode)
+				{
+					// the source is a port
+					// the sourceModule is a submodule
+					// the target is an equivalence node
+					return "A submodule port cannot connect to an equivalence node.";
+				}
+				else if (targetObject instanceof VisibleVariable)
+				{
+					// the source is a port
+					// the sourceModule is a submodule
+					// the target is a visible variable
+					switch(sourcePortType)
+					{
+					case INPUT:
+						return "A submodule input port cannot connect to a variable.";
+					case OUTPUT:
+						if (mxGraphModel.getDirectedEdgeCount(model, target, false, edge) != 0)
+						{
+							return "A variable cannot have more than one incoming connection.";
+						}
+						return null;
+					case EQUIVALENCE:
+						if (mxGraphModel.getDirectedEdgeCount(model, target, false, edge) != 0)
+						{
+							return "A variable cannot have more than one incoming connection.";
+						}
+						return null;
+					default:
+					}
+				}
+				else if (targetObject instanceof Port)
+				{
+					// the source is a port
+					// the sourceModule is a submodule
+					// the target is a port
+					Port targetPort = (Port)targetObject;
+					PortType targetPortType = targetPort.getType();
+					Module targetModule = targetPort.getParent();
+					
+					if (targetModule == AC_GUI.activeModule)
+					{
+						// the source is a port
+						// the sourceModule is a submodule
+						// the target is a port
+						// the targetModule is the active module
+						switch(sourcePortType)
+						{
+						case INPUT:
+							switch(targetPortType)
+							{
+							case INPUT:
+								return "A submodule input port cannot connect to a module input port.";
+							case OUTPUT:
+								return "A submodule input port cannot connect to a module output port.";
+							case EQUIVALENCE:
+								return "A submodule input port cannot connect to a module equivalence port.";
+							default:
+							}
+							break;
+						case OUTPUT:
+							switch(targetPortType)
+							{
+							case INPUT:
+								return "A submodule output port cannot connect to a module input port.";
+							case OUTPUT:
+								if (mxGraphModel.getDirectedEdgeCount(model, target, false, edge) != 0)
+								{
+									return "An output port cannot have more than one incoming connection.";
+								}
+								return null;
+							case EQUIVALENCE:
+								return "A submodule output port cannot connect to a module equivalence port.";
+							default:
+							}
+							break;
+						case EQUIVALENCE:
+							switch(targetPortType)
+							{
+							case INPUT:
+								return "A submodule equivalence port cannot connect to a module input port.";
+							case OUTPUT:
+								return "A submodule equivalence port cannot connect to a module output port.";
+							case EQUIVALENCE:
+								/*
+								if (mxGraphModel.getDirectedEdgeCount(model, target, false, edge) != 0)
+								{
+									return "An equivalence port cannot have more than one incoming connection.";
+								}
+								*/
+								return null;
+							default:
+							}
+							break;
+						default:
+						}
+					}
+					else
+					{
+						// the source is a port
+						// the sourceModule is a submodule
+						// the target is a port
+						// the targetModule is a submodule
+						if (sourceModule == targetModule)
+						{
+							// the source and target ports belong to the same submodule
+							return "Ports of the same submodule cannot connect.";
+						}
+						
+						switch(sourcePortType)
+						{
+						case INPUT:
+							switch(targetPortType)
+							{
+							case INPUT:
+								return "A submodule input port cannot connect to a submodule module input port.";
+							case OUTPUT:
+								return "A submodule input port cannot connect to a submodule output port.";
+							case EQUIVALENCE:
+								return "A submodule input port cannot connect to a submodule equivalence port.";
+							default:
+							}
+							break;
+						case OUTPUT:
+							switch(targetPortType)
+							{
+							case INPUT:
+								if (mxGraphModel.getDirectedEdgeCount(model, target, false, edge) != 0)
+								{
+									return "An input port cannot have more than one incoming connection.";
+								}
+								return null;
+							case OUTPUT:
+								return "A submodule output port cannot connect to a submodule output port.";
+							case EQUIVALENCE:
+								return "A submodule output port cannot connect to a submodule equivalence port.";
+							default:
+							}
+							break;
+						case EQUIVALENCE:
+							switch(targetPortType)
+							{
+							case INPUT:
+								if (mxGraphModel.getDirectedEdgeCount(model, target, false, edge) != 0)
+								{
+									return "An input port cannot have more than one incoming connection.";
+								}
+								return null;
+							case OUTPUT:
+								return "A submodule equivalence port cannot connect to a submodule output port.";
+							case EQUIVALENCE:
+								/*
+								if (mxGraphModel.getDirectedEdgeCount(model, target, false, edge) != 0)
+								{
+									return "An equivalence port cannot have more than one incoming connection.";
+								}
+								*/
+								return null;
+							default:
+							}
+							break;
+						default:
+						}
+					}
+				}
+			}
+		}
+		
+		
+		/*
+		if (sourceObject instanceof Port && targetObject instanceof Port)
+		{
+			Port sourcePort = (Port)sourceObject;
+			Port targetPort = (Port)targetObject;
 			Module sourceModule = sourcePort.getParent();
 			Module targetModule = targetPort.getParent();
 			
 			//System.out.println("Source: " + ((mxCell)source).getValue().toString());
 			//System.out.println("Target: " + ((mxCell)target).getValue().toString());
-			PortType sourceType = ((Port)((mxCell)source).getValue()).getType();
-			PortType targetType = ((Port)((mxCell)target).getValue()).getType();
+			PortType sourcePortType = ((Port)sourceObject).getType();
+			PortType targetPortType = ((Port)targetObject).getType();
 			
 			if(sourceModule == targetModule)
 			{
@@ -365,22 +814,22 @@ public class ACGraph extends mxGraph
 			if(sourceModule == targetModule.getParent())
 			{
 				// the targetModule is a submodule
-				switch(sourceType)
+				switch(sourcePortType)
 				{
 				case INPUT:
-					if (targetType.compareTo(PortType.OUTPUT) == 0)
+					if (targetPortType.compareTo(PortType.OUTPUT) == 0)
 					{
 						return "A Module input port cannot connect to a Submodule output port.";
 					}
 					break;
 				case OUTPUT:
-					if (targetType.compareTo(PortType.INPUT) == 0)
+					if (targetPortType.compareTo(PortType.INPUT) == 0)
 					{
 						return "A Module output port cannot connect to a Submodule input port.";
 					}
 					break;
 				case EQUIVALENCE:
-					if (targetType.compareTo(PortType.OUTPUT) == 0)
+					if (targetPortType.compareTo(PortType.OUTPUT) == 0)
 					{
 						return "A Module equivalence port cannot connect to a Submodule output port.";
 					}
@@ -391,16 +840,16 @@ public class ACGraph extends mxGraph
 			else if (sourceModule.getParent() == targetModule)
 			{
 				// the sourceModule is a submodule
-				switch(sourceType)
+				switch(sourcePortType)
 				{
 				case INPUT:
-					if (targetType.compareTo(PortType.OUTPUT) == 0)
+					if (targetPortType.compareTo(PortType.OUTPUT) == 0)
 					{
 						return "A Submodule input port cannot connect to a Module output port.";
 					}
 					break;
 				case OUTPUT:
-					switch(targetType)
+					switch(targetPortType)
 					{
 					case INPUT:
 						return "A Submodule output port cannot connect to a Module input port.";
@@ -419,10 +868,10 @@ public class ACGraph extends mxGraph
 			else
 			{
 				// both the sourceModule and the targetModule are submodules
-				switch(sourceType)
+				switch(sourcePortType)
 				{
 				case INPUT:
-					switch(targetType)
+					switch(targetPortType)
 					{
 					case INPUT:
 						return "A Submodule input port cannot connect to another Submodule input port.";
@@ -433,13 +882,13 @@ public class ACGraph extends mxGraph
 					default:
 					}
 				case OUTPUT:
-					if (targetType.compareTo(PortType.OUTPUT) == 0)
+					if (targetPortType.compareTo(PortType.OUTPUT) == 0)
 					{
 						return "A Submodule output port cannot connect to another Submodule output port.";
 					}
 					break;
 				case EQUIVALENCE:
-					if (targetType.compareTo(PortType.OUTPUT) == 0)
+					if (targetPortType.compareTo(PortType.OUTPUT) == 0)
 					{
 						return "A Submodule equivalence port cannot connect to another Submodule output port.";
 					}
@@ -448,6 +897,7 @@ public class ACGraph extends mxGraph
 				}
 			}
 		}
+		*/
 		/*
 		if ((sourceType.compareTo(PortType.OUTPUT) == 0) && (targetType.compareTo(PortType.INPUT) == 0))
 		{

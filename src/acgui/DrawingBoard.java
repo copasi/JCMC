@@ -471,7 +471,16 @@ public class DrawingBoard extends JPanel
 	{
 		Object parentCell = edge.getParent().getDrawingCell();
 		//Object edgeCell = graph.createEdge(parentCell, null, edge, source, target, "ConnectionEdge");
-		Object edgeCell = graph.insertEdge(parentCell, null, edge, source, target, "ConnectionEdge");
+		String drawingCellStyle = "";
+		if (edge.getDrawingCellStyle() != "")
+		{
+			drawingCellStyle = edge.getDrawingCellStyle();
+		}
+		else
+		{
+			drawingCellStyle = "ConnectionEdge";
+		}
+		Object edgeCell = graph.insertEdge(parentCell, null, edge, source, target, drawingCellStyle);
 		edge.setDrawingCell(edgeCell);
 	}
 	
@@ -557,6 +566,18 @@ public class DrawingBoard extends JPanel
 		graph.setSelectionCell(cell);
 	}
 
+	public void setValue(Object cell, Object value)
+	{
+		graph.getModel().beginUpdate();
+		try
+		{
+			graph.getModel().setValue(cell, value);
+		}
+		finally
+		{
+			graph.getModel().endUpdate();
+		}
+	}
 	/**
 	 * Return the current loaded module.
 	 * 
@@ -693,7 +714,143 @@ public class DrawingBoard extends JPanel
 			}
 		}
 	}
+	
+	private void addCell(Object pCell, Object cell)
+	{
+		Object parentCell = null;
+		if (pCell == null)
+		{
+			parentCell = activeModule.getDrawingCell();
+		}
+		else
+		{
+			parentCell = pCell;
+		}
+		
+		graph.getModel().beginUpdate();
+		try
+		{
+			graph.getModel().add(parentCell, cell, 0);
+		}
+		finally
+		{
+			graph.getModel().endUpdate();
+		}
+	}
+	
+	private Object createEquivalenceNodeCell(Object pCell)
+	{
+		Object parentCell = null;
+		if (pCell == null)
+		{
+			parentCell = activeModule.getDrawingCell();
+		}
+		else
+		{
+			parentCell = pCell;
+		}
+		
+		mxCell eNodeCell = (mxCell)graph.createVertex(parentCell, null, null, 5, 5, DEFAULT_EQUIVALENCENODE_WIDTH, DEFAULT_EQUIVALENCENODE_HEIGHT, "EquivalenceNode");
+		eNodeCell.setVertex(true);
+		eNodeCell.setConnectable(true);
+		
+		return eNodeCell;
+	}
+	
+	private Object createVisibleVariableCell(Object pCell)
+	{
+		Object parentCell = null;
+		if (pCell == null)
+		{
+			parentCell = activeModule.getDrawingCell();
+		}
+		else
+		{
+			parentCell = pCell;
+		}
+		
+		mxCell varCell = (mxCell)graph.createVertex(parentCell, null, null, 5, 5, DEFAULT_VISIBLEVARIABLE_WIDTH, DEFAULT_VISIBLEVARIABLE_HEIGHT, "VisibleVariable");
+		varCell.setVertex(true);
+		varCell.setConnectable(true);
+		
+		return varCell;
+	}
+	
+	private Object createConnectionCell(Object pCell, Object source, Object target, String style)
+	{
+		Object parentCell = null;
+		if (pCell == null)
+		{
+			parentCell = activeModule.getDrawingCell();
+		}
+		else
+		{
+			parentCell = pCell;
+		}
+		
+		Object edgeCell = graph.insertEdge(parentCell, null, null, source, target, style);
+		
+		return edgeCell;
+	}
 
+	private void setCellGeometryToCenterOfEdge(Object cell, Object edge)
+	{
+		mxGeometry formerGeo = ((mxCell)cell).getGeometry();
+		mxGeometry edgeGeo = ((mxCell)edge).getGeometry();
+		double width = formerGeo.getWidth();
+		double height = formerGeo.getHeight();
+		double xPosition = (edgeGeo.getSourcePoint().getX() + edgeGeo.getTargetPoint().getX()) / 2 - (width/2);;
+		double yPosition = (edgeGeo.getSourcePoint().getY() + edgeGeo.getTargetPoint().getY()) / 2 - (height/2);;
+		
+		mxGeometry geo = new mxGeometry(xPosition, yPosition, width, height);
+		
+		graph.getModel().beginUpdate();
+		try
+		{
+			graph.getModel().setGeometry(cell, geo);
+		}
+		finally
+		{
+			graph.getModel().endUpdate();
+		}
+	}
+	
+	private void setCellGeometryToCenterPointOfCells(Object cell, Object sourceCell, Object targetCell)
+	{
+		mxGeometry sourceGeo = ((mxCell)sourceCell).getGeometry();
+		if (((mxCell)sourceCell).getValue() instanceof Port)
+		{
+			// sourceCell represents a Port.
+			// The drawing cell of a Port has relative geometry to its parent.
+			// Set sourceGeo to the geometry of the Port's parent.
+			sourceGeo = ((mxCell)((Port)((mxCell)sourceCell).getValue()).getParent().getDrawingCell()).getGeometry();
+		}
+		mxGeometry targetGeo = ((mxCell)targetCell).getGeometry();
+		if (((mxCell)targetCell).getValue() instanceof Port)
+		{
+			// targetCell represents a Port.
+			// The drawing cell of a Port has relative geometry to its parent.
+			// Set targetGeo to the geometry of the Port's parent.
+			targetGeo = ((mxCell)((Port)((mxCell)targetCell).getValue()).getParent().getDrawingCell()).getGeometry();
+		}
+		double width = ((mxCell)cell).getGeometry().getWidth();
+		double height = ((mxCell)cell).getGeometry().getHeight();
+		double xPosition = (sourceGeo.getX() + targetGeo.getX()) / 2 - (width/2);;
+		double yPosition = (sourceGeo.getY() + targetGeo.getY()) / 2 - (height/2);;
+		
+		mxGeometry geo = new mxGeometry(xPosition, yPosition, width, height);
+		
+		graph.getModel().beginUpdate();
+		try
+		{
+			graph.getModel().setGeometry(cell, geo);
+		}
+		finally
+		{
+			graph.getModel().endUpdate();
+		}
+	}
+	
 	/**
 	 * Used for debugging purposes.
 	 * @param cell the parent cell
@@ -1233,6 +1390,44 @@ public class DrawingBoard extends JPanel
 			}
 		}
 	}
+	
+	private String generateName(String oldName)
+	{
+		String name = oldName;
+		int index;
+		
+		while(!AC_GUI.newNameValidation(name))
+		{
+			try
+			{
+				if (name.length() > 1)
+				{
+					if (name.charAt(name.length()-2) == '_')
+					{
+						index = Integer.parseInt(name.substring(name.length()-1));
+						name = name.substring(0, name.length()-1);
+						index++;
+						name += index;
+					}
+					else
+					{
+						name += "_1";
+					}
+				}
+				else
+				{
+					name += "_1";
+				}
+			}
+			catch (Exception e)
+			{
+				e.printStackTrace();
+				System.out.println("Problem parsing oldName.");
+			}
+		}
+		
+		return name;
+	}
 
 	/**
 	 * Add various display properties to the graph stylesheet.
@@ -1462,6 +1657,14 @@ public class DrawingBoard extends JPanel
 		cell.put(mxConstants.STYLE_ENDARROW, "none");
 		
 		styleSheet.putCellStyle("ConnectionEdge", cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		cell.put(mxConstants.STYLE_DASHED, "1");
+		
+		styleSheet.putCellStyle("DashedConnectionEdge", cell);
 	}
 
 	/**
@@ -1469,26 +1672,26 @@ public class DrawingBoard extends JPanel
 	 */
 	private void installListeners()
 	{
-		// when a cell is selected the corresponding tree node is also highlighted.
-		graphComponent.getGraphControl().addMouseListener(new MouseAdapter() {
-			public void mouseReleased(MouseEvent e)
-			{
-				// Object cell = graphComponent.getCellAt(e.getX(), e.getY());
-				mxCell cell = (mxCell) graphComponent.getCellAt(e.getX(), e.getY());
-				// Object obj = graph.getModel().getValue(cell);
-				// Module val = (Module) ((mxCell)cell).getValue();
-				mxCell dCell = ((mxCell) cell);
-				Port p;
 
+		// when right-click is pressed, create a popup menu.
+		graphComponent.getGraphControl().addMouseListener(new MouseAdapter() {
+			@Override
+			public void mousePressed(MouseEvent e)
+			{
+				//Object cell = graphComponent.getCellAt(e.getX(), e.getY());
+				mxCell cell = (mxCell) graphComponent.getCellAt(e.getX(), e.getY());
+				
+				
 				if (cell != null)
 				{
-					if (((mxCell) cell).getValue() instanceof Port)
+					if (cell.getValue() instanceof Port)
 					{
 						// System.out.println("port=" + ((mxCell) cell).getValue().toString());
 						// p = (Port) ((mxCell)cell).getValue();
+						AC_GUI.modelBuilder.setSelectedPort((Port)cell.getValue());
 					}
 
-					if (((mxCell) cell).getValue() instanceof Module)
+					if (cell.getValue() instanceof Module)
 					{
 						// System.out.println("cell=" + graph.getLabel(cell));
 						// Module mod = AC_GUI.moduleList.findModule(cell);
@@ -1496,27 +1699,14 @@ public class DrawingBoard extends JPanel
 						AC_GUI.currentGUI.setSelectedModule(cell);
 						//printCellCount(cell);
 					}
-				}
-				else
-				{
-					// System.out.println("Null click");
-				}
-			}
-		});
-
-		// when right-click is pressed, create a popup menu.
-		graphComponent.getGraphControl().addMouseListener(new MouseAdapter() {
-			@Override
-			public void mousePressed(MouseEvent e)
-			{
-				Object cell = graphComponent.getCellAt(e.getX(), e.getY());
-
-				if (cell != null && SwingUtilities.isRightMouseButton(e))
-				{
-					// System.out.println("cell=" + graph.getLabel(cell));
-					// System.out.println("button = " + e.getButton());
-					JPopupMenu menu = createPopupMenu(e.getPoint(), cell);
-					menu.show(graphComponent, e.getX(), e.getY());
+					
+					if (SwingUtilities.isRightMouseButton(e))
+					{
+						// System.out.println("cell=" + graph.getLabel(cell));
+						// System.out.println("button = " + e.getButton());
+						JPopupMenu menu = createPopupMenu(e.getPoint(), cell);
+						menu.show(graphComponent, e.getX(), e.getY());
+					}
 				}
 
 			}
@@ -1534,9 +1724,1291 @@ public class DrawingBoard extends JPanel
 				//System.out.println("Source port: " + sourcePort.getName());
 				//System.out.println("Target port: " + targetPort.getName());
 				mxCell cell = (mxCell)evt.getProperty("cell");
-				//check if the edge is connecting two equivalence ports
-				if (cell.getSource().getValue() instanceof Port && cell.getTarget().getValue() instanceof Port)
+				mxCell source = (mxCell)cell.getSource();
+				mxCell target = (mxCell)cell.getTarget();
+				
+				if ((source == null) || (target == null))
 				{
+					removeCell(cell);
+					return;
+				}
+				
+				Object sourceObject = source.getValue();
+				Object targetObject = target.getValue();
+				String newName;
+				
+				removeCell(cell);
+				
+				if (sourceObject instanceof VisibleVariable)
+				{
+					// the source is a visible variable
+					VisibleVariable sourceVisibleVariable = (VisibleVariable)sourceObject;
+					
+					if (targetObject instanceof VisibleVariable)
+					{
+						// the source is a visible variable
+						// the target is a visible variable
+						// cannot occur
+						return;
+					}
+					else if (targetObject instanceof EquivalenceNode)
+					{
+						// the source is a visible variable
+						// the target is an equivalence node
+						// cannot occur
+						return;
+					}
+					else if (targetObject instanceof Port)
+					{
+						// the source is a visible variable
+						// the target is a port
+						Port targetPort = (Port)targetObject;
+						PortType targetPortType = ((Port)targetObject).getType();
+						Module targetModule = targetPort.getParent();
+						
+						if(targetModule == AC_GUI.activeModule)
+						{
+							// the source is a visible variable
+							// the target is a port
+							// the targetModule is the active module
+							switch(targetPortType)
+							{
+							case INPUT:
+								// cannot occur
+								return;
+							case OUTPUT:
+								/*
+								if (mxGraphModel.getDirectedEdgeCount(graph.getModel(), target, false, cell) != 0)
+								{
+									return "An output port cannot have more than one incoming connection.";
+								}
+								*/
+								mxCell varToPortCell = (mxCell)createConnectionCell(null, source, target, "ConnectionEdge");
+								AC_GUI.addConnection(activeModule, varToPortCell);
+								return;
+							case EQUIVALENCE:
+								// cannot occur
+								return;
+							default:
+									
+							}
+						}
+						else
+						{
+							// the source is a visible variable
+							// the target is a port
+							// the targetModule is a submodule
+							switch(targetPortType)
+							{
+							case INPUT:
+								/*
+								if (mxGraphModel.getDirectedEdgeCount(graph.getModel(), target, false, cell) != 0)
+								{
+									return "An input port cannot have more than one incoming connection.";
+								}
+								*/
+								mxCell varToPortCell = (mxCell)createConnectionCell(null, source, target, "ConnectionEdge");
+								AC_GUI.addConnection(activeModule, varToPortCell);
+								return;
+							case OUTPUT:
+								// cannot occur
+								return;
+							case EQUIVALENCE:
+								// cannot occur
+								return;
+							default:
+									
+							}
+						}
+					}
+				}
+				else if (sourceObject instanceof EquivalenceNode)
+				{
+					// the source is an equivalence node
+					EquivalenceNode sourceENode = (EquivalenceNode)sourceObject;
+					
+					if (targetObject instanceof EquivalenceNode)
+					{
+						// the source is an equivalence node
+						// the target is an equivalence node
+						// cannot occur
+						return;
+					}
+					if (targetObject instanceof VisibleVariable)
+					{
+						// the source is an equivalence node
+						// the target is a visible variable
+						mxCell eNodeToVarCell = (mxCell)createConnectionCell(null, source, target, "DashedConnectionEdge");
+						AC_GUI.addConnection(activeModule, eNodeToVarCell);
+						return;
+					}
+					else if (targetObject instanceof Port)
+					{
+						// the source is an equivalence node
+						// the target is a port
+						Port targetPort = (Port)targetObject;
+						PortType targetPortType = ((Port)targetObject).getType();
+						Module targetModule = targetPort.getParent();
+						
+						if (targetModule == AC_GUI.activeModule)
+						{
+							// the source is an equivalence node
+							// the target is a port
+							// the targetModule is the active module
+							switch(targetPortType)
+							{
+							case INPUT:
+								// cannot occur
+								return;
+							case OUTPUT:
+								/*
+								if (mxGraphModel.getDirectedEdgeCount(model, target, false, edge) != 0)
+								{
+									return "An output port cannot have more than one incoming connection.";
+								}
+								*/
+								
+								mxCell eNodeToOutputCell = (mxCell)createConnectionCell(null, source, target, "ConnectionEdge");
+								AC_GUI.addConnection(activeModule, eNodeToOutputCell);
+								return;
+							case EQUIVALENCE:
+								/*
+								if (mxGraphModel.getDirectedEdgeCount(model, target, false, edge) != 0)
+								{
+									return "An equivalence port cannot have more than one incoming connection.";
+								}
+								*/
+								mxCell eNodeToPortCell = (mxCell)createConnectionCell(null, source, target, "ConnectionEdge");
+								AC_GUI.addConnection(activeModule, eNodeToPortCell);
+								return;
+							default:
+									
+							}
+						}
+						else
+						{
+							// the source is an equivalence node
+							// the target is a port
+							// the targetModule is a submodule
+							switch(targetPortType)
+							{
+							case INPUT:
+								/*
+								if (mxGraphModel.getDirectedEdgeCount(model, target, false, edge) != 0)
+								{
+									return "An input port cannot have more than one incoming connection.";
+								}
+								*/
+								
+								mxCell eNodeToPortCell = (mxCell)createConnectionCell(null, source, target, "ConnectionEdge");
+								AC_GUI.addConnection(activeModule, eNodeToPortCell);
+								return;
+							case OUTPUT:
+								// cannot occur
+								return;
+							case EQUIVALENCE:
+								/*
+								if (mxGraphModel.getDirectedEdgeCount(model, target, false, edge) != 0)
+								{
+									return "An equivalence port cannot have more than one incoming connection.";
+								}
+								*/
+								mxCell eNodeToPortCell1 = (mxCell)createConnectionCell(null, source, target, "ConnectionEdge");
+								AC_GUI.addConnection(activeModule, eNodeToPortCell1);
+								return;
+							default:
+									
+							}
+						}
+					}
+				}
+				else if (sourceObject instanceof Port)
+				{
+					// the source is a port
+					Port sourcePort = (Port)sourceObject;
+					PortType sourcePortType = sourcePort.getType();
+					Module sourceModule = sourcePort.getParent();
+					
+					if (sourceModule == AC_GUI.activeModule)
+					{
+						// the source is a port
+						// the sourceModule is the active module
+						if (targetObject instanceof EquivalenceNode)
+						{
+							// the source is a port
+							// the sourceModule is the active module
+							// the target is an equivalence node
+							// cannot occur
+							return;
+						}
+						else if (targetObject instanceof VisibleVariable)
+						{
+							// the source is a port
+							// the sourceModule is the active module
+							// the target is a visible variable
+							switch(sourcePortType)
+							{
+							case INPUT:
+								/*
+								if (mxGraphModel.getDirectedEdgeCount(model, target, false, edge) != 0)
+								{
+									return "A variable cannot have more than one incoming connection.";
+								}
+								*/
+								mxCell portToVarCell = (mxCell)createConnectionCell(null, source, target, "DashedConnectionEdge");
+								AC_GUI.addConnection(activeModule, portToVarCell);
+								return;
+							case OUTPUT:
+								// cannot occur
+								return;
+							case EQUIVALENCE:
+								/*
+								if (mxGraphModel.getDirectedEdgeCount(model, target, false, edge) != 0)
+								{
+									return "A variable cannot have more than one incoming connection.";
+								}
+								*/
+								mxCell eportToVarCell = (mxCell)createConnectionCell(null, source, target, "DashedConnectionEdge");
+								AC_GUI.addConnection(activeModule, eportToVarCell);
+								return;
+							default:
+									
+							}
+						}
+						else if (targetObject instanceof Port)
+						{
+							// the source is a port
+							// the sourceModule is the active module
+							// the target is a port
+							Port targetPort = (Port)targetObject;
+							PortType targetPortType = targetPort.getType();
+							Module targetModule = targetPort.getParent();
+							
+							if (sourceModule == targetModule)
+							{
+								// the source and target ports belong to the same module
+								// cannot occur
+								return;
+							}
+							
+							// since the sourceModule is the active module,
+							// the targetModule must be a submodule
+							switch(sourcePortType)
+							{
+							case INPUT:
+								switch(targetPortType)
+								{
+								case INPUT:
+									/*
+									if (mxGraphModel.getDirectedEdgeCount(graph.getModel(), target, false, cell) != 0)
+									{
+										
+										return;
+									}
+									*/
+									if (mxGraphModel.getDirectedEdgeCount(graph.getModel(), source, true, cell) != 0)
+									{
+										// the source has an existing outgoing edge
+										System.out.println("Source has existing edges.");
+										mxCell existingEdgeTarget = (mxCell)((mxCell)graph.getModel().getEdgeAt(source, 0)).getTarget();
+										if (existingEdgeTarget.getValue() instanceof VisibleVariable)
+										{
+											// add connection from existing visible variable to the selected target
+											mxCell varToTargetCell = (mxCell)createConnectionCell(null, existingEdgeTarget, target, "ConnectionEdge");
+											//addCell(null, varToTargetCell);
+											AC_GUI.addConnection(activeModule, varToTargetCell);
+										}
+										return;
+									}
+									// the source has no existing outgoing edges
+									System.out.println("Source has no existing edges.");
+									// create a visible variable
+									newName = generateName(sourcePort.getRefName());
+									mxCell varCell = (mxCell)createVisibleVariableCell(null);
+									addCell(null, varCell);
+									setCellGeometryToCenterOfEdge(varCell, cell);
+									AC_GUI.addVisibleVariable(activeModule, newName, varCell);
+									mxCell sourceToVarCell = (mxCell)createConnectionCell(null, source, varCell, "DashedConnectionEdge");
+									AC_GUI.addConnection(activeModule, sourceToVarCell);
+									mxCell varToTargetCell = (mxCell)createConnectionCell(null, varCell, target, "ConnectionEdge");
+									AC_GUI.addConnection(activeModule, varToTargetCell);
+									/*
+									if (AC_GUI.newNameValidation(sourcePort.getRefName()))
+									{
+										mxCell varCell = (mxCell)createVisibleVariableCell(null);
+										addCell(null, varCell);
+										setCellGeometryToCenterOfEdge(varCell, cell);
+										AC_GUI.addVisibleVariable(activeModule, sourcePort.getRefName(), varCell);
+										mxCell sourceToVarCell = (mxCell)createConnectionCell(null, source, varCell, "DashedConnectionEdge");
+										AC_GUI.addConnection(activeModule, sourceToVarCell);
+										mxCell varToTargetCell = (mxCell)createConnectionCell(null, varCell, target, "ConnectionEdge");
+										AC_GUI.addConnection(activeModule, varToTargetCell);
+									}
+									else
+									{
+										String msg = "Error: \"";
+										msg += sourcePort.getRefName();
+										msg += "\" is already the name of a Species or Global Quantity.";
+										JOptionPane.showMessageDialog(null, msg);
+										return;
+									}
+									*/
+									//mxCell portToPortCell = (mxCell)createConnectionCell(null, source, target, "ConnectionEdge");
+									//AC_GUI.addConnection(activeModule, portToPortCell);
+									return;
+								case OUTPUT:
+									// cannot occur
+									return;
+								case EQUIVALENCE:
+									// cannot occur
+									return;
+								default:
+								}
+								break;
+							case OUTPUT:
+								switch(targetPortType)
+								{
+								case INPUT:
+									// cannot occur
+									return;
+								case OUTPUT:
+									// cannot occur
+									return;
+								case EQUIVALENCE:
+									// cannot occur
+									return;
+								default:
+								}
+								break;
+							case EQUIVALENCE:
+								mxCell eNodeCell;
+								mxCell sourceToeNodeCell;
+								mxCell eNodeToTargetCell;
+								switch(targetPortType)
+								{
+								case INPUT:
+									if (mxGraphModel.getDirectedEdgeCount(graph.getModel(), source, false, cell) != 0)
+									{
+										// the source has an existing incoming edge
+										mxCell existingEdgeSource = (mxCell)((mxCell)graph.getModel().getEdgeAt(source, 0)).getSource();
+										if (existingEdgeSource.getValue() instanceof EquivalenceNode)
+										{
+											// the existing edge connects from an equivalence node
+											EquivalenceNode eNode = (EquivalenceNode)existingEdgeSource.getValue();
+										
+											// add connection from existing eNode to the selected target
+											eNodeToTargetCell = (mxCell)createConnectionCell(null, existingEdgeSource, target, "ConnectionEdge");
+											AC_GUI.addConnection(activeModule, eNodeToTargetCell);
+										
+										}
+										return;
+									}
+									// the source has no existing outgoing edges
+									System.out.println("Source has no existing outgoing edges.");
+									// create an equivalence node
+									newName = generateName(sourcePort.getRefName());
+									eNodeCell = (mxCell)createEquivalenceNodeCell(null);
+									addCell(null, eNodeCell);
+									setCellGeometryToCenterOfEdge(eNodeCell, cell);
+									AC_GUI.addEquivalenceNode(activeModule, newName, eNodeCell);
+									sourceToeNodeCell = (mxCell)createConnectionCell(null, eNodeCell, source, "ConnectionEdge");
+									AC_GUI.addConnection(activeModule, sourceToeNodeCell);
+									eNodeToTargetCell = (mxCell)createConnectionCell(null, eNodeCell, target, "ConnectionEdge");
+									AC_GUI.addConnection(activeModule, eNodeToTargetCell);
+									/*
+									if (AC_GUI.newNameValidation(sourcePort.getRefName()))
+									{
+										mxCell eNodeCell = (mxCell)createEquivalenceNodeCell(null);
+										addCell(null, eNodeCell);
+										setCellGeometryToCenterOfEdge(eNodeCell, cell);
+										AC_GUI.addEquivalenceNode(activeModule, sourcePort.getRefName(), eNodeCell);
+										mxCell sourceToeNodeCell = (mxCell)createConnectionCell(null, eNodeCell, source, "ConnectionEdge");
+										AC_GUI.addConnection(activeModule, sourceToeNodeCell);
+										mxCell eNodeToTargetCell = (mxCell)createConnectionCell(null, eNodeCell, target, "ConnectionEdge");
+										AC_GUI.addConnection(activeModule, eNodeToTargetCell);
+									}
+									else
+									{
+										String msg = "Error: \"";
+										msg += sourcePort.getRefName();
+										msg += "\" is already the name of a Species or Global Quantity.";
+										JOptionPane.showMessageDialog(null, msg);
+										return;
+									}
+									*/
+									//mxCell portToPortCell = (mxCell)createConnectionCell(null, source, target, "ConnectionEdge");
+									//AC_GUI.addConnection(activeModule, portToPortCell);
+									return;
+								case OUTPUT:
+									// cannot occur
+									return;
+								case EQUIVALENCE:
+									/*
+									if (mxGraphModel.getDirectedEdgeCount(model, target, false, edge) != 0)
+									{
+										return "An equivalence port cannot have more than one incoming connection.";
+									}
+									*/
+									boolean sourceHasIncomingEdge;
+									boolean targetHasIncomingEdge;
+									
+									
+									sourceHasIncomingEdge = (mxGraphModel.getDirectedEdgeCount(graph.getModel(), source, false, cell) != 0);
+									targetHasIncomingEdge = (mxGraphModel.getDirectedEdgeCount(graph.getModel(), target, false, cell) != 0);
+									eNodeCell = null;
+									
+									if (!sourceHasIncomingEdge && !targetHasIncomingEdge)
+									{
+										// the source has no incoming edges
+										// the target has no incoming edges
+										// create an equivalence node
+										// create connection from eNode->source port
+										// create connection from eNode->target port
+										
+										// create an equivalence node
+										newName = generateName(sourcePort.getRefName());
+										eNodeCell = (mxCell)createEquivalenceNodeCell(null);
+										addCell(null, eNodeCell);
+										setCellGeometryToCenterOfEdge(eNodeCell, cell);
+										AC_GUI.addEquivalenceNode(activeModule, newName, eNodeCell);
+										sourceToeNodeCell = (mxCell)createConnectionCell(null, eNodeCell, source, "ConnectionEdge");
+										AC_GUI.addConnection(activeModule, sourceToeNodeCell);
+										eNodeToTargetCell = (mxCell)createConnectionCell(null, eNodeCell, target, "ConnectionEdge");
+										AC_GUI.addConnection(activeModule, eNodeToTargetCell);
+										/*
+										if (AC_GUI.newNameValidation(sourcePort.getRefName()))
+										{
+											eNodeCell = (mxCell)createEquivalenceNodeCell(null);
+											addCell(null, eNodeCell);
+											setCellGeometryToCenterOfEdge(eNodeCell, cell);
+											AC_GUI.addEquivalenceNode(activeModule, sourcePort.getRefName(), eNodeCell);
+											mxCell sourceToeNodeCell = (mxCell)createConnectionCell(null, eNodeCell, source, "ConnectionEdge");
+											AC_GUI.addConnection(activeModule, sourceToeNodeCell);
+											mxCell eNodeToTargetCell = (mxCell)createConnectionCell(null, eNodeCell, target, "ConnectionEdge");
+											AC_GUI.addConnection(activeModule, eNodeToTargetCell);
+										}
+										else
+										{
+											String msg = "Error: \"";
+											msg += sourcePort.getRefName();
+											msg += "\" is already the name of a Species or Global Quantity.";
+											JOptionPane.showMessageDialog(null, msg);
+											return;
+										}
+										*/
+										return;
+									}
+									
+									if (sourceHasIncomingEdge)
+									{
+										// the source has an incoming edge
+										
+										Object sourceIncomingEdges [] = mxGraphModel.getIncomingEdges(graph.getModel(), source);
+										mxCell existingeNodeCell = null;
+										for(int i = 0; i < sourceIncomingEdges.length; i++)
+										{
+											if (((mxCell)sourceIncomingEdges[i]).getSource().getValue() instanceof EquivalenceNode)
+											{
+												existingeNodeCell = (mxCell)((mxCell)sourceIncomingEdges[i]).getSource();
+											}
+										}
+										if (existingeNodeCell != null)
+										{
+											// the source of the incoming edge is an equivalence node
+											// check if target equivalence port is already connected to the eNode
+											int edgesBetween = mxGraphModel.getEdgesBetween(graph.getModel(), existingeNodeCell, target, false).length;
+											if (edgesBetween == 0)
+											{
+												// the target equivalence port is not connected to the eNode
+												// create an edge between the target equivalence port and the eNode
+												eNodeToTargetCell = (mxCell)createConnectionCell(null, existingeNodeCell, target, "ConnectionEdge");
+												AC_GUI.addConnection(activeModule, eNodeToTargetCell);
+											}
+											else
+											{
+												// the target equivalence port is already connected to the eNode
+												JOptionPane.showMessageDialog(null,
+														"The two equivalence ports are already connected through an equivalence node.");
+											}
+										}
+										else
+										{
+											System.out.println("Problem: module.equivalenceport->submodule.equivalenceport" +
+													"existingeNodeCell equals null");
+										}
+										return;
+									}
+									
+									// the source has no incoming edges
+									System.out.println("Source has no existing incoming edges.");
+									if (targetHasIncomingEdge)
+									{
+										// the target has existing incoming edges
+										Object targetIncomingEdges [] = mxGraphModel.getIncomingEdges(graph.getModel(), target);
+										for(int i = 0; i < targetIncomingEdges.length; i++)
+										{
+											if (((mxCell)targetIncomingEdges[i]).getSource().getValue() instanceof EquivalenceNode)
+											{
+												eNodeCell = (mxCell)((mxCell)targetIncomingEdges[i]).getSource();
+											}
+										}
+										if (eNodeCell != null)
+										{
+											// create connection from eNode->source port
+											mxCell eNodeToSourceCell = (mxCell)createConnectionCell(null, eNodeCell, source, "ConnectionEdge");
+											AC_GUI.addConnection(activeModule, eNodeToSourceCell);
+										}
+										else
+										{
+											System.out.println("Problem: module.equivalenceport->submodule.equivalenceport" +
+													" eNodeCell equals null");
+										}
+										return;
+									}
+									return;
+								default:
+								}
+								break;
+							default:
+							}
+						}
+					}
+					else
+					{
+						// the source is a port
+						// the sourceModule is a submodule
+						if (targetObject instanceof EquivalenceNode)
+						{
+							// the source is a port
+							// the sourceModule is a submodule
+							// the target is an equivalence node
+							// cannot occur
+							return;
+						}
+						else if (targetObject instanceof VisibleVariable)
+						{
+							// the source is a port
+							// the sourceModule is a submodule
+							// the target is a visible variable
+							switch(sourcePortType)
+							{
+							case INPUT:
+								// cannot occur
+								return;
+							case OUTPUT:
+								/*
+								if (mxGraphModel.getDirectedEdgeCount(model, target, false, edge) != 0)
+								{
+									return "A variable cannot have more than one incoming connection.";
+								}
+								*/
+								mxCell portToVarCell = (mxCell)createConnectionCell(null, source, target, "DashedConnectionEdge");
+								AC_GUI.addConnection(activeModule, portToVarCell);
+								return;
+							case EQUIVALENCE:
+								/*
+								if (mxGraphModel.getDirectedEdgeCount(model, target, false, edge) != 0)
+								{
+									return "A variable cannot have more than one incoming connection.";
+								}
+								*/
+								mxCell portToVarCell1 = (mxCell)createConnectionCell(null, source, target, "DashedConnectionEdge");
+								AC_GUI.addConnection(activeModule, portToVarCell1);
+								return;
+							default:
+							}
+						}
+						else if (targetObject instanceof Port)
+						{
+							// the source is a port
+							// the sourceModule is a submodule
+							// the target is a port
+							Port targetPort = (Port)targetObject;
+							PortType targetPortType = targetPort.getType();
+							Module targetModule = targetPort.getParent();
+							
+							if (targetModule == AC_GUI.activeModule)
+							{
+								// the source is a port
+								// the sourceModule is a submodule
+								// the target is a port
+								// the targetModule is the active module
+								switch(sourcePortType)
+								{
+								case INPUT:
+									switch(targetPortType)
+									{
+									case INPUT:
+										// cannot occur
+										return;
+									case OUTPUT:
+										// cannot occur
+										return;
+									case EQUIVALENCE:
+										// cannot occur
+										return;
+									default:
+									}
+									break;
+								case OUTPUT:
+									switch(targetPortType)
+									{
+									case INPUT:
+										// cannot occur
+										return;
+									case OUTPUT:
+										/*
+										if (mxGraphModel.getDirectedEdgeCount(model, target, false, edge) != 0)
+										{
+											return "An output port cannot have more than one incoming connection.";
+										}
+										*/
+										if (mxGraphModel.getDirectedEdgeCount(graph.getModel(), source, true, cell) != 0)
+										{
+											// the source has existing outgoing edges
+											System.out.println("Source has existing outgoing edges.");
+											mxCell varCell = null;
+											Object outgoingEdges [] = mxGraphModel.getOutgoingEdges(graph.getModel(), source);
+											for(int i = 0; i < outgoingEdges.length; i++)
+											{
+												if (((mxCell)outgoingEdges[i]).getTarget().getValue() instanceof VisibleVariable)
+												{
+													varCell = (mxCell)((mxCell)outgoingEdges[i]).getTarget();
+												}
+											}
+											if (varCell != null)
+											{
+												mxCell varToPortCell = (mxCell)createConnectionCell(null, varCell, target, "ConnectionEdge");
+												AC_GUI.addConnection(activeModule, varToPortCell);
+											}
+											else
+											{
+												System.out.println("Problem: submodule.outputport->module.outputport, " +
+														"varCell is null.");
+											}
+											return;
+										}
+										// the source has no existing outgoing edges
+										System.out.println("Source has no existing edges.");
+										// create a visible variable
+										newName = generateName(sourcePort.getRefName());
+										mxCell varCell = (mxCell)createVisibleVariableCell(null);
+										addCell(null, varCell);
+										setCellGeometryToCenterOfEdge(varCell, cell);
+										AC_GUI.addVisibleVariable(activeModule, sourcePort.getRefName(), varCell);
+										mxCell sourceToVarCell = (mxCell)createConnectionCell(null, source, varCell, "DashedConnectionEdge");
+										AC_GUI.addConnection(activeModule, sourceToVarCell);
+										mxCell varToTargetCell = (mxCell)createConnectionCell(null, varCell, target, "ConnectionEdge");
+										AC_GUI.addConnection(activeModule, varToTargetCell);
+										/*
+										if (AC_GUI.newNameValidation(sourcePort.getRefName()))
+										{
+											mxCell varCell = (mxCell)createVisibleVariableCell(null);
+											addCell(null, varCell);
+											setCellGeometryToCenterOfEdge(varCell, cell);
+											AC_GUI.addVisibleVariable(activeModule, sourcePort.getRefName(), varCell);
+											mxCell sourceToVarCell = (mxCell)createConnectionCell(null, source, varCell, "DashedConnectionEdge");
+											AC_GUI.addConnection(activeModule, sourceToVarCell);
+											mxCell varToTargetCell = (mxCell)createConnectionCell(null, varCell, target, "ConnectionEdge");
+											AC_GUI.addConnection(activeModule, varToTargetCell);
+										}
+										else
+										{
+											String msg = "Error: \"";
+											msg += sourcePort.getRefName();
+											msg += "\" is already the name of a Species or Global Quantity.";
+											JOptionPane.showMessageDialog(null, msg);
+											return;
+										}
+										*/
+										//mxCell portToPortCell = (mxCell)createConnectionCell(null, source, target, "ConnectionEdge");
+										//AC_GUI.addConnection(activeModule, portToPortCell);
+										return;
+									case EQUIVALENCE:
+										// cannot occur
+										return;
+									default:
+									}
+									break;
+								case EQUIVALENCE:
+									switch(targetPortType)
+									{
+									case INPUT:
+										// cannot occur
+										return;
+									case OUTPUT:
+										// cannot occur
+										return;
+									case EQUIVALENCE:
+										/*
+										if (mxGraphModel.getDirectedEdgeCount(model, target, false, edge) != 0)
+										{
+											return "An equivalence port cannot have more than one incoming connection.";
+										}
+										*/
+										/*
+										// the source has no existing outgoing edges
+										System.out.println("Source has no existing edges.");
+										// create an equivalence node
+										mxCell eNodeCell = (mxCell)createEquivalenceNodeCell(null);
+										addCell(null, eNodeCell);
+										setCellGeometryToCenterOfEdge(eNodeCell, cell);
+										AC_GUI.addEquivalenceNode(activeModule, sourcePort.getRefName(), eNodeCell);
+										mxCell sourceToeNodeCell = (mxCell)createConnectionCell(null, source, eNodeCell, "ConnectionEdge");
+										AC_GUI.addConnection(activeModule, sourceToeNodeCell);
+										mxCell eNodeToTargetCell = (mxCell)createConnectionCell(null, eNodeCell, target, "ConnectionEdge");
+										AC_GUI.addConnection(activeModule, eNodeToTargetCell);
+										//mxCell portToPortCell = (mxCell)createConnectionCell(null, source, target, "ConnectionEdge");
+										//AC_GUI.addConnection(activeModule, portToPortCell);
+										return;
+										*/
+										boolean sourceHasIncomingEdge;
+										boolean targetHasIncomingEdge;
+										mxCell eNodeCell;
+										
+										sourceHasIncomingEdge = (mxGraphModel.getDirectedEdgeCount(graph.getModel(), source, false, cell) != 0);
+										targetHasIncomingEdge = (mxGraphModel.getDirectedEdgeCount(graph.getModel(), target, false, cell) != 0);
+										eNodeCell = null;
+										
+										if (!sourceHasIncomingEdge && !targetHasIncomingEdge)
+										{
+											// the source has no incoming edges
+											// the target has no incoming edges
+											// create an equivalence node
+											// create connection from eNode->source port
+											// create connection from eNode->target port
+											
+											// create an equivalence node
+											newName = generateName(sourcePort.getRefName());
+											eNodeCell = (mxCell)createEquivalenceNodeCell(null);
+											addCell(null, eNodeCell);
+											setCellGeometryToCenterOfEdge(eNodeCell, cell);
+											AC_GUI.addEquivalenceNode(activeModule, newName, eNodeCell);
+											mxCell sourceToeNodeCell = (mxCell)createConnectionCell(null, eNodeCell, source, "ConnectionEdge");
+											AC_GUI.addConnection(activeModule, sourceToeNodeCell);
+											mxCell eNodeToTargetCell = (mxCell)createConnectionCell(null, eNodeCell, target, "ConnectionEdge");
+											AC_GUI.addConnection(activeModule, eNodeToTargetCell);
+											/*
+											if (AC_GUI.newNameValidation(sourcePort.getRefName()))
+											{
+												eNodeCell = (mxCell)createEquivalenceNodeCell(null);
+												addCell(null, eNodeCell);
+												setCellGeometryToCenterOfEdge(eNodeCell, cell);
+												AC_GUI.addEquivalenceNode(activeModule, sourcePort.getRefName(), eNodeCell);
+												mxCell sourceToeNodeCell = (mxCell)createConnectionCell(null, eNodeCell, source, "ConnectionEdge");
+												AC_GUI.addConnection(activeModule, sourceToeNodeCell);
+												mxCell eNodeToTargetCell = (mxCell)createConnectionCell(null, eNodeCell, target, "ConnectionEdge");
+												AC_GUI.addConnection(activeModule, eNodeToTargetCell);
+											}
+											else
+											{
+												String msg = "Error: \"";
+												msg += sourcePort.getRefName();
+												msg += "\" is already the name of a Species or Global Quantity.";
+												JOptionPane.showMessageDialog(null, msg);
+												return;
+											}
+											*/
+											return;
+										}
+										
+										if (sourceHasIncomingEdge)
+										{
+											// the source has an incoming edge
+											
+											Object sourceIncomingEdges [] = mxGraphModel.getIncomingEdges(graph.getModel(), source);
+											mxCell existingeNodeCell = null;
+											for(int i = 0; i < sourceIncomingEdges.length; i++)
+											{
+												if (((mxCell)sourceIncomingEdges[i]).getSource().getValue() instanceof EquivalenceNode)
+												{
+													existingeNodeCell = (mxCell)((mxCell)sourceIncomingEdges[i]).getSource();
+												}
+											}
+											if (existingeNodeCell != null)
+											{
+												// the source of the incoming edge is an equivalence node
+												// check if target equivalence port is already connected to the eNode
+												int edgesBetween = mxGraphModel.getEdgesBetween(graph.getModel(), existingeNodeCell, target, false).length;
+												if (edgesBetween == 0)
+												{
+													// the target equivalence port is not connected to the eNode
+													// create an edge between the target equivalence port and the eNode
+													mxCell eNodeToTargetCell = (mxCell)createConnectionCell(null, existingeNodeCell, target, "ConnectionEdge");
+													AC_GUI.addConnection(activeModule, eNodeToTargetCell);
+												}
+												else
+												{
+													// the target equivalence port is already connected to the eNode
+													JOptionPane.showMessageDialog(null,
+															"The two equivalence ports are already connected through an equivalence node.");
+												}
+											}
+											else
+											{
+												System.out.println("Problem: submodule.equivalenceport->module.equivalenceport" +
+														"existingeNodeCell equals null");
+											}
+											return;
+										}
+										
+										// the source has no incoming edges
+										System.out.println("Source has no existing incoming edges.");
+										if (targetHasIncomingEdge)
+										{
+											// the target has existing incoming edges
+											Object targetIncomingEdges [] = mxGraphModel.getIncomingEdges(graph.getModel(), target);
+											for(int i = 0; i < targetIncomingEdges.length; i++)
+											{
+												if (((mxCell)targetIncomingEdges[i]).getSource().getValue() instanceof EquivalenceNode)
+												{
+													eNodeCell = (mxCell)((mxCell)targetIncomingEdges[i]).getSource();
+												}
+											}
+											if (eNodeCell != null)
+											{
+												// create connection from eNode->source port
+												mxCell eNodeToSourceCell = (mxCell)createConnectionCell(null, eNodeCell, source, "ConnectionEdge");
+												AC_GUI.addConnection(activeModule, eNodeToSourceCell);
+											}
+											else
+											{
+												System.out.println("Problem: submodule.equivalenceport->module.equivalenceport" +
+														" eNodeCell equals null");
+											}
+											return;
+										}
+										return;
+									default:
+									}
+									break;
+								default:
+								}
+							}
+							else
+							{
+								// the source is a port
+								// the sourceModule is a submodule
+								// the target is a port
+								// the targetModule is a submodule
+								if (sourceModule == targetModule)
+								{
+									// the source and target ports belong to the same submodule
+									// cannot occur
+									return;
+								}
+								
+								switch(sourcePortType)
+								{
+								case INPUT:
+									switch(targetPortType)
+									{
+									case INPUT:
+										// cannot occur
+										return;
+									case OUTPUT:
+										// cannot occur
+										return;
+									case EQUIVALENCE:
+										// cannot occur
+										return;
+									default:
+									}
+									break;
+								case OUTPUT:
+									switch(targetPortType)
+									{
+									case INPUT:
+										/*
+										if (mxGraphModel.getDirectedEdgeCount(model, target, false, edge) != 0)
+										{
+											return "An input port cannot have more than one incoming connection.";
+										}
+										*/
+										if (mxGraphModel.getDirectedEdgeCount(graph.getModel(), source, true, cell) != 0)
+										{
+											// the source has existing outgoing edges
+											System.out.println("Source has existing outgoing edges.");
+											mxCell varCell = null;
+											Object outgoingEdges [] = mxGraphModel.getOutgoingEdges(graph.getModel(), source);
+											for(int i = 0; i < outgoingEdges.length; i++)
+											{
+												if (((mxCell)outgoingEdges[i]).getTarget().getValue() instanceof VisibleVariable)
+												{
+													varCell = (mxCell)((mxCell)outgoingEdges[i]).getTarget();
+												}
+											}
+											if (varCell != null)
+											{
+												mxCell varToPortCell = (mxCell)createConnectionCell(null, varCell, target, "ConnectionEdge");
+												AC_GUI.addConnection(activeModule, varToPortCell);
+											}
+											else
+											{
+												System.out.println("Problem: submodule.outputport->submodule.inputport, " +
+														"varCell is null.");
+											}
+											return;
+										}
+										// the source has no existing outgoing edges
+										System.out.println("Source has no existing edges.");
+										// create a visible variable
+										newName = generateName(sourcePort.getRefName());
+										mxCell varCell = (mxCell)createVisibleVariableCell(null);
+										addCell(null, varCell);
+										setCellGeometryToCenterOfEdge(varCell, cell);
+										AC_GUI.addVisibleVariable(activeModule, newName, varCell);
+										mxCell sourceToVarCell = (mxCell)createConnectionCell(null, source, varCell, "DashedConnectionEdge");
+										AC_GUI.addConnection(activeModule, sourceToVarCell);
+										mxCell varToTargetCell = (mxCell)createConnectionCell(null, varCell, target, "ConnectionEdge");
+										AC_GUI.addConnection(activeModule, varToTargetCell);
+										/*
+										if (AC_GUI.newNameValidation(sourcePort.getRefName()))
+										{
+											mxCell varCell = (mxCell)createVisibleVariableCell(null);
+											addCell(null, varCell);
+											setCellGeometryToCenterOfEdge(varCell, cell);
+											AC_GUI.addVisibleVariable(activeModule, sourcePort.getRefName(), varCell);
+											mxCell sourceToVarCell = (mxCell)createConnectionCell(null, source, varCell, "DashedConnectionEdge");
+											AC_GUI.addConnection(activeModule, sourceToVarCell);
+											mxCell varToTargetCell = (mxCell)createConnectionCell(null, varCell, target, "ConnectionEdge");
+											AC_GUI.addConnection(activeModule, varToTargetCell);
+										}
+										else
+										{
+											String msg = "Error: \"";
+											msg += sourcePort.getRefName();
+											msg += "\" is already the name of a Species or Global Quantity.";
+											JOptionPane.showMessageDialog(null, msg);
+											return;
+										}
+										*/
+										//mxCell portToPortCell = (mxCell)createConnectionCell(null, source, target, "ConnectionEdge");
+										//AC_GUI.addConnection(activeModule, portToPortCell);
+										return;
+									case OUTPUT:
+										// cannot occur
+										return;
+									case EQUIVALENCE:
+										// cannot occur
+										return;
+									default:
+									}
+									break;
+								case EQUIVALENCE:
+									mxCell eNodeCell;
+									mxCell sourceToeNodeCell;
+									mxCell eNodeToTargetCell;
+									switch(targetPortType)
+									{
+									case INPUT:
+										/*
+										if (mxGraphModel.getDirectedEdgeCount(model, target, false, edge) != 0)
+										{
+											return "An input port cannot have more than one incoming connection.";
+										}
+										*/
+										if (mxGraphModel.getDirectedEdgeCount(graph.getModel(), source, false, cell) != 0)
+										{
+											// the source has an existing incoming edge
+											mxCell existingEdgeSource = (mxCell)((mxCell)graph.getModel().getEdgeAt(source, 0)).getSource();
+											if (existingEdgeSource.getValue() instanceof EquivalenceNode)
+											{
+												// the existing edge connects from an equivalence node
+												EquivalenceNode eNode = (EquivalenceNode)existingEdgeSource.getValue();
+												
+												// add connection from existing visible variable to the selected target
+												eNodeToTargetCell = (mxCell)createConnectionCell(null, existingEdgeSource, target, "ConnectionEdge");
+												AC_GUI.addConnection(activeModule, eNodeToTargetCell);
+											
+											}
+											return;
+										}
+										// the source has no existing outgoing edges
+										System.out.println("Source has no existing edges.");
+										// create an equivalence node
+										newName = generateName(sourcePort.getRefName());
+										eNodeCell = (mxCell)createEquivalenceNodeCell(null);
+										addCell(null, eNodeCell);
+										setCellGeometryToCenterOfEdge(eNodeCell, cell);
+										AC_GUI.addEquivalenceNode(activeModule, newName, eNodeCell);
+										sourceToeNodeCell = (mxCell)createConnectionCell(null, eNodeCell, source, "ConnectionEdge");
+										AC_GUI.addConnection(activeModule, sourceToeNodeCell);
+										eNodeToTargetCell = (mxCell)createConnectionCell(null, eNodeCell, target, "ConnectionEdge");
+										AC_GUI.addConnection(activeModule, eNodeToTargetCell);
+										/*
+										if (AC_GUI.newNameValidation(sourcePort.getRefName()))
+										{
+											mxCell eNodeCell = (mxCell)createEquivalenceNodeCell(null);
+											addCell(null, eNodeCell);
+											setCellGeometryToCenterOfEdge(eNodeCell, cell);
+											AC_GUI.addEquivalenceNode(activeModule, sourcePort.getRefName(), eNodeCell);
+											mxCell sourceToeNodeCell = (mxCell)createConnectionCell(null, eNodeCell, source, "ConnectionEdge");
+											AC_GUI.addConnection(activeModule, sourceToeNodeCell);
+											mxCell eNodeToTargetCell = (mxCell)createConnectionCell(null, eNodeCell, target, "ConnectionEdge");
+											AC_GUI.addConnection(activeModule, eNodeToTargetCell);
+										}
+										else
+										{
+											String msg = "Error: \"";
+											msg += sourcePort.getRefName();
+											msg += "\" is already the name of a Species or Global Quantity.";
+											JOptionPane.showMessageDialog(null, msg);
+											return;
+										}
+										*/
+										//mxCell portToPortCell = (mxCell)createConnectionCell(null, source, target, "ConnectionEdge");
+										//AC_GUI.addConnection(activeModule, portToPortCell);
+										return;
+									case OUTPUT:
+										// cannot occur
+										return;
+									case EQUIVALENCE:
+										/*
+										if (mxGraphModel.getDirectedEdgeCount(model, target, false, edge) != 0)
+										{
+											return "An equivalence port cannot have more than one incoming connection.";
+										}
+										*/
+										/*										// the source has no existing outgoing edges
+										System.out.println("Source has no existing edges.");
+										// create an equivalence node
+										mxCell eNodeCell = (mxCell)createEquivalenceNodeCell(null);
+										addCell(null, eNodeCell);
+										setCellGeometryToCenterOfEdge(eNodeCell, cell);
+										AC_GUI.addEquivalenceNode(activeModule, sourcePort.getRefName(), eNodeCell);
+										mxCell sourceToeNodeCell = (mxCell)createConnectionCell(null, source, eNodeCell, "ConnectionEdge");
+										AC_GUI.addConnection(activeModule, sourceToeNodeCell);
+										mxCell eNodeToTargetCell = (mxCell)createConnectionCell(null, eNodeCell, target, "ConnectionEdge");
+										AC_GUI.addConnection(activeModule, eNodeToTargetCell);
+										//mxCell portToPortCell1 = (mxCell)createConnectionCell(null, source, target, "ConnectionEdge");
+										//AC_GUI.addConnection(activeModule, portToPortCell1);
+										return;
+										*/
+										boolean sourceHasIncomingEdge;
+										boolean targetHasIncomingEdge;
+										
+										sourceHasIncomingEdge = (mxGraphModel.getDirectedEdgeCount(graph.getModel(), source, false, cell) != 0);
+										targetHasIncomingEdge = (mxGraphModel.getDirectedEdgeCount(graph.getModel(), target, false, cell) != 0);
+										eNodeCell = null;
+										
+										if (!sourceHasIncomingEdge && !targetHasIncomingEdge)
+										{
+											// the source has no incoming edges
+											// the target has no incoming edges
+											// create an equivalence node
+											// create connection from eNode->source port
+											// create connection from eNode->target port
+											
+											// create an equivalence node
+											newName = generateName(sourcePort.getRefName());
+											eNodeCell = (mxCell)createEquivalenceNodeCell(null);
+											addCell(null, eNodeCell);
+											setCellGeometryToCenterOfEdge(eNodeCell, cell);
+											AC_GUI.addEquivalenceNode(activeModule, newName, eNodeCell);
+											sourceToeNodeCell = (mxCell)createConnectionCell(null, eNodeCell, source, "ConnectionEdge");
+											AC_GUI.addConnection(activeModule, sourceToeNodeCell);
+											eNodeToTargetCell = (mxCell)createConnectionCell(null, eNodeCell, target, "ConnectionEdge");
+											AC_GUI.addConnection(activeModule, eNodeToTargetCell);
+											/*
+											if (AC_GUI.newNameValidation(sourcePort.getRefName()))
+											{
+												eNodeCell = (mxCell)createEquivalenceNodeCell(null);
+												addCell(null, eNodeCell);
+												setCellGeometryToCenterOfEdge(eNodeCell, cell);
+												AC_GUI.addEquivalenceNode(activeModule, sourcePort.getRefName(), eNodeCell);
+												mxCell sourceToeNodeCell = (mxCell)createConnectionCell(null, eNodeCell, source, "ConnectionEdge");
+												AC_GUI.addConnection(activeModule, sourceToeNodeCell);
+												mxCell eNodeToTargetCell = (mxCell)createConnectionCell(null, eNodeCell, target, "ConnectionEdge");
+												AC_GUI.addConnection(activeModule, eNodeToTargetCell);
+											}
+											else
+											{
+												String msg = "Error: \"";
+												msg += sourcePort.getRefName();
+												msg += "\" is already the name of a Species or Global Quantity.";
+												JOptionPane.showMessageDialog(null, msg);
+												return;
+											}
+											*/
+											return;
+										}
+										
+										if (sourceHasIncomingEdge)
+										{
+											// the source has an incoming edge
+											
+											Object sourceIncomingEdges [] = mxGraphModel.getIncomingEdges(graph.getModel(), source);
+											eNodeCell = null;
+											for(int i = 0; i < sourceIncomingEdges.length; i++)
+											{
+												if (((mxCell)sourceIncomingEdges[i]).getSource().getValue() instanceof EquivalenceNode)
+												{
+													eNodeCell = (mxCell)((mxCell)sourceIncomingEdges[i]).getSource();
+												}
+											}
+											if (eNodeCell != null)
+											{
+												// the source of the incoming edge is an equivalence node
+												// check if target equivalence port is already connected to the eNode
+												int edgesBetween = mxGraphModel.getEdgesBetween(graph.getModel(), eNodeCell, target, false).length;
+												if (edgesBetween == 0)
+												{
+													// the target equivalence port is not connected to the eNode
+													// create an edge between the target equivalence port and the eNode
+													eNodeToTargetCell = (mxCell)createConnectionCell(null, eNodeCell, target, "ConnectionEdge");
+													AC_GUI.addConnection(activeModule, eNodeToTargetCell);
+												}
+												else
+												{
+													// the target equivalence port is already connected to the eNode
+													JOptionPane.showMessageDialog(null,
+															"The two equivalence ports are already connected through an equivalence node.");
+												}
+											}
+											else
+											{
+												System.out.println("Problem: submodule.equivalenceport->submodule.equivalenceport" +
+														"existingeNodeCell equals null");
+											}
+											return;
+										}
+										
+										// the source has no incoming edges
+										System.out.println("Source has no existing incoming edges.");
+										if (targetHasIncomingEdge)
+										{
+											// the target has existing incoming edges
+											Object targetIncomingEdges [] = mxGraphModel.getIncomingEdges(graph.getModel(), target);
+											eNodeCell = null;
+											for(int i = 0; i < targetIncomingEdges.length; i++)
+											{
+												if (((mxCell)targetIncomingEdges[i]).getSource().getValue() instanceof EquivalenceNode)
+												{
+													eNodeCell = (mxCell)((mxCell)targetIncomingEdges[i]).getSource();
+												}
+											}
+											if (eNodeCell != null)
+											{
+												// create connection from eNode->source port
+												mxCell eNodeToSourceCell = (mxCell)createConnectionCell(null, eNodeCell, source, "ConnectionEdge");
+												AC_GUI.addConnection(activeModule, eNodeToSourceCell);
+											}
+											else
+											{
+												System.out.println("Problem: submodule.equivalenceport->submodule.equivalenceport" +
+														" eNodeCell equals null");
+											}
+											return;
+										}
+										return;
+									default:
+									}
+									break;
+								default:
+								}
+							}
+						}
+					}
+				}
+				
+				/*
+				//check if the edge is connecting two equivalence ports
+				if (source.getValue() instanceof Port && target.getValue() instanceof Port)
+				{
+					Port sourcePort = (Port)((mxCell)source).getValue();
+					Port targetPort = (Port)((mxCell)target).getValue();
+					Module sourceModule = sourcePort.getParent();
+					Module targetModule = targetPort.getParent();
+					
+					//System.out.println("Source: " + ((mxCell)source).getValue().toString());
+					//System.out.println("Target: " + ((mxCell)target).getValue().toString());
+					PortType sourceType = ((Port)((mxCell)source).getValue()).getType();
+					PortType targetType = ((Port)((mxCell)target).getValue()).getType();
+					
+					removeCell(cell);
+					
+					switch(sourceType)
+					{
+					case OUTPUT:
+						System.out.println("Source = Output Port");
+						System.out.println("Source edge count: " + graph.getModel().getEdgeCount(source));
+						if (graph.getModel().getEdgeCount(source) == 0)
+						{
+							// the source has no existing outgoing edges
+							System.out.println("Source has no existing edges.");
+							mxCell varCell = (mxCell)createVisibleVariableCell(null);
+							addCell(null, varCell);
+							setCellGeometryToCenterOfEdge(varCell, cell);
+							//removeCell(cell);
+							AC_GUI.addVisibleVariable(activeModule, sourcePort.getRefName(), varCell);
+							mxCell sourceToVarCell = (mxCell)createConnectionCell(null, source, varCell, "DashedConnectionEdge");
+							//addCell(null, sourceToVarCell);
+							AC_GUI.addConnection(activeModule, sourceToVarCell);
+							mxCell varToTargetCell = (mxCell)createConnectionCell(null, varCell, target, "ConnectionEdge");
+							//addCell(null, varToTargetCell);
+							AC_GUI.addConnection(activeModule, varToTargetCell);
+						}
+						else
+						{
+							// the source has an existing outgoing edge
+							mxCell existingEdgeTarget = (mxCell)((mxCell)graph.getModel().getEdgeAt(source, 0)).getTarget();
+							if (existingEdgeTarget.getValue() instanceof VisibleVariable)
+							{
+								// add connection from existing visible variable to the selected target
+								mxCell varToTargetCell = (mxCell)createConnectionCell(null, existingEdgeTarget, target, "ConnectionEdge");
+								//addCell(null, varToTargetCell);
+								AC_GUI.addConnection(activeModule, varToTargetCell);
+							}
+						}
+						break;
+					case EQUIVALENCE:
+						switch(targetType)
+						{
+						case INPUT:
+							
+							break;
+						case OUTPUT:
+							AC_GUI.addConnection(activeModule, cell);
+							break;
+						case EQUIVALENCE:
+							//the edge is connecting two equivalence ports
+							System.out.println("Time to create an equivalence node.");
+							if (graph.getModel().getEdgeCount(source) == 0)
+							{
+								mxCell eNodeCell = (mxCell)createEquivalenceNodeCell(null);
+								addCell(null, eNodeCell);
+								setCellGeometryToCenterOfEdge(eNodeCell, cell);
+								AC_GUI.addEquivalenceNode(activeModule, sourcePort.getRefName(), eNodeCell);
+								mxCell sourceToeNodeCell = (mxCell)createConnectionCell(null, source, eNodeCell, "ConnectionEdge");
+								AC_GUI.addConnection(activeModule, sourceToeNodeCell);
+								mxCell eNodeToTargetCell = (mxCell)createConnectionCell(null, eNodeCell, target, "ConnectionEdge");
+								AC_GUI.addConnection(activeModule, eNodeToTargetCell);
+							}
+							else
+							{
+								// the source has an existing outgoing edge
+								mxCell existingEdgeTarget = (mxCell)((mxCell)graph.getModel().getEdgeAt(source, 0)).getTarget();
+								if (existingEdgeTarget.getValue() instanceof EquivalenceNode)
+								{
+									// add connection from existing visible variable to the selected target
+									mxCell eNodeToTargetCell = (mxCell)createConnectionCell(null, existingEdgeTarget, target, "ConnectionEdge");
+									//addCell(null, varToTargetCell);
+									AC_GUI.addConnection(activeModule, eNodeToTargetCell);
+								}
+							}
+							//AC_GUI.addEquivalenceNode(activeModule, cell);
+							//graph.getModel().remove(cell);
+							return;
+						default:
+						
+						}
+						break;
+					default:
+							
+					}
+					*/
+					/*
 					if (((Port)cell.getSource().getValue()).getType() == PortType.EQUIVALENCE 
 							&& ((Port)cell.getTarget().getValue()).getType() == PortType.EQUIVALENCE)
 					{
@@ -1546,20 +3018,25 @@ public class DrawingBoard extends JPanel
 						graph.getModel().remove(cell);
 						return;
 					}
+					
 				}
+				*/
+				//AC_GUI.currentGUI.addConnection(activeModule, evt.getProperty("cell"));
 				
-				AC_GUI.currentGUI.addConnection(activeModule, evt.getProperty("cell"));
 				//Object cell1 = graph.createEdge(cell, null, "val", "s", "t", "");
+				/*
 				// set the connection edge style
 				graph.getModel().beginUpdate();
 				try
 				{
-					graph.getModel().setStyle(evt.getProperty("cell"), "ConnectionEdge");
+					//graph.getModel().remove(cell);
+					//graph.getModel().setStyle(evt.getProperty("cell"), "ConnectionEdge");
 				}
 				finally
 				{
 					graph.getModel().endUpdate();
 				}
+				*/
 			}
 		});
 	}
@@ -1572,8 +3049,10 @@ public class DrawingBoard extends JPanel
 	 */
 	private JPopupMenu createPopupMenu(final Point pt, final Object cell)
 	{
+		Object cellValue;
 		JPopupMenu menu = new JPopupMenu();
 
+		cellValue = ((mxCell)cell).getValue();
 		menu.add(new AbstractAction("Edit Name") {
 			/**
 			 * 
@@ -1596,12 +3075,14 @@ public class DrawingBoard extends JPanel
 				
 				public void actionPerformed(ActionEvent e)
 				{
+					//System.out.println("Connected edge count: " + graph.getModel().getEdgeCount(((mxCell)cell).getSource()));
 					// get the connection object from the drawing cell
 					Connection edge = (Connection)((mxCell)cell).getValue();
 					// remove the drawing cell
 					removeCell(edge.getDrawingCell());
 					// remove the connection from the module
 					AC_GUI.currentGUI.removeConnection(edge);
+					//System.out.println("Connected edge count: " + graph.getModel().getEdgeCount(((mxCell)cell).getSource()));
 				}
 			});
 			
@@ -1613,29 +3094,42 @@ public class DrawingBoard extends JPanel
 
 				public void actionPerformed(ActionEvent e)
 				{
+					Object sourceValue;
+					Object targetValue;
 					String source = "";
 					String target = "";
 					
-					if (((mxCell)cell).getSource().getValue() instanceof Port)
+					sourceValue = ((mxCell)cell).getSource().getValue();
+					targetValue = ((mxCell)cell).getTarget().getValue();
+					
+					if (sourceValue instanceof Port)
 					{
 						source = "Port ";
-						source += ((Port)((mxCell)cell).getSource().getValue()).getParent().getName();
-						source += "." + ((Port)((mxCell)cell).getSource().getValue()).getName();
-					} else if (((mxCell)cell).getSource().getValue() instanceof VisibleVariable)
+						source += ((Port)sourceValue).getParent().getName();
+						source += "." + ((Port)sourceValue).getName();
+					} else if (sourceValue instanceof VisibleVariable)
 					{
 						source = "Variable ";
-						source += ((VisibleVariable)((mxCell)cell).getSource().getValue()).getRefName();
+						source += ((VisibleVariable)sourceValue).getRefName();
+					} else if (sourceValue instanceof EquivalenceNode)
+					{
+						source = "Equivalence Node ";
+						source += ((EquivalenceNode)sourceValue).getRefName();
 					}
 					
-					if (((mxCell)cell).getTarget().getValue() instanceof Port)
+					if (targetValue instanceof Port)
 					{
 						target = "Port ";
-						target += ((Port)((mxCell)cell).getTarget().getValue()).getParent().getName();
-						target += "." + ((Port)((mxCell)cell).getTarget().getValue()).getName();
-					} else if (((mxCell)cell).getTarget().getValue() instanceof VisibleVariable)
+						target += ((Port)targetValue).getParent().getName();
+						target += "." + ((Port)targetValue).getName();
+					} else if (targetValue instanceof VisibleVariable)
 					{
 						target = "Variable ";
-						target += ((VisibleVariable)((mxCell)cell).getTarget().getValue()).getRefName();
+						target += ((VisibleVariable)targetValue).getRefName();
+					} else if (targetValue instanceof EquivalenceNode)
+					{
+						target = "Equivalence Node ";
+						target += ((EquivalenceNode)targetValue).getRefName();
 					}
 					
 					String msg = "Source = " + source + "\nDestination = " + target;
@@ -1645,102 +3139,116 @@ public class DrawingBoard extends JPanel
 		}
 		else
 		{
-			if (((mxCell) cell).getValue() instanceof Module)
+			if (cellValue instanceof Module)
 			{
-				menu.add(new AbstractAction("Add Port") {
-					/**
-					 * 
-					 */
-					private static final long serialVersionUID = 1L;
-
-					public void actionPerformed(ActionEvent e)
-					{
-						PortAddEditor portAddEditor = new PortAddEditor(cell, graphComponent);
-						portAddEditor.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-						portAddEditor.setModal(true);
-						portAddEditor.setVisible(true);
-					}
-				});
-				
-				menu.add(new AbstractAction("Show Variable") {
-					/**
-					 * 
-					 */
-					private static final long serialVersionUID = 1L;
-
-					public void actionPerformed(ActionEvent e)
-					{
-						VariableAddEditor varAddEditor = new VariableAddEditor(graphComponent);
-						varAddEditor.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-						varAddEditor.setModal(true);
-						varAddEditor.setVisible(true);
-					}
-				});
-			}
-			else if (((mxCell) cell).getValue() instanceof Port)
+				if (activeModule == (Module)cellValue)
+				{
+					menu.add(new AbstractAction("Add Port") {
+						/**
+						 * 
+						 */
+						private static final long serialVersionUID = 1L;
+	
+						public void actionPerformed(ActionEvent e)
+						{
+							PortAddEditor portAddEditor = new PortAddEditor(cell, graphComponent);
+							portAddEditor.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+							portAddEditor.setModal(true);
+							portAddEditor.setVisible(true);
+						}
+					});
+					
+					menu.add(new AbstractAction("Show Variable") {
+						/**
+						 * 
+						 */
+						private static final long serialVersionUID = 1L;
+	
+						public void actionPerformed(ActionEvent e)
+						{
+							VariableAddEditor varAddEditor = new VariableAddEditor(graphComponent);
+							varAddEditor.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+							varAddEditor.setModal(true);
+							varAddEditor.setVisible(true);
+						}
+					});
+				}
+				else
+				{
+					// the module selected is a submodule
+				}
+			} 
+			else if (cellValue instanceof Port)
 			{
-				menu.add(new AbstractAction("Change Type") {
-					/**
-					 * 
-					 */
-					private static final long serialVersionUID = 1L;
-
-					public void actionPerformed(ActionEvent e)
-					{
-						Port currentPort = (Port) ((mxCell) cell).getValue();
-
-						Object[] possibleValues = { "Input", "Output", "Equivalence" };
-						Object selectedValue = JOptionPane.showInputDialog(null, "Select Type", "Change Port Type", JOptionPane.INFORMATION_MESSAGE, null, possibleValues, currentPort.getType().toString());
-
-						if (selectedValue.toString().compareTo("Input") == 0)
+				if (activeModule == ((Port)cellValue).getParent())
+				{
+					menu.add(new AbstractAction("Change Type") {
+						/**
+						 * 
+						 */
+						private static final long serialVersionUID = 1L;
+	
+						public void actionPerformed(ActionEvent e)
 						{
-							currentPort.setType(PortType.INPUT);
+							Port currentPort = (Port) ((mxCell) cell).getValue();
+	
+							Object[] possibleValues = { "Input", "Output", "Equivalence" };
+							Object selectedValue = JOptionPane.showInputDialog(null, "Select Type", "Change Port Type", JOptionPane.INFORMATION_MESSAGE, null, possibleValues, currentPort.getType().toString());
+	
+							if (selectedValue.toString().compareTo("Input") == 0)
+							{
+								currentPort.setType(PortType.INPUT);
+							}
+							else if (selectedValue.toString().compareTo("Output") == 0)
+							{
+								currentPort.setType(PortType.OUTPUT);
+							}
+							else if (selectedValue.toString().compareTo("Equivalence") == 0)
+							{
+								currentPort.setType(PortType.EQUIVALENCE);
+							}
+	
+							mxGeometry geo = ((mxCell) cell).getGeometry();
+							graph.updatePortOrientation(cell, geo);
 						}
-						else if (selectedValue.toString().compareTo("Output") == 0)
+					});
+	
+					menu.add(new AbstractAction("Remove") {
+						/**
+						 * 
+						 */
+						private static final long serialVersionUID = 1L;
+	
+						public void actionPerformed(ActionEvent e)
 						{
-							currentPort.setType(PortType.OUTPUT);
+							// get the Port object from the drawing cell
+							Port currentPort = (Port) ((mxCell) cell).getValue();
+							String msg = "Number of edges connected to the port: ";
+							msg += graph.getModel().getEdgeCount(cell) + ".";
+							//System.out.println(msg);
+							// call AC_GUI to fully remove the port
+							AC_GUI.currentGUI.removePort(currentPort);
 						}
-						else if (selectedValue.toString().compareTo("Equivalence") == 0)
+					});
+	
+					menu.add(new AbstractAction("Properties") {
+						/**
+						 * 
+						 */
+						private static final long serialVersionUID = 1L;
+	
+						public void actionPerformed(ActionEvent e)
 						{
-							currentPort.setType(PortType.EQUIVALENCE);
+	
 						}
-
-						mxGeometry geo = ((mxCell) cell).getGeometry();
-						graph.updatePortOrientation(cell, geo);
-					}
-				});
-
-				menu.add(new AbstractAction("Remove") {
-					/**
-					 * 
-					 */
-					private static final long serialVersionUID = 1L;
-
-					public void actionPerformed(ActionEvent e)
-					{
-						// get the Port object from the drawing cell
-						Port currentPort = (Port) ((mxCell) cell).getValue();
-						String msg = "Number of edges connected to the port: ";
-						msg += graph.getModel().getEdgeCount(cell) + ".";
-						//System.out.println(msg);
-						// call AC_GUI to fully remove the port
-						AC_GUI.currentGUI.removePort(currentPort);
-					}
-				});
-
-				menu.add(new AbstractAction("Properties") {
-					/**
-					 * 
-					 */
-					private static final long serialVersionUID = 1L;
-
-					public void actionPerformed(ActionEvent e)
-					{
-
-					}
-				});
+					});
+				}
+				else
+				{
+					// the port belongs to a submodule
+				}
 			}
-			else if (((mxCell) cell).getValue() instanceof VisibleVariable)
+			else if (cellValue instanceof VisibleVariable)
 			{
 				menu.add(new AbstractAction("Remove") {
 					/**
@@ -1760,8 +3268,27 @@ public class DrawingBoard extends JPanel
 					}
 				});
 			}
+			else if (cellValue instanceof EquivalenceNode)
+			{
+				menu.add(new AbstractAction("Remove") {
+					/**
+					 * 
+					 */
+					private static final long serialVersionUID = 1L;
+
+					public void actionPerformed(ActionEvent e)
+					{
+						// get the Equivalence Node object from the drawing cell
+						EquivalenceNode currentENode = (EquivalenceNode) ((mxCell) cell).getValue();
+						String msg = "Number of edges connected to the eNode: ";
+						msg += graph.getModel().getEdgeCount(cell) + ".";
+						//System.out.println(msg);
+						// call AC_GUI to fully remove the port
+						AC_GUI.removeEquivalenceNode(currentENode);
+					}
+				});
+			}
 		}
-		
 
 		return menu;
 	}

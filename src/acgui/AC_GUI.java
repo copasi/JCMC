@@ -10,6 +10,7 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.ListIterator;
+import java.util.Vector;
 
 import javax.swing.JFrame;
 import javax.swing.JMenu;
@@ -232,6 +233,10 @@ public class AC_GUI extends JFrame
 	
 	public static void exportSBML(String fileName)
 	{
+		if (!saveModules())
+		{
+			System.out.println("Problem saving Modules.");
+		}
 		SBMLParser output = new SBMLParser();
 		output.saveSBML("", activeModule, fileName);
 	}
@@ -253,7 +258,7 @@ public class AC_GUI extends JFrame
 		treeView.addNode(mod);
 		drawingBoard.createCell(mod);
 		drawingBoard.changeModule(mod);
-		modelBuilder.loadModel(mod.getKey());
+		modelBuilder.loadModel(mod.getKey(), true);
 		modelBuilder.setVisible(true);		
 		
 		activeModule = mod;
@@ -286,10 +291,21 @@ public class AC_GUI extends JFrame
 		activeModule.addVisibleVariable(var);
 	}
 	
+	public static void addVisibleVariable(Module parentMod, String refName, Object varCell)
+	{
+		VisibleVariable var = new VisibleVariable(activeModule, refName, varCell);
+		drawingBoard.setValue(varCell, var);
+		activeModule.addVisibleVariable(var);
+		
+		//add a new species to msmb
+		modelBuilder.addSpecies(refName);
+	}
+	
 	public static void removeVisibleVariable(VisibleVariable var)
 	{
 		drawingBoard.removeEdges(var.getDrawingCell());
 		drawingBoard.removeCell(var.getDrawingCell());
+		modelBuilder.removeSpecies(var.getRefName());
 		activeModule.removeVisibleVariable(var);
 	}
 	
@@ -371,12 +387,12 @@ public class AC_GUI extends JFrame
 	 * @param parentMod the module to add a connection
 	 * @param connectionCell the drawing cell representation of the connection
 	 */
-	public void addConnection(Module parentMod, Object connectionCell)
+	public static void addConnection(Module parentMod, Object connectionCell)
 	{
 		// make a connection object
 		Connection edge = new Connection(parentMod, connectionCell);
 		// set the connection as the user object of the drawing cell
-		((mxCell)connectionCell).setValue(edge);
+		drawingBoard.setValue(connectionCell, edge);
 		// add the edge to the parent module
 		parentMod.addConnection(edge);
 	}
@@ -419,6 +435,7 @@ public class AC_GUI extends JFrame
 		//Port sourcePort = (Port)((mxCell)cell).getSource().getValue();
 		//Port targetPort = (Port)((mxCell)cell).getTarget().getValue();
 		String refName = ((Port)((mxCell)cell).getSource().getValue()).getRefName();
+		//refName = "E" + refName;
 		EquivalenceNode eNode = new EquivalenceNode(parentMod, refName);
 		drawingBoard.addEquivalenceNode(eNode, cell);
 		parentMod.addEquivalenceNode(eNode);
@@ -434,6 +451,25 @@ public class AC_GUI extends JFrame
 		
 		//add a new species to msmb
 		modelBuilder.addSpecies(refName);
+	}
+	
+	public static void addEquivalenceNode(Module parentMod, String refName, Object eNodeCell)
+	{
+		//refName = "E" + refName;
+		EquivalenceNode eNode = new EquivalenceNode(parentMod, refName, eNodeCell);
+		drawingBoard.setValue(eNodeCell, eNode);
+		activeModule.addEquivalenceNode(eNode);
+		
+		//add a new species to msmb
+		modelBuilder.addSpecies(refName);
+	}
+	
+	public static void removeEquivalenceNode(EquivalenceNode eNode)
+	{
+		drawingBoard.removeEdges(eNode.getDrawingCell());
+		drawingBoard.removeCell(eNode.getDrawingCell());
+		modelBuilder.removeSpecies(eNode.getRefName());
+		activeModule.removeEquivalenceNode(eNode);
 	}
 	
 	/**
@@ -483,11 +519,11 @@ public class AC_GUI extends JFrame
 		if (newCode != null)
 		{
 			byte[] data = mod.getMSMBData().getBytes();
-			modelBuilder.loadModel(data);
+			modelBuilder.loadModel(data, true);
 		}
 		else
 		{
-			modelBuilder.loadModel(mod.getKey());
+			modelBuilder.loadModel(mod.getKey(), true);
 		}		
 		activeModule = mod;
 		
@@ -568,7 +604,7 @@ public class AC_GUI extends JFrame
 		fileMenu.addSeparator();
 		fileMenu.add(makeMenuItem(MenuItem.SAVE, menuListener, KeyEvent.VK_S));
 		fileMenu.add(makeMenuItem(MenuItem.SAVE_AS, menuListener, -1));
-		fileMenu.add(makeMenuItem(MenuItem.EXPORT_SMBL, menuListener, -1));
+		fileMenu.add(makeMenuItem(MenuItem.EXPORT_SBML, menuListener, -1));
 		fileMenu.addSeparator();
 		fileMenu.add(makeMenuItem(MenuItem.CLOSE, menuListener, -1));
 		fileMenu.addSeparator();
@@ -659,6 +695,56 @@ public class AC_GUI extends JFrame
 		mathAgg.addPort(newPort);
 	}
 	
+	private static boolean saveModules()
+	{
+		boolean successfulSave = true;
+		Module child;
+		String code;
+		byte[] data;
+		
+		// save the activeModule
+		code = new String(modelBuilder.saveModel());
+		activeModule.setMSMBData(code);
+		
+		successfulSave = modelBuilder.saveToCK(activeModule.getKey());
+		if (!successfulSave)
+		{
+			return false;
+		}
+		
+		// load and save each of the activeModule's children
+		ListIterator<Module> children = activeModule.getChildren().listIterator();
+		while (children.hasNext())
+		{
+			child = children.next();
+			
+			code = child.getMSMBData();
+			if (code != null)
+			{
+				data = child.getMSMBData().getBytes();
+				modelBuilder.loadModel(data, false);
+			}
+			else
+			{
+				modelBuilder.loadModel(child.getKey(), false);
+			}		
+			
+			code = new String(modelBuilder.saveModel());
+			child.setMSMBData(code);
+			successfulSave =  modelBuilder.saveToCK(child.getKey());
+			if (!successfulSave)
+			{
+				return false;
+			}
+		}
+		
+		// reload the original activeModule
+		code = activeModule.getMSMBData();
+		data = activeModule.getMSMBData().getBytes();
+		modelBuilder.loadModel(data, false);
+		
+		return successfulSave;
+	}
 	/**
 	 * Open the Preferences display from MSMB.
 	 */
@@ -737,6 +823,12 @@ public class AC_GUI extends JFrame
 		return true;
 	}
 	
+	public static boolean newNameValidation(String newSpecies)
+	{
+		Vector<String> refNames = modelBuilder.getRefNames();
+		return !refNames.contains(newSpecies);
+	}
+	
 	public static void changeName(ChangedElement beforeE, ChangedElement afterE)
 	{
 		if (beforeE == null || afterE == null)
@@ -788,6 +880,7 @@ public class AC_GUI extends JFrame
 		{
 			//changeActiveModule(activeModule);
 			drawingBoard.changeModule(activeModule);
+			modelBuilder.updatePorts();
 		}
 	}
 	

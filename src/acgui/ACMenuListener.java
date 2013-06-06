@@ -121,16 +121,16 @@ public class ACMenuListener implements ActionListener
 			JOptionPane.showMessageDialog(null,
 					"Will save the entire model in one SBML file (not yet implemented).");
 			break;
-		case EXPORT_SMBL:
+		case EXPORT_SBML:
 			String fileName2 = null;
 			fileChooser = new JFileChooser (new File ("."));
-			fileChooser.setFileFilter (new FileNameExtensionFilter("SBML file (.sbml)","sbml"));
+			fileChooser.setFileFilter (new FileNameExtensionFilter("SBML file (.xml)","xml"));
 			if (fileChooser.showSaveDialog(null) == JFileChooser.APPROVE_OPTION)
 			{
 				fileName2 = fileChooser.getSelectedFile().getAbsolutePath();
-				if (!fileName2.endsWith (".sbml"))
+				if (!fileName2.endsWith (".xml"))
 				{
-					fileName2 += ".sbml";
+					fileName2 += ".xml";
 				}
 				//AC_GUI.currentGUI.save(fileName2);
 				AC_GUI.exportSBML(fileName2);

@@ -13,7 +13,7 @@ public enum MenuItem
 	RECENT("Recent Files"),
 	SAVE("Save"),
 	SAVE_AS("Save As"),
-	EXPORT_SMBL("Export SMBL"),
+	EXPORT_SBML("Export SBML"),
 	CLOSE("Close"), // close the model and get back to new
 	EXIT("Exit"), // exit application
 	// -------------------------------------------------------------------------------------

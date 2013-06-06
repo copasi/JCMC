@@ -2,6 +2,7 @@ package acgui;
 
 import java.awt.BorderLayout;
 import java.awt.Font;
+import java.util.ListIterator;
 import java.util.Vector;
 
 import javax.swing.DefaultCellEditor;
@@ -58,7 +59,7 @@ public class ModelBuilder
 	 * Load the given Copasi model into the model builder.
 	 * @param key the unique Copasi key referencing the model
 	 */
-	public void loadModel(String key)
+	public void loadModel(String key, boolean display)
 	{
 		try 
 		{
@@ -69,15 +70,21 @@ public class ModelBuilder
 			 //method declaration
 			 e.printStackTrace();
 		}
-		tableModel.clearData();
-		updateRefNameColumn();
+		if (display)
+		{
+			tableModel.clearData();
+			updateRefNameColumn();
+		}
 	}
 	
-	public void loadModel(byte[] msmbCode)
+	public void loadModel(byte[] msmbCode, boolean display)
 	{
 		msmb.loadFromMSMB(msmbCode);
-		tableModel.clearData();
-		updateRefNameColumn();
+		if (display)
+		{
+			tableModel.clearData();
+			updateRefNameColumn();
+		}
 		//installListeners();
 	}
 	
@@ -158,6 +165,30 @@ public class ModelBuilder
 		tableModel.removePort(port);
 	}
 	
+	public void updatePorts()
+	{
+		tableModel.clearData();
+		updateRefNameColumn();
+		
+		//add activeModule's Ports
+		ListIterator<Port> portList = AC_GUI.activeModule.getPorts().listIterator();
+		while (portList.hasNext())
+		{
+			addPort(portList.next());
+		}
+		
+		//add activeModule's Children's Ports
+		ListIterator<Module> children = AC_GUI.activeModule.getChildren().listIterator();
+		while(children.hasNext())
+		{
+			portList = children.next().getPorts().listIterator();
+			while (portList.hasNext())
+			{
+				addPort(portList.next());
+			}
+		}
+	}
+	
 	public void addSpecies(String speciesName)
 	{
 		String speciesQuantity =  msmb.getDefault_SpeciesInitialQuantity();
@@ -172,6 +203,30 @@ public class ModelBuilder
 			//you can popup an error message or something similar.
 			e.printStackTrace();
 		}
+	}
+	
+	public void removeSpecies(String speciesName)
+	{
+		try 
+		{
+			msmb.removeSpecies(speciesName);
+		} 
+		catch (Exception e) 
+		{
+			//you can popup an error message or something similar.
+			e.printStackTrace();
+			System.out.println("Error removing the species " + speciesName + " from the msmb panel.");
+		}
+	}
+	
+	public void setSelectedPort(Port port)
+	{
+		//getMSMB_MainTabPanel() gets the JTabbed panel
+		JTabbedPane tabPanel = msmb.getMSMB_MainTabPanel();
+		int lastTabIndex = tabPanel.getTabCount() - 1;
+		tabPanel.setSelectedIndex(lastTabIndex);
+		int portIndex = tableModel.getPortIndex(port);
+		jTableCustom.setRowSelectionInterval(portIndex, portIndex);
 	}
 	
 	/**
@@ -233,6 +288,7 @@ public class ModelBuilder
 			
 		jScrollPaneTablePorts.setViewportView(jTableCustom);
 		//Add specific listeners
+		/*
 		 msmb.addChangeListener(
 					new ChangeListener() {// my part will call this state change.. this code the  actions you want to do once the change is triggered
 						@Override
@@ -254,8 +310,8 @@ public class ModelBuilder
 						public void stateChanged(ChangeEvent e) {
 							ChangedElement before = (((MSMB_InterfaceChange)e.getSource()).getElementBefore());
 							ChangedElement after = (((MSMB_InterfaceChange)e.getSource()).getElementAfter());
-							if(before!=null) System.out.println("Species before = " + before.getName());
-							if(after!=null)  System.out.println("Species after = " + after.getName());
+							if(before!=null) System.out.println("Species before1 = " + before.getName());
+							if(after!=null)  System.out.println("Species after1 = " + after.getName());
 						}
 					}, 
 					MSMB_Element.SPECIES);
@@ -266,12 +322,12 @@ public class ModelBuilder
 						public void stateChanged(ChangeEvent e) {
 							ChangedElement before = (((MSMB_InterfaceChange)e.getSource()).getElementBefore());
 							ChangedElement after = (((MSMB_InterfaceChange)e.getSource()).getElementAfter());
-							if(before!=null) System.out.println("Model name before = " + before.getName());
-							if(after!=null)  System.out.println("Model name after = " + after.getName());
+							if(before!=null) System.out.println("Model name before1 = " + before.getName());
+							if(after!=null)  System.out.println("Model name after1 = " + after.getName());
 						}
 					}, 
 					MSMB_Element.MODEL);
-		
+		*/
 		panelPorts.add(jScrollPaneTablePorts, BorderLayout.CENTER);	
 		tabPanel.addTab("Ports", null, panelPorts, null);
 	}
@@ -354,14 +410,15 @@ public class ModelBuilder
 		
 	private void installListeners()
 	{
+		
 		msmb.addChangeListener(
 				new ChangeListener() {
 					@Override
 					public void stateChanged(ChangeEvent e) {
 						ChangedElement before = (((MSMB_InterfaceChange)e.getSource()).getElementBefore());
 						ChangedElement after = (((MSMB_InterfaceChange)e.getSource()).getElementAfter());
-						if(before!=null) System.out.println("Species before1 = " + before.getName());
-						if(after!=null)  System.out.println("Species after1 = " + after.getName());
+						if(before!=null) System.out.println("Species before = " + before.getName());
+						if(after!=null)  System.out.println("Species after = " + after.getName());
 						AC_GUI.changeName(before, after);
 					}
 				}, 
@@ -373,12 +430,38 @@ public class ModelBuilder
 					public void stateChanged(ChangeEvent e) {
 						ChangedElement before = (((MSMB_InterfaceChange)e.getSource()).getElementBefore());
 						ChangedElement after = (((MSMB_InterfaceChange)e.getSource()).getElementAfter());
-						if(before!=null) System.out.println("Global Quantity before1 = " + before.getName());
-						if(after!=null)  System.out.println("Global Quantity after1 = " + after.getName());
+						if(before!=null) System.out.println("Global Quantity before = " + before.getName());
+						if(after!=null)  System.out.println("Global Quantity after = " + after.getName());
 						AC_GUI.changeName(before, after);
 					}
 				}, 
 				MSMB_Element.GLOBAL_QUANTITY);
+		
+		msmb.addChangeListener(
+				new ChangeListener() {
+					@Override
+					public void stateChanged(ChangeEvent e) {
+						ChangedElement before = (((MSMB_InterfaceChange)e.getSource()).getElementBefore());
+						ChangedElement after = (((MSMB_InterfaceChange)e.getSource()).getElementAfter());
+						if(before!=null) System.out.println("Model name before = " + before.getName());
+						if(after!=null)  System.out.println("Model name after = " + after.getName());
+					}
+				}, 
+				MSMB_Element.MODEL);
+		
+		msmb.addChangeListener(
+				new ChangeListener() {// my part will call this state change.. this code the  actions you want to do once the change is triggered
+					@Override
+					public void stateChanged(ChangeEvent e) { 
+						//you don't need the before after, but you know that something has been changed, so you need to ask for the new value
+						Font newFont = msmb.getCustomFont();
+						jTableCustom.getTableHeader().setFont(newFont);
+						//any other action that you need to do on your side when the size of the font is changed
+						jTableCustom.setCustomFont(newFont);
+						
+					}
+				}, 
+				MSMB_Element.FONT);
 	}
 		
 	}

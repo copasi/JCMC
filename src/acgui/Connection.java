@@ -16,8 +16,9 @@ public class Connection implements Serializable
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	Module parent;
-	Object drawingCell;
+	private Module parent;
+	private Object drawingCell;
+	private String drawingCellStyle;
 	
 	/**
 	 * Construct the object.
@@ -26,6 +27,7 @@ public class Connection implements Serializable
 	{
 		parent = null;
 		drawingCell = null;
+		drawingCellStyle = "";
 	}
 	
 	/**
@@ -36,6 +38,7 @@ public class Connection implements Serializable
 	{
 		parent = iParent;
 		drawingCell = null;
+		drawingCellStyle = "";
 	}
 	
 	/**
@@ -47,6 +50,7 @@ public class Connection implements Serializable
 	{
 		parent = iParent;
 		drawingCell = cell;
+		drawingCellStyle = ((mxCell)cell).getStyle();
 	}
 	
 	/**
@@ -74,6 +78,16 @@ public class Connection implements Serializable
 	public Object getDrawingCell()
 	{
 		return drawingCell;
+	}
+	
+	public void setDrawingCellStyle(String style)
+	{
+		drawingCellStyle = style;
+	}
+	
+	public String getDrawingCellStyle()
+	{
+		return drawingCellStyle;
 	}
 	
 	/**

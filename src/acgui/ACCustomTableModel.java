@@ -72,6 +72,11 @@ public class ACCustomTableModel extends CustomTableModel
 		fireTableDataChanged();
 	}
 	
+	public int getPortIndex(Port port)
+	{
+		return portsListed.indexOf(port);
+	}
+	
 	@Override
 	public void clearData()
 	{
