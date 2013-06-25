@@ -38,6 +38,7 @@ public class MathAggregatorAddEditor extends JDialog
 	private mxGraphComponent graphComponent;
 	private String type;
 	private Operation op;
+	private String eol;
 	
 	/**
 	 * 
@@ -57,6 +58,7 @@ public class MathAggregatorAddEditor extends JDialog
 			type = "Product";
 		}
 		initializeComponents();
+		eol = System.getProperty("line.separator");
 	}
 
 	private void initializeComponents()
@@ -89,8 +91,9 @@ public class MathAggregatorAddEditor extends JDialog
 		JButton addButton = new JButton("Add");
 		addButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e)
-			{				
-				if (textfield1.getText().equals(""))
+			{
+				String name = textfield1.getText();
+				if (name.equals(""))
 				{
 					JOptionPane.showMessageDialog(null, "Please enter a Module Name.");
 				}
@@ -100,8 +103,28 @@ public class MathAggregatorAddEditor extends JDialog
 				}
 				else
 				{
-					AC_GUI.addMathAggregator(textfield1.getText(), Integer.parseInt(textfield2.getText()), op);
-					dispose();
+					if (AC_GUI.nameValidation(name))
+					{
+						if (AC_GUI.submoduleValidation(name))
+						{
+							AC_GUI.addMathAggregator(textfield1.getText(), Integer.parseInt(textfield2.getText()), op);
+							dispose();
+						}
+						else
+						{
+							String message = "There already exists a submodule with the same name.";
+							JOptionPane.showMessageDialog(null, message);
+						}
+					}
+					else
+					{
+						String message = "Invalid name. Names must adhere to the following rules:" + eol;
+						message += "\u2022 Names cannot start with a number or punctuation character." + eol;
+						message += "\u2022 Names cannot start with the letters \"xml\"." + eol;
+						message += "\u2022 Names cannot contain spaces.";
+												
+						JOptionPane.showMessageDialog(null, message);
+					}
 				}
 			}
 		});

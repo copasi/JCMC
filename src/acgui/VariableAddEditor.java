@@ -91,7 +91,7 @@ public class VariableAddEditor extends JDialog
 				{
 					if (AC_GUI.visibleVariableValidation((String)comboBox1.getSelectedItem()))
 					{
-						AC_GUI.addVisibleVariable((String) comboBox1.getSelectedItem());
+						AC_GUI.addVisibleVariable((String)comboBox1.getSelectedItem());
 						dispose();
 					}
 					else

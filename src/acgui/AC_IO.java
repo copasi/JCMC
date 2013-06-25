@@ -283,6 +283,7 @@ public class AC_IO
 		data.put("refName", port.getRefName());
 		data.put("drawingCell", port.getDrawingCell());
 		data.put("type", port.getType().toString());
+		data.put("variableType", port.getVariableType().toString());
 		data.put("rowIndex", port.getRowIndex());
 		data.put("drawingCellGeometry", ((mxCell)port.getDrawingCell()).getGeometry());
 		
@@ -295,22 +296,32 @@ public class AC_IO
 		String refName = (String)data.get("refName");
 		Object drawingCell = data.get("drawingCell");
 		String type = (String)data.get("type");
+		String variableType = (String)data.get("variableType");
 		mxGeometry oldCellGeo = (mxGeometry)data.get("drawingCellGeometry");
 		int rowIndex = (Integer)data.get("rowIndex");
 		
-		PortType current = null;
+		PortType pType = null;
 		if(type.equalsIgnoreCase(PortType.INPUT.toString()))
 		{
-			current = PortType.INPUT;
+			pType = PortType.INPUT;
 		} else if(type.equalsIgnoreCase(PortType.OUTPUT.toString()))
 		{
-			current = PortType.OUTPUT;
+			pType = PortType.OUTPUT;
 		} else if(type.equalsIgnoreCase(PortType.EQUIVALENCE.toString()))
 		{
-			current = PortType.EQUIVALENCE;
+			pType = PortType.EQUIVALENCE;
 		}
 		
-		Port newPort = new Port(parent, refName, current, name, rowIndex);
+		VariableType vType = null;
+		if(variableType.equalsIgnoreCase(VariableType.SPECIES.toString()))
+		{
+			vType = VariableType.SPECIES;
+		} else if(variableType.equalsIgnoreCase(VariableType.GLOBAL_QUANTITY.toString()))
+		{
+			vType = VariableType.GLOBAL_QUANTITY;
+		}
+		
+		Port newPort = new Port(parent, refName, pType, vType, name, rowIndex);
 		//((mxCell)drawingCell).setValue(newPort);
 		//newPort.setDrawingCell(drawingCell);
 		AC_GUI.drawingBoard.createPort(newPort, oldCellGeo);
@@ -322,6 +333,7 @@ public class AC_IO
 	{
 		Map<String, Object> data = new HashMap<String, Object>();
 		data.put("refName", var.getRefName());
+		data.put("variableType", var.getVariableType().toString());
 		data.put("drawingCell", var.getDrawingCell());
 		data.put("drawingCellBounds", var.getDrawingCellBounds());
 		data.put("drawingCellGeometry", var.getDrawingCellGeometry());
@@ -332,6 +344,7 @@ public class AC_IO
 	private static VisibleVariable unpackVisibleVariable(Map<String, Object> data, Module parent)
 	{
 		String refName = (String)data.get("refName");
+		String variableType = (String)data.get("variableType");
 		Object drawingCell = data.get("drawingCell");
 		mxRectangle oldBounds = (mxRectangle)data.get("drawingCellBounds");
 		mxGeometry oldGeo = (mxGeometry)data.get("drawingCellGeometry");
@@ -348,7 +361,16 @@ public class AC_IO
 			newGeo = new mxGeometry(oldGeo.getX(), oldGeo.getY(), oldGeo.getWidth(), oldGeo.getHeight());
 		}
 		
-		VisibleVariable var = new VisibleVariable(parent, refName, drawingCell, newBounds, newGeo);
+		VariableType vType = null;
+		if(variableType.equalsIgnoreCase(VariableType.SPECIES.toString()))
+		{
+			vType = VariableType.SPECIES;
+		} else if(variableType.equalsIgnoreCase(VariableType.GLOBAL_QUANTITY.toString()))
+		{
+			vType = VariableType.GLOBAL_QUANTITY;
+		}
+		
+		VisibleVariable var = new VisibleVariable(parent, refName, drawingCell, newBounds, newGeo, vType);
 		//((mxCell)drawingCell).setValue(var);
 		AC_GUI.drawingBoard.createVisibleVariable(var);
 		

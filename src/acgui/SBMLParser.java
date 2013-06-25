@@ -8,7 +8,14 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.util.ListIterator;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+
 import org.COPASI.*;
+import org.w3c.dom.Document;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import com.mxgraph.model.mxCell;
 import com.mxgraph.model.mxGraphModel;
@@ -22,7 +29,7 @@ public class SBMLParser {
 	private PrintWriter out;
 	private String modelSBML;
 	private String fileName;
-	private String eol;
+	private static String eol = System.getProperty("line.separator");
 	
 	/**
 	 * Construct the object.
@@ -33,10 +40,9 @@ public class SBMLParser {
 		out = null;
 		modelSBML = "";
 		fileName = "";
-		eol = System.getProperty("line.separator");
 	}
 	
-	public void saveSBML(String modelCopasi, Module rootModule, String fName)
+	public void exportSBML(String modelCopasi, Module rootModule, String fName)
 	{
 		try {
 			out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(fName), "UTF-8")); 
@@ -82,57 +88,26 @@ public class SBMLParser {
 		out.close();
 	}
 	
-	
-	/**
-	 * Print the model in SBML format.
-	 * @param mod the model to output
-	 * @return the name of the file
-	 */
-	public String print(Module mod)
+	public static void importSBML(String fileName)
 	{
-		/*
-		out.println("<model id=\"" + mod.getName() + "\" name=\"" + mod.getName() + "\">");
-		printSubmodelInformation(mod);
-		printPortInformation(mod);
-		out.println("</model>");
-		out.close();
-		*/
-		fileName = mod.getName() + ".sbml";
-		try {
-			out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(fileName), "UTF-8")); 
-			//out = new PrintWriter(new BufferedWriter(new FileWriter(fileName)));
-		} catch (IOException e) {
+		try
+		{
+			DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+			DocumentBuilder db = dbf.newDocumentBuilder();
+			Document doc = db.parse(fileName);
+			doc.getDocumentElement().normalize();
+			importContainerModule(doc);
 			
+		}
+		catch (Exception e)
+		{
 			e.printStackTrace();
 		}
-
-		printModelCompHeader();
 		
-		modelSBML = "<model id=\"" + mod.getName() + "\">";
-		out.println(modelSBML);
-		if (!mod.getChildren().isEmpty())
-		{
-			//printSubmodelInformation(mod);
-		}
-		
-		/*
-		if (!mod.getPorts().isEmpty())
-		{
-			printPortInformation(mod);
-		}
-		*/
-		modelSBML = "</model>\n";
-		modelSBML += "</sbml>\n";
-		out.println(modelSBML);
-		
-		//printModelDefinitions(mod);
-		
-		out.close();
-		return fileName;
 	}
 	
 	/**
-	 * Print the model definitions.
+	 * Return the model definitions.
 	 * @param mod the model to output
 	 */
 	private String getModelDefinitions(Module mod)
@@ -200,6 +175,7 @@ public class SBMLParser {
 				{
 					String part1 = modelSBML.substring(0, endofModelDefIndex);
 					String part2 = modelSBML.substring(endofModelDefIndex);
+					setPortIDRefs(part1, child);
 					String portDefinitions = getPortDefinitions(child);
 					
 					modelSBML = part1 + portDefinitions + addSpace(2) + part2;
@@ -272,7 +248,7 @@ public class SBMLParser {
 		{
 			port = ports.next();
 			
-			idRef = port.getRefName();
+			idRef = port.getVariableSBMLid();
 			id = port.getName();
 			
 			portInfo += addSpace(6) + "<comp:port ";
@@ -560,7 +536,7 @@ public class SBMLParser {
 		*/
 	}
 	
-	private String addSpace(int length)
+	private static String addSpace(int length)
 	{
 		String space = "";
 		
@@ -599,5 +575,280 @@ public class SBMLParser {
 			startMetaIDIndex = output.indexOf("metaid=", startMetaIDIndex);
 		}
 		return output;
+	}
+	
+	private void setPortIDRefs(String sbml, Module mod)
+	{
+		ListIterator<Port> ports = mod.getPorts().listIterator();
+		Port port;
+		int startlistofSpeciesIndex = sbml.indexOf("<listOfSpecies>");
+		int endlistofSpeciesIndex = sbml.indexOf("</listOfSpecies>", startlistofSpeciesIndex+5);
+		String speciesList = null;
+		if ((startlistofSpeciesIndex != -1) && (endlistofSpeciesIndex != -1))
+		{
+			speciesList = sbml.substring(startlistofSpeciesIndex, endlistofSpeciesIndex);
+		}
+		
+		int startlistofGlobalQIndex = sbml.indexOf("<listOfParameters>");
+		int endlistofGlobalQIndex = sbml.indexOf("</listOfParameters>", startlistofGlobalQIndex);
+		String globalQList = null;
+		if ((startlistofGlobalQIndex != -1) && (endlistofGlobalQIndex != -1))
+		{
+			globalQList = sbml.substring(startlistofGlobalQIndex, endlistofGlobalQIndex);
+		}
+		
+		System.out.println(speciesList);
+		String name;
+		String sbmlID = null;
+		VariableType vType;
+		
+		while(ports.hasNext())
+		{
+			port = ports.next();
+			name = port.getRefName();
+			vType = port.getVariableType();
+			
+			switch(vType)
+			{
+			case SPECIES:
+				sbmlID = getSpeciesSBMLid(speciesList, name);
+				break;
+			case GLOBAL_QUANTITY:
+				sbmlID = getGlobalQSBMLid(globalQList, name);
+				break;
+			}
+			
+			System.out.println("Port name: " + name + ".......ID: " + sbmlID);
+			if (sbmlID != null)
+			{
+				port.setVariableSBMLid(sbmlID);
+			}
+			else
+			{
+				System.err.println("SBMLParser.setPortIDRefs: sbmlID is null.");
+			}
+		}
+	}
+	
+	private String getSpeciesSBMLid(String speciesList, String name)
+	{
+		String id = null;
+		int nameIndex;
+		int startIndex;
+		int startIDIndex;
+		int endIDIndex;
+		
+		nameIndex = speciesList.indexOf("name=\""+ name + "\"");
+		if (nameIndex == -1)
+		{
+			System.err.println("SBMLParser.getSpeciesSBMLid: species name \"" + name + "\" not found.");
+		}
+		
+		startIndex = nameIndex - 50;
+		if (startIndex < 0)
+		{
+			startIndex = 0;
+		}
+		startIDIndex = speciesList.indexOf(" id=\"", startIndex);
+		startIDIndex = startIDIndex + 5;
+		endIDIndex = speciesList.indexOf("\"", startIDIndex);
+		
+		id = speciesList.substring(startIDIndex, endIDIndex);
+		return id;
+	}
+	
+	private String getGlobalQSBMLid(String globalQList, String name)
+	{
+		String id = null;
+		int nameIndex;
+		int startIndex;
+		int startIDIndex;
+		int endIDIndex;
+		
+		nameIndex = globalQList.indexOf("name=\""+ name + "\"");
+		if (nameIndex == -1)
+		{
+			System.err.println("SBMLParser.getGlobalQSBMLid: species name \"" + name + "\" not found.");
+		}
+		
+		startIndex = nameIndex - 50;
+		if (startIndex < 0)
+		{
+			startIndex = 0;
+		}
+		startIDIndex = globalQList.indexOf(" id=\"", startIndex);
+		startIDIndex = startIDIndex + 5;
+		endIDIndex = globalQList.indexOf("\"", startIDIndex);
+		
+		id = globalQList.substring(startIDIndex, endIDIndex);
+		return id;
+	}
+	
+	// return string representation of a Node (with XML tags and full expansion) 
+	private static String elementToString(Node n) 
+	{
+		String name = n.getNodeName();
+		short type = n.getNodeType();
+		if (Node.CDATA_SECTION_NODE == type) {
+		  return "<![CDATA[" + n.getNodeValue() + "]]&gt;";
+		}
+		
+		if (name.startsWith("#")) 
+		  return "";
+		
+		StringBuffer sb = new StringBuffer();
+		sb.append('<').append(name);
+		
+		NamedNodeMap attrs = n.getAttributes();
+		if (attrs != null) {
+		  for (int i = 0; i < attrs.getLength(); i++) {
+		    Node attr = attrs.item(i);
+		    sb.append(' ').append(attr.getNodeName()).append("=\"").append(attr.getNodeValue()).append(
+		"\"");
+		  }
+		}
+		
+		String textContent = null;
+		NodeList children = n.getChildNodes();
+		
+		if (children.getLength() == 0) {
+		 if ((textContent = n.getTextContent()) != null && !"".equals(textContent)) {
+		sb.append(textContent).append("</").append(name).append('>');
+		    ;
+		  } else {	
+		sb.append("/>").append('\n');
+		  }
+		} else {
+		  sb.append('>').append('\n');
+		  boolean hasValidChildren = false;
+		  for (int i = 0; i < children.getLength(); i++) {
+		    String childToString = elementToString(children.item(i));
+		    if (!"".equals(childToString)) {
+		      sb.append(childToString);
+		      hasValidChildren = true;
+		    }
+		  }
+		
+		  if (!hasValidChildren && ((textContent = n.getTextContent()) != null)) {
+		    sb.append(textContent);
+		  }
+		  sb.append("</").append(name).append('>');
+		}
+		return sb.toString();
+	}
+	
+	private static void importContainerModule(Document doc)
+	{
+		String name = "";
+		String sbmlID = "";
+		String space = addSpace(6);
+		String modString = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + eol;
+		modString += "<sbml xmlns=\"http://www.sbml.org/sbml/level3/version1/core\" level=\"3\" version=\"1\" " + eol;
+		modString += space + "xmlns:comp=\"http://www.sbml.org/sbml/level3/version1/comp/version1\">" + eol;
+		modString += space + "xmlns:html=\"http://www.w3.org/1999/xhtml\"" + eol;
+		modString += space + "xmlns:jigcell=\"http://www.sbml.org/2001/ns/jigcell\"" + eol;
+		modString += space + "xmlns:math=\"http://www.w3.org/1998/Math/MathML\">\n" + eol;
+		System.out.println ("Root element of the doc is " + doc.getDocumentElement().getNodeName());
+		NodeList nodeLst = doc.getElementsByTagName("model");
+		assert nodeLst.getLength() == 1;
+		modString += "<model ";
+		Node modNode = nodeLst.item(0);		   
+		NamedNodeMap nnMap = modNode.getAttributes();
+		Node iNode;
+		for(int i = 0; i < nnMap.getLength();i++)
+		{
+			iNode = nnMap.item(i);
+			modString += " " + iNode.getNodeName() + "=\"" + iNode.getNodeValue() + "\"";
+			if (iNode.getNodeName().equals("name"))
+			{
+				name = iNode.getNodeValue();
+			}
+			else if (iNode.getNodeName().equals("id"))
+			{
+				sbmlID = iNode.getNodeValue();
+			}
+		}
+		modString += "\">\"";
+		
+		nodeLst = modNode.getChildNodes();
+		Node child = null;
+		for(int i = 0; i < nodeLst.getLength(); i++)
+		{
+			child = nodeLst.item(i);
+			if(child.getNodeName().equals("comp:listOfSubmodels"))
+			{
+				continue;
+			}
+			
+			modString += elementToString(child);
+		}
+		modString += eol + "</model>" + eol + "</sbml>";
+		
+		Module mod = AC_GUI.currentGUI.newModule(name, sbmlID, modString);
+		importAllSubmodules(doc, mod);
+		//System.out.println(modString);
+	}
+	
+	private static void importAllSubmodules(Document doc, Module parent)
+	{
+		String name = "";
+		String sbmlID = "";
+		String space = addSpace(6);
+		String prefix = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + eol;
+		prefix += "<sbml xmlns=\"http://www.sbml.org/sbml/level3/version1/core\" level=\"3\" version=\"1\" comp:required=\"false\"" + eol;
+		prefix += space + "xmlns:comp=\"http://www.sbml.org/sbml/level3/version1/comp/version1\">" + eol;
+		prefix += space + "xmlns:html=\"http://www.w3.org/1999/xhtml\"" + eol;
+		prefix += space + "xmlns:jigcell=\"http://www.sbml.org/2001/ns/jigcell\"" + eol;
+		prefix += space + "xmlns:math=\"http://www.w3.org/1998/Math/MathML\">\n" + eol;
+		String modString = prefix;
+		NodeList nodeLst1 = doc.getElementsByTagName("comp:modelDefinition");
+		NodeList nodeLst2;
+		System.out.println("All the models in the file:");
+		Node submoduleNode;
+		for (int i = 0; i < nodeLst1.getLength(); i++) 
+		{
+			submoduleNode = nodeLst1.item(i);
+			if (submoduleNode == null)
+			{
+				continue;
+			}
+			modString += "<model ";	   
+			NamedNodeMap nnMap = submoduleNode.getAttributes();
+			Node iNode;
+			for(int j = 0; j < nnMap.getLength(); j++)
+			{
+				iNode = nnMap.item(j);
+				modString += " " + iNode.getNodeName() + "=\"" + iNode.getNodeValue() + "\"";
+				if (iNode.getNodeName().equals("name"))
+				{
+					name = iNode.getNodeValue();
+				}
+				else if (iNode.getNodeName().equals("id"))
+				{
+					sbmlID = iNode.getNodeValue();
+				}
+			}
+			modString += ">";
+			
+			nodeLst2 = submoduleNode.getChildNodes();
+			Node child = null;
+			for(int j = 0; j < nodeLst2.getLength(); j++)
+			{
+				child = nodeLst2.item(j);
+				if(child.getNodeName().equals("comp:listOfSubmodels"))
+				{
+					continue;
+				}
+				if(child.getNodeName().equals("comp:listOfPorts"))
+				{
+					continue;
+				}
+				modString += elementToString(child);
+			}
+			modString += eol + "</model>" + eol + "</sbml>";
+			System.out.println(modString);
+			AC_GUI.currentGUI.newSubmodule(name, sbmlID, modString, parent);
+			modString = prefix;
+		}
 	}
 }

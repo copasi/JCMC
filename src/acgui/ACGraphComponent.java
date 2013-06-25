@@ -57,7 +57,7 @@ public class ACGraphComponent extends mxGraphComponent
 			model.beginUpdate();
 			try
 			{
-				mod.setName(newName);
+				AC_GUI.changeModuleName(mod, newName, false);
 				graph.cellLabelChanged(cell, mod, graph.isAutoSizeCell(cell));
 				eventSource.fireEvent(new mxEventObject(mxEvent.LABEL_CHANGED,"cell", cell, "value", value, "event", evt));
 			}

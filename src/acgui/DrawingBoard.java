@@ -1700,6 +1700,17 @@ public class DrawingBoard extends JPanel
 						//printCellCount(cell);
 					}
 					
+					if (cell.getValue() instanceof VisibleVariable)
+					{
+						VisibleVariable var = (VisibleVariable)cell.getValue();
+						AC_GUI.modelBuilder.setSelectedVariable(var.getRefName(), var.getVariableType());
+					}
+					
+					if (cell.getValue() instanceof EquivalenceNode)
+					{
+						AC_GUI.modelBuilder.setSelectedVariable(((EquivalenceNode)cell.getValue()).getRefName(), VariableType.SPECIES);
+					}
+					
 					if (SwingUtilities.isRightMouseButton(e))
 					{
 						// System.out.println("cell=" + graph.getLabel(cell));

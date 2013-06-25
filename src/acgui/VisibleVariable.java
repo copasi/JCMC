@@ -18,6 +18,7 @@ public class VisibleVariable implements Serializable
 	private static final long serialVersionUID = 1L;
 	private Module parent;
 	private String refName;
+	private VariableType variableType;
 	private Object drawingCell;
 	private mxRectangle drawingCellBounds;
 	private mxGeometry drawingCellGeometry;
@@ -25,26 +26,29 @@ public class VisibleVariable implements Serializable
 	/**
 	 * 
 	 */
-	public VisibleVariable(Module iParent, String iRefName)
+	public VisibleVariable(Module iParent, String iRefName, VariableType vType)
 	{
 		parent = iParent;
 		refName = iRefName;
+		variableType = vType;
 	}
 	
-	public VisibleVariable(Module iParent, String iRefName, Object iDrawingCell)
+	public VisibleVariable(Module iParent, String iRefName, Object iDrawingCell, VariableType vType)
 	{
 		parent = iParent;
 		refName = iRefName;
 		drawingCell = iDrawingCell;
+		variableType = vType;
 	}
 	
-	public VisibleVariable(Module iParent, String iRefName, Object iDrawingCell, mxRectangle iCellBounds, mxGeometry iCellGeo)
+	public VisibleVariable(Module iParent, String iRefName, Object iDrawingCell, mxRectangle iCellBounds, mxGeometry iCellGeo, VariableType vType)
 	{
 		parent = iParent;
 		refName = iRefName;
 		drawingCell = iDrawingCell;
 		drawingCellBounds = iCellBounds;
 		drawingCellGeometry = iCellGeo;
+		variableType = vType;
 	}
 
 	public Module getParent()
@@ -98,6 +102,16 @@ public class VisibleVariable implements Serializable
 	public mxGeometry getDrawingCellGeometry()
 	{
 		return drawingCellGeometry;
+	}
+	
+	public VariableType getVariableType()
+	{
+		return variableType;
+	}
+	
+	public void setVariableType(VariableType varType)
+	{
+		variableType = varType;
 	}
 	
 	public String toString()

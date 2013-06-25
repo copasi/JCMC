@@ -19,7 +19,7 @@ public class ACMenuListener implements ActionListener
 {
 
 	JFileChooser fileChooser;
-	
+	private String eol;
 	/**
 	 * Detect which action occurred and perform the appropriate task.
 	 * @param ae the action event
@@ -37,6 +37,7 @@ public class ACMenuListener implements ActionListener
 		Module parentMod;
 		DefaultMutableTreeNode node;
 		DefaultMutableTreeNode parent;
+		eol = System.getProperty("line.separator");
 		
 		
 		switch(selection)
@@ -47,9 +48,21 @@ public class ACMenuListener implements ActionListener
 			if (AC_GUI.isModuleOpen() == false)
 			{
 				name = JOptionPane.showInputDialog("Name of the new module:", "Module");
-				if (name != null)
+				if ((name != null) && (!name.isEmpty()))
 				{
-					AC_GUI.currentGUI.newModule(name);
+					if (AC_GUI.nameValidation(name))
+					{
+						AC_GUI.currentGUI.newModule(name);
+					}
+					else
+					{
+						String message = "Invalid name. Names must adhere to the following rules:" + eol;
+						message += "\u2022 Names cannot start with a number or punctuation character." + eol;
+						message += "\u2022 Names cannot start with the letters \"xml\"." + eol;
+						message += "\u2022 Names cannot contain spaces.";
+												
+						JOptionPane.showMessageDialog(null, message);
+					}
 				}
 			}
 			else
@@ -74,9 +87,21 @@ public class ACMenuListener implements ActionListener
             	if (ext.equals(".xml") || ext.equals(".cps"))
         		{
             		String iName = JOptionPane.showInputDialog("Name of the loaded module:", "Module");
-    				if (iName != null)
+    				if ((iName != null) && (!iName.isEmpty()))
     				{
-    					AC_GUI.currentGUI.load(file.getAbsolutePath(), iName);
+    					if (AC_GUI.nameValidation(iName))
+    					{
+    						AC_GUI.currentGUI.load(file.getAbsolutePath(), iName);
+    					}
+    					else
+    					{
+    						String message = "Invalid name. Names must adhere to the following rules:" + eol;
+    						message += "\u2022 Names cannot start with a number or punctuation character." + eol;
+    						message += "\u2022 Names cannot start with the letters \"xml\"." + eol;
+    						message += "\u2022 Names cannot contain spaces.";
+    												
+    						JOptionPane.showMessageDialog(null, message);
+    					}
     				}
         		}
             	else{
@@ -168,9 +193,34 @@ public class ACMenuListener implements ActionListener
 					if (parentMod == AC_GUI.drawingBoard.getActiveModule())
 					{
 						name = JOptionPane.showInputDialog("Name of the new submodule:", "Submodule");
-						if (name != null)
+						while(name != null)
 						{
-							AC_GUI.currentGUI.newSubmodule(name, parentMod);
+							if (!name.isEmpty())
+							{
+								if (AC_GUI.nameValidation(name))
+		    					{
+									if (AC_GUI.submoduleValidation(name))
+									{
+										AC_GUI.currentGUI.newSubmodule(name, parentMod);
+										break;
+									}
+									else
+									{
+										String message = "There already exists a submodule with the same name.";
+										JOptionPane.showMessageDialog(null, message);
+									}
+		    					}
+		    					else
+		    					{
+		    						String message = "Invalid name. Names must adhere to the following rules:" + eol;
+		    						message += "\u2022 Names cannot start with a number or punctuation character." + eol;
+		    						message += "\u2022 Names cannot start with the letters \"xml\"." + eol;
+		    						message += "\u2022 Names cannot contain spaces.";
+		    												
+		    						JOptionPane.showMessageDialog(null, message);
+		    					}
+							}
+							name = JOptionPane.showInputDialog("Name of the new submodule:", name);
 						}
 					}
 					else
@@ -216,10 +266,35 @@ public class ACMenuListener implements ActionListener
 			            	if (ext.equals(".xml") || ext.equals(".cps"))
 			        		{
 			            		String iName = JOptionPane.showInputDialog("Name of the loaded module:", "Module");
-			    				if (iName != null)
-			    				{
-			    					AC_GUI.currentGUI.loadSubmodule(file.getAbsolutePath(), AC_GUI.selectedModule, iName);
-			    				}
+			    				while(iName != null)
+								{
+									if (!iName.isEmpty())
+									{
+										if (AC_GUI.nameValidation(iName))
+				    					{
+											if (AC_GUI.submoduleValidation(iName))
+											{
+												AC_GUI.currentGUI.loadSubmodule(file.getAbsolutePath(), AC_GUI.selectedModule, iName);
+												break;
+											}
+											else
+											{
+												String message = "There already exists a submodule with the same name.";
+												JOptionPane.showMessageDialog(null, message);
+											}
+				    					}
+				    					else
+				    					{
+				    						String message = "Invalid name. Names must adhere to the following rules:" + eol;
+				    						message += "\u2022 Names cannot start with a number or punctuation character." + eol;
+				    						message += "\u2022 Names cannot start with the letters \"xml\"." + eol;
+				    						message += "\u2022 Names cannot contain spaces.";
+				    												
+				    						JOptionPane.showMessageDialog(null, message);
+				    					}
+									}
+									iName = JOptionPane.showInputDialog("Name of the loaded module:", iName);
+								}
 			        		}
 			            	else{
 			            		AC_GUI.currentGUI.loadSubmodule(file.getAbsolutePath(), AC_GUI.selectedModule, "");

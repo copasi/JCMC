@@ -19,6 +19,8 @@ public class Port implements Serializable
 	private PortType type;
 	private String name;
 	private String refName;
+	private VariableType variableType;
+	private String variableSBMLid;
 	private Object drawingCell;
 	private int rowIndex;
 	
@@ -37,6 +39,22 @@ public class Port implements Serializable
 		rowIndex = iRowIndex;
 	}
 	
+	/**
+	 * Construct the port object.
+	 * @param iParent the module where the port is located
+	 * @param pType the type of port
+	 * @param vType the type of variable
+	 * @param iName the name of the port
+	 */
+	public Port(Module iParent, String iRefName, PortType pType, VariableType vType, String iName, int iRowIndex)
+	{
+		parent = iParent;
+		refName = iRefName;
+		type = pType;
+		variableType = vType;
+		name = iName;
+		rowIndex = iRowIndex;
+	}
 	/**
 	 * Return the parent of the port.
 	 * @return the parent of the port
@@ -126,6 +144,26 @@ public class Port implements Serializable
 	public void setRowIndex(int iRowIndex)
 	{
 		rowIndex = iRowIndex;
+	}
+	
+	public VariableType getVariableType()
+	{
+		return variableType;
+	}
+	
+	public void setVariableType(VariableType varType)
+	{
+		variableType = varType;
+	}
+	
+	public String getVariableSBMLid()
+	{
+		return variableSBMLid;
+	}
+	
+	public void setVariableSBMLid(String id)
+	{
+		variableSBMLid = id;
 	}
 	
 	/**

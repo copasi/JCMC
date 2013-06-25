@@ -121,7 +121,7 @@ public class PortAddEditor extends JDialog
 				{
 				case 0:
 					dispose();
-					AC_GUI.currentGUI.addPort(module, (String) comboBox1.getSelectedItem(), textfield.getText(), (PortType) comboBox2.getSelectedItem());
+					AC_GUI.currentGUI.addPort(module, (String)comboBox1.getSelectedItem(), textfield.getText(), (PortType)comboBox2.getSelectedItem());
 					break;
 				case 1:
 					msg = "\"" + (String)comboBox1.getSelectedItem() + "\"";

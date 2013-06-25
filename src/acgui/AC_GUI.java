@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.ListIterator;
 import java.util.Vector;
+import java.util.regex.Pattern;
 
 import javax.swing.JFrame;
 import javax.swing.JMenu;
@@ -123,7 +124,8 @@ public class AC_GUI extends JFrame
 		{
 			if (ext.equals(".xml"))
 			{
-				dataModel.importSBML(fileName);
+				//dataModel.importSBML(fileName);
+				SBMLParser.importSBML(fileName);
 			}
 			else if (ext.equals(".cps"))
 			{
@@ -140,7 +142,7 @@ public class AC_GUI extends JFrame
 			System.err.println( "Error while importing the model from file named \"" + fileName + "\"." );
 		}
 		
-		if (ext.equals(".xml") || ext.equals(".cps"))
+		if (ext.equals(".cps"))
 		{
 			dataModel.getModel().setObjectName(optName);
 			mod = new Module(dataModel.getModel().getObjectName(), dataModel.getModel().getKey());
@@ -150,11 +152,13 @@ public class AC_GUI extends JFrame
 		}
 		
 		//drawingBoard.changeModule(mod);
-		
-		changeActiveModule(mod);
-		//modelBuilder.loadModel(mod.getKey());
-		modelBuilder.setVisible(true);
-		activeModule = mod;
+		if (ext.equals(".cps") || ext.equals(".ac"))
+		{
+			changeActiveModule(mod);
+			//modelBuilder.loadModel(mod.getKey());
+			modelBuilder.setVisible(true);
+			activeModule = mod;
+		}
 	}
 	
 	public void loadSubmodule(String fileName, Module parent, String optName)
@@ -238,7 +242,7 @@ public class AC_GUI extends JFrame
 			System.out.println("Problem saving Modules.");
 		}
 		SBMLParser output = new SBMLParser();
-		output.saveSBML("", activeModule, fileName);
+		output.exportSBML("", activeModule, fileName);
 	}
 	
 	/**
@@ -264,6 +268,29 @@ public class AC_GUI extends JFrame
 		activeModule = mod;
 	}
 	
+	public Module newModule(String name, String sbmlID, String copasiData)
+	{
+		CCopasiDataModel dataModel = copasiUtility.createDataModel();
+		dataModel.getModel().setObjectName(name);
+		dataModel.getModel().setSBMLId(sbmlID);
+		//dataModel.importSBMLFromString(copasiData);
+		Module mod = new Module(name, dataModel.getModel().getKey());
+		mod.setDrawingCellStyle("Module");
+		//System.out.println(name + " key = " + mod.getKey());
+		masterModuleList.add(mod);
+		//treeView.setup(mod);
+		//treeView.setup();
+		treeView.addNode(mod);
+		drawingBoard.createCell(mod);
+		drawingBoard.changeModule(mod);
+		modelBuilder.loadModel(mod.getKey(), true);
+		modelBuilder.setVisible(true);		
+		
+		activeModule = mod;
+		System.out.println("Module created. Name: " + name + "...SBMLid: " + sbmlID + "");
+		return mod;
+	}
+	
 	/**
 	 * Create a new submodule in the three panels.
 	 * @param name the name of the new submodule
@@ -284,16 +311,58 @@ public class AC_GUI extends JFrame
 		//printList();
 	}
 	
+	public void newSubmodule(String name, String sbmlID, String copasiData, Module parent)
+	{
+		CCopasiDataModel dataModel = copasiUtility.createDataModel();
+		dataModel.getModel().setObjectName(name);
+		dataModel.getModel().setSBMLId(sbmlID);
+		
+		try
+		{
+			dataModel.importSBMLFromString(copasiData);
+		}
+		catch (java.lang.Exception ex)
+		{
+			ex.printStackTrace();
+		}
+		
+		Module mod = new Module(name, dataModel.getModel().getKey(), parent);
+		mod.setDrawingCellStyle("Submodule");
+		//System.out.println(name + " key = " + mod.getKey());
+		parent.addChild(mod);
+		treeView.addNode(mod);
+		drawingBoard.createCell(mod);
+		drawingBoard.addCell(mod);
+		drawingBoard.changeModule(parent);
+		System.out.println("Submodule created. Name: " + name + "...SBMLid: " + sbmlID + "");
+	}
+	
 	public static void addVisibleVariable(String refName)
 	{
-		VisibleVariable var = new VisibleVariable(activeModule, refName);
+		VariableType vType= null;
+		if (refName.endsWith(VariableType.SPECIES.toString()))
+		{
+			refName = refName.replace(" - " + VariableType.SPECIES.toString(), "");
+			vType = VariableType.SPECIES;
+		}
+		else if (refName.endsWith(VariableType.GLOBAL_QUANTITY.toString()))
+		{
+			refName = refName.replace(" - " + VariableType.GLOBAL_QUANTITY.toString(), "");
+			vType = VariableType.GLOBAL_QUANTITY;
+		}
+		else
+		{
+			System.err.println("AC_GUI.addPort: A valid VariableType was not found.");
+		}
+		
+		VisibleVariable var = new VisibleVariable(activeModule, refName, vType);
 		drawingBoard.addVisibleVariable(activeModule, var);
 		activeModule.addVisibleVariable(var);
 	}
 	
 	public static void addVisibleVariable(Module parentMod, String refName, Object varCell)
 	{
-		VisibleVariable var = new VisibleVariable(activeModule, refName, varCell);
+		VisibleVariable var = new VisibleVariable(activeModule, refName, varCell, VariableType.SPECIES);
 		drawingBoard.setValue(varCell, var);
 		activeModule.addVisibleVariable(var);
 		
@@ -355,10 +424,26 @@ public class AC_GUI extends JFrame
 	 * @param name the name of the port
 	 * @param type the type of the port
 	 */
-	public void addPort(Module parentMod, String refName, String name, PortType type)
+	public void addPort(Module parentMod, String refName, String name, PortType pType)
 	{
 		int portCount = parentMod.getPorts().size();
-		Port newPort = new Port(parentMod, refName, type, name, portCount);
+		VariableType vType= null;
+		if (refName.endsWith(VariableType.SPECIES.toString()))
+		{
+			refName = refName.replace(" - " + VariableType.SPECIES.toString(), "");
+			vType = VariableType.SPECIES;
+		}
+		else if (refName.endsWith(VariableType.GLOBAL_QUANTITY.toString()))
+		{
+			refName = refName.replace(" - " + VariableType.GLOBAL_QUANTITY.toString(), "");
+			vType = VariableType.GLOBAL_QUANTITY;
+		}
+		else
+		{
+			System.err.println("AC_GUI.addPort: A valid VariableType was not found.");
+		}
+		
+		Port newPort = new Port(parentMod, refName, pType, vType, name, portCount);
 		drawingBoard.addPort(parentMod, newPort);
 		modelBuilder.addPort(newPort);
 		parentMod.addPort(newPort);
@@ -499,6 +584,16 @@ public class AC_GUI extends JFrame
 	public void setSelectedModule(Object drawingCell)
 	{
 		setSelectedModule(masterModuleList.findModule(drawingCell));
+	}
+	
+	public void setSelectedPort(String refName)
+	{
+		
+	}
+	
+	public void setSelectedVariable(String refName, VariableType vType)
+	{
+		
 	}
 	
 	public static void changeActiveModule(Module mod)
@@ -684,13 +779,13 @@ public class AC_GUI extends JFrame
 		// create the input ports
 		for(int i = 0; i < inputs; i++)
 		{
-			newPort = new Port(mathAgg, inputPrefix+i, PortType.INPUT, ""+i, i);
+			newPort = new Port(mathAgg, inputPrefix+i, PortType.INPUT, VariableType.GLOBAL_QUANTITY, inputPrefix+i, i);
 			modelBuilder.addPort(newPort);
 			mathAgg.addPort(newPort);
 		}
 		
 		// create the output port
-		newPort = new Port(mathAgg, outputName, PortType.OUTPUT, "Total", mathAgg.getPorts().size());
+		newPort = new Port(mathAgg, outputName, PortType.OUTPUT, VariableType.GLOBAL_QUANTITY, "Total", mathAgg.getPorts().size());
 		modelBuilder.addPort(newPort);
 		mathAgg.addPort(newPort);
 	}
@@ -781,10 +876,42 @@ public class AC_GUI extends JFrame
 		drawingBoard.updatePort(port.getDrawingCell());
 	}
 	
+	public static boolean submoduleValidation(String name)
+	{
+		ListIterator<Module> children = activeModule.getChildren().listIterator();
+		
+		while(children.hasNext())
+		{
+			if (name.compareToIgnoreCase(children.next().getName()) == 0)
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+	
 	public static int portValidation(String portName, String refName)
 	{
 		ListIterator<Port> ports = activeModule.getPorts().listIterator();
 		Port currentPort;
+		
+		// trim the refName
+		if (refName.endsWith(VariableType.SPECIES.toString()))
+		{
+			System.out.println("Old refName: " + refName);
+			refName = refName.replace(" - " + VariableType.SPECIES.toString(), "");
+			System.out.println("New refName: " + refName);
+		}
+		else if (refName.endsWith(VariableType.GLOBAL_QUANTITY.toString()))
+		{
+			System.out.println("Old refName: " + refName);
+			refName = refName.replace(" - " + VariableType.GLOBAL_QUANTITY.toString(), "");
+			System.out.println("New refName: " + refName);
+		}
+		else
+		{
+			System.err.println("AC_GUI.portValidation: A valid VariableType was not found.");
+		}
 		
 		while (ports.hasNext())
 		{
@@ -809,6 +936,24 @@ public class AC_GUI extends JFrame
 	{
 		ListIterator<VisibleVariable> vars = activeModule.getVisibleVariables().listIterator();
 		VisibleVariable currentVar;
+		
+		// trim the refName
+		if (refName.endsWith(VariableType.SPECIES.toString()))
+		{
+			System.out.println("Old refName: " + refName);
+			refName = refName.replace(" - " + VariableType.SPECIES.toString(), "");
+			System.out.println("New refName: " + refName);
+		}
+		else if (refName.endsWith(VariableType.GLOBAL_QUANTITY.toString()))
+		{
+			System.out.println("Old refName: " + refName);
+			refName = refName.replace(" - " + VariableType.GLOBAL_QUANTITY.toString(), "");
+			System.out.println("New refName: " + refName);
+		}
+		else
+		{
+			System.err.println("AC_GUI.visibleVariableValidation: A valid VariableType was not found.");
+		}
 		
 		while (vars.hasNext())
 		{
@@ -884,6 +1029,57 @@ public class AC_GUI extends JFrame
 		}
 	}
 	
+	public static void changeModuleName(Module mod, String newName, boolean fromModelBuilder)
+	{
+		mod.setName(newName);
+		treeView.refreshTree();
+		if (mod == activeModule)
+		{
+			if (!fromModelBuilder)
+			{
+				modelBuilder.setModelName(newName);
+			}
+		}
+		// call msmb and set the model name
+		/*
+		dataModel = copasiUtility.getCopasiModelFromKey(mod.getKey());
+		if (dataModel != null)
+		{
+			dataModel.getModel().setObjectName(newName);
+		}
+		else
+		{
+			System.err.println("AC_GUI.changeModuleName, no Copasi data model found.");
+		}
+		*/
+	}
+	
+	public static boolean nameValidation(String name)
+	{
+		String first = name.substring(0, 1);
+		
+		if(Pattern.matches("\\d", first))
+		{
+			return false;
+		}
+		
+		if(name.matches(".*\\s.*"))
+		{
+			return false;
+		}
+		
+		if(Pattern.matches("\\p{Punct}", first))
+		{
+			return false;
+		}
+		
+		if(name.toLowerCase().startsWith("xml"))
+		{
+			return false;
+		}
+		
+		return true;
+	}
 	public static void close()
 	{
 		masterModuleList.clearList();

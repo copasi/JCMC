@@ -2,6 +2,7 @@ package acgui;
 
 import java.awt.BorderLayout;
 import java.awt.Font;
+import java.util.Iterator;
 import java.util.ListIterator;
 import java.util.Vector;
 
@@ -13,6 +14,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
+import javax.swing.JTable;
 import javax.swing.MenuElement;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -229,6 +231,34 @@ public class ModelBuilder
 		jTableCustom.setRowSelectionInterval(portIndex, portIndex);
 	}
 	
+	public void setSelectedVariable(String name, VariableType vType)
+	{
+		JTabbedPane tabPanel = msmb.getMSMB_MainTabPanel();
+		int tabPanelIndex = 0;
+		
+		switch(vType)
+		{
+		case SPECIES:
+			tabPanelIndex = 1;
+			break;
+		case GLOBAL_QUANTITY:
+			tabPanelIndex = 2;
+			break;
+		}
+		
+		tabPanel.setSelectedIndex(tabPanelIndex);
+	}
+	
+	public int getSelectedTabIndex()
+	{
+		return msmb.getMSMB_MainTabPanel().getSelectedIndex();
+	}
+	
+	public void setModelName(String newName)
+	{
+		msmb.setModelName(newName);
+	}
+
 	/**
 	 * Display the Port tab with the rest of the MSMB panel.
 	 */
@@ -364,10 +394,52 @@ public class ModelBuilder
 	 */
 	private void updateRefNames()
 	{
+		Vector<String> species;
+		Vector<String> newSpeciesList = null;
+		Vector<String> globalq;
+		Vector<String> newGlobalQList = null;
 		//reset and update the refNames list
 		refNames.clear();
-		refNames.addAll(msmb.getMSMB_listOfSpecies());
-		refNames.addAll(msmb.getMSMB_listOfGlobalQuantities());
+		
+		try
+		{
+			species = msmb.getMSMB_listOfSpecies();
+			newSpeciesList = new Vector<String>(species.size());
+			for (int i = 0; i < species.size(); i++)
+			{
+				newSpeciesList.add(i, species.get(i) + " - Species");
+			}
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+			System.err.println("Error updating Species list.");
+		}
+		
+		try
+		{
+			globalq = msmb.getMSMB_listOfGlobalQuantities();
+			newGlobalQList = new Vector<String>(globalq.size());
+			for (int i = 0; i < globalq.size(); i++)
+			{
+				newGlobalQList.add(i, globalq.get(i) + " - Global Quantity");
+			}
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+			System.err.println("Error updating GlobalQ list.");
+		}
+		
+		if ((newSpeciesList != null) && (newGlobalQList != null))
+		{
+			refNames.addAll(newSpeciesList);
+			refNames.addAll(newGlobalQList);
+		}
+		else
+		{
+			System.err.println("Error in ModelBuilder.updateRefNames().");
+		}
 	}
 	
 	/**
@@ -410,6 +482,22 @@ public class ModelBuilder
 		
 	private void installListeners()
 	{
+		// add a row listener to the species, global quantity, and port tables
+		jTableCustom.getSelectionModel().addListSelectionListener(new ACRowListener());
+		//((CustomJTable)msmb.getSpeciesJTable()).addMouseListener(new ACRowListener());
+		msmb.getSpeciesJTable().getSelectionModel().addListSelectionListener(new ACRowListener());
+		msmb.getGlobalQJTable().getSelectionModel().addListSelectionListener(new ACRowListener());
+		
+		/*
+		JTabbedPane tabPanel = msmb.getMSMB_MainTabPanel();
+		//now you can add your ports tab as a normal jtabbedpanel
+		JPanel panel = (JPanel)tabPanel.getComponentAt(1);
+		System.out.println("Comp count: " + panel.getComponentCount());
+		JScrollPane pane = (JScrollPane)panel.getComponent(0);
+		System.out.println("Vp count: " + pane.getViewport().getComponentCount());
+		JTable table = (JTable)pane.getViewport().getComponent(0);
+		table.getSelectionModel().addListSelectionListener(new ACRowListener());
+		*/
 		
 		msmb.addChangeListener(
 				new ChangeListener() {
@@ -445,6 +533,7 @@ public class ModelBuilder
 						ChangedElement after = (((MSMB_InterfaceChange)e.getSource()).getElementAfter());
 						if(before!=null) System.out.println("Model name before = " + before.getName());
 						if(after!=null)  System.out.println("Model name after = " + after.getName());
+						AC_GUI.changeModuleName(AC_GUI.activeModule, after.getName(), true);
 					}
 				}, 
 				MSMB_Element.MODEL);
@@ -462,7 +551,7 @@ public class ModelBuilder
 					}
 				}, 
 				MSMB_Element.FONT);
-	}
 		
 	}
+}
 
