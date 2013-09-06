@@ -6,7 +6,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.io.StringReader;
 import java.util.ListIterator;
+import java.util.Vector;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -16,6 +18,9 @@ import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
+
+import org.sbml.libsbml.*;
 
 import com.mxgraph.model.mxCell;
 import com.mxgraph.model.mxGraphModel;
@@ -54,19 +59,23 @@ public class SBMLParser {
 		String output;
 		
 		//print header
-		printModelCompHeader();
+		output = printModelCompHeader();
 		
 		//output = addSpace(2) + "<model id=\"" + rootModule.getName() + "\">";
-		output = getContainerDefinition(rootModule);
-		int endofModelDefIndex = output.indexOf("</model>");
-		String part1 = output.substring(0, endofModelDefIndex);
-		String part2 = output.substring(endofModelDefIndex);
+		System.out.println("getContainerDefinition() start.");
+		String containerOutput = getContainerDefinition(rootModule);
+		System.out.println("getContainerDefinition() end.");
+		int endofModelDefIndex = containerOutput.indexOf("</model>");
+		String part1 = containerOutput.substring(0, endofModelDefIndex);
+		String part2 = containerOutput.substring(endofModelDefIndex);
 		
-		output = part1;
+		output += part1;
 		//out.print(output);
 		if (!rootModule.getChildren().isEmpty())
 		{
+			System.out.println("getSubmodelInformation() start.");
 			output += getSubmodelInformation(rootModule) + eol;
+			System.out.println("getSubmodelInformation() end.");
 		}
 		/*
 		if (!rootModule.getPorts().isEmpty())
@@ -77,33 +86,69 @@ public class SBMLParser {
 		output += addSpace(2) + part2;
 		//out.println(output);
 		
+		System.out.println("addReplacements() start.");
 		output = addReplacements(output, rootModule);
+		System.out.println("addReplacements() end.");
 		
+		System.out.println("getModelDefinitions() start.");
 		output += getModelDefinitions(rootModule);
+		System.out.println("getModelDefinitions() end.");
 		
 		output += "</sbml>" + eol;
 		
+		System.out.println("removeCOPASIMetaID start.");
 		output = removeCOPASIMetaID(output);
+		System.out.println("removeCOPASIMetaID end.");
+		
+		System.out.println("fixReactionModifiers start.");
+		output = fixReactionModifiers(rootModule, output);
+		System.out.println("fixReactionModifiers end.");
+		
+		System.out.println("addLayoutInformation start.");
+		output = addLayoutInformation(rootModule, output);
+		System.out.println("addLayoutInformation end.");
+		
 		out.println(output);
 		out.close();
 	}
 	
-	public static void importSBML(String fileName)
+	public static Module importSBML(String fileName)
 	{
+		return importSBML(fileName, null);
+	}
+	
+	public static Module importSBML(String fileName, Module parent)
+	{
+		Module mod = null;
 		try
 		{
+			/*
 			DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 			DocumentBuilder db = dbf.newDocumentBuilder();
 			Document doc = db.parse(fileName);
 			doc.getDocumentElement().normalize();
-			importContainerModule(doc);
+			*/
+			
+			SBMLDocument sdoc = libsbml.readSBMLFromFile(fileName);
+			//System.out.println("Document Level: " + sdoc.getLevel());
+			//System.out.println("Document Version: " + sdoc.getVersion());
+			long numErrors = sdoc.getNumErrors();
+
+			if (numErrors > 0) {
+				System.err.println("Encountered errors while reading the file. ");
+				System.err.println("Please correct the following errors and try again.");
+				sdoc.printErrors();
+				System.exit(2);
+			}
+			//importContainerModule(doc, sdoc);
+			mod =  ximportContainerModule(sdoc, parent);
 			
 		}
 		catch (Exception e)
 		{
 			e.printStackTrace();
 		}
-		
+		return mod;
 	}
 	
 	/**
@@ -120,17 +165,25 @@ public class SBMLParser {
 		annotationHeader +=  "<params>\n";
 		String annotationFooter = "</params>\n" + "</COPASI>\n";
 		String output = "";
-		
 		//out.println(addSpace(2) + "<comp:listOfModelDefinitions>");
+		System.out.println("children loop start.");
 		output += addSpace(2) + "<comp:listOfModelDefinitions>" + eol;
 		while(children.hasNext())
 		{
 			child = children.next();
+			System.out.println("child " + child.getName() + " start.");
+			System.out.println("getCopasiModelFromKey() start.");
 			dataModel = AC_GUI.copasiUtility.getCopasiModelFromKey(child.getKey());
-			System.out.println(child.getName() + " key = " + child.getKey());
-			System.out.println(child.getName() + " dataModel key = " + dataModel.getModel().getKey());
-			System.out.println(child.getName() + " dataModel name = " + dataModel.getObjectName());
+			if (dataModel == null)
+			{
+				System.err.println(child.getName() + "'s dataModel is empty");
+			}
+			System.out.println("getCopasiModelFromKey() end.");
+			//System.out.println(child.getName() + " key = " + child.getKey());
+			//System.out.println(child.getName() + " dataModel key = " + dataModel.getModel().getKey());
+			//System.out.println(child.getName() + " dataModel name = " + dataModel.getObjectName());
 			hasPorts = (child.getPorts().size() != 0);
+			System.out.println("hasPorts = " + hasPorts);
 			/*
 			if (!child.getPorts().isEmpty())
 			{
@@ -152,21 +205,29 @@ public class SBMLParser {
 				//System.out.println();
 				//System.out.println(dataModel.exportSBMLToString(3, 1));
 				//modelSBML = dataModel.exportSBMLToString(3, 1);
+				System.out.println("SBMLparser.getModelDefinitions() " + child.getName() + "'s copasi key = " + child.getKey());
+				System.out.println("Datamodel name = " + dataModel.getModel().getObjectName());
+				System.out.println("exportSBMLToString() start.");
 				modelSBML = dataModel.exportSBMLToString(3, 1);
+				System.out.println("exportSBMLToString() end.");
+				System.out.println("substring and replace start.");
 				modelSBML = modelSBML.substring(modelSBML.indexOf("<model"));
 				modelSBML = modelSBML.replaceAll("<model", "<comp:modelDefinition");
 				modelSBML = modelSBML.replaceAll("</model>", "</comp:modelDefinition>");
 				modelSBML = modelSBML.replaceAll("\n</sbml>", "");
 				modelSBML = modelSBML.replaceAll("</sbml>", "");
 				modelSBML = addSpace(2) + modelSBML;
+				System.out.println("substring and replace end.");
 				
 				// replace the old id with the correct id
+				System.out.println("replace id start.");
 				int startIDIndex = modelSBML.indexOf(" id=");
 				int endIDIndex = modelSBML.indexOf("name=");
 				String oldID = modelSBML.substring(startIDIndex+1, endIDIndex);
-				System.out.println("OldID: " + oldID);
+				//System.out.println("OldID: " + oldID);
 				String newID = "id=\"" + child.getKey() + "\" ";
 				modelSBML = modelSBML.replaceAll(oldID, newID);
+				System.out.println("replace id end.");
 				
 				// add the port definitions to the submodule
 				//int endListofReactionsIndex = modelSBML.indexOf("</listOfReactions>");
@@ -175,8 +236,12 @@ public class SBMLParser {
 				{
 					String part1 = modelSBML.substring(0, endofModelDefIndex);
 					String part2 = modelSBML.substring(endofModelDefIndex);
+					System.out.println("setPortIDRefs start.");
 					setPortIDRefs(part1, child);
+					System.out.println("setPortIDRefs end.");
+					System.out.println("getPortDefinitions() start.");
 					String portDefinitions = getPortDefinitions(child);
+					System.out.println("getPortDefinitions() end.");
 					
 					modelSBML = part1 + portDefinitions + addSpace(2) + part2;
 				}
@@ -190,8 +255,10 @@ public class SBMLParser {
 			}
 			//out.println(modelSBML);
 			output += modelSBML;
+			System.out.println("child " + child.getName() + " end.");
 		}
 		//out.println(addSpace(2) + "</comp:listOfModelDefinitions>");
+		System.out.println("children loop end.");
 		output += addSpace(2) + "</comp:listOfModelDefinitions>" + eol;
 		return output;
 	}
@@ -201,12 +268,21 @@ public class SBMLParser {
 	{
 		String modSBML = "";
 		CCopasiDataModel dataModel;
-		
+		System.out.println("getCopasiModelFromKey() start.");
 		dataModel = AC_GUI.copasiUtility.getCopasiModelFromKey(mod.getKey());
-		
+		if (dataModel == null)
+		{
+			System.err.println(mod.getName() + "'s dataModel is empty");
+		}
+		System.out.println("getCopasiModelFromKey() end.");
+		//AC_GUI.copasiUtility.setLayout(mod);
 		try
 		{
+			System.out.println("parser.getContDef() " + mod.getName() + "'s copasi key = " + mod.getKey());
+			System.out.println("Datamodel name = " + dataModel.getModel().getObjectName());
+			System.out.println("exportSBMLToString() start.");
 			modSBML = dataModel.exportSBMLToString(3, 1);
+			System.out.println("exportSBMLToString() end.");
 			modSBML = modSBML.substring(modSBML.indexOf("<model"));
 			modSBML = modSBML.replaceAll("\n</sbml>", "");
 			modSBML = modSBML.replaceAll("</sbml>", "");
@@ -216,7 +292,7 @@ public class SBMLParser {
 			int startIDIndex = modSBML.indexOf(" id=");
 			int endIDIndex = modSBML.indexOf("name=");
 			String oldID = modSBML.substring(startIDIndex+1, endIDIndex);
-			System.out.println("OldID: " + oldID);
+			//System.out.println("OldID: " + oldID);
 			String newID = "id=\"" + mod.getName() + "\" ";
 			modSBML = modSBML.replaceAll(oldID, newID);
 		}
@@ -302,7 +378,7 @@ public class SBMLParser {
 		int endCompartmentIndex = sbml.indexOf(">", startCompartmentIndex);
 		String oldCompartment = sbml.substring(startCompartmentIndex, endCompartmentIndex+1);
 		String newCompartment = oldCompartment.substring(0, oldCompartment.length()-2) + ">" + eol;
-		System.out.println(oldCompartment);
+		//System.out.println(oldCompartment);
 		
 		ListIterator<Module> children = mod.getChildren().listIterator();
 		Module child;
@@ -324,7 +400,10 @@ public class SBMLParser {
 		newCompartment += addSpace(8) + "</comp:listOfReplacedElements>" + eol;
 		newCompartment += addSpace(6) + "</compartment>";
 		output = sbml.replaceAll(oldCompartment, newCompartment);
-		output = addReplacementSpecies(output, mod);
+		if (!AC_GUI.modelBuilder.isSpeciesListEmpty())
+		{
+			output = addReplacementSpecies(output, mod);
+		}
 		return output;
 	}
 	
@@ -341,16 +420,18 @@ public class SBMLParser {
 		String newSpecies;
 		String speciesName;
 		
-		System.out.println("oldSpeciesList: ");
-		System.out.println(oldSpeciesList);
-		System.out.println();
+		//System.out.println("oldSpeciesList: ");
+		//System.out.println(oldSpeciesList);
+		//System.out.println();
 		startSpeciesIndex = newSpeciesList.indexOf("<species");
 		while (startSpeciesIndex != -1)
 		{
+			System.out.println("addReplacementSpecies while loop. Mod = : " + mod.getName());
+			System.out.println("startSpeciesIndex = " + startSpeciesIndex);
 			endSpeciesIndex = newSpeciesList.indexOf(">", startSpeciesIndex);
 			oldSpecies = newSpeciesList.substring(startSpeciesIndex, endSpeciesIndex+1);
 			speciesName = oldSpecies.substring(oldSpecies.indexOf("name=\"") + 6, oldSpecies.indexOf("\" compartment"));
-			System.out.println(speciesName);
+			//System.out.println(speciesName);
 			
 			Object node = findVariable(speciesName, mod);
 			if (node != null)
@@ -376,7 +457,7 @@ public class SBMLParser {
 		return output;
 	}
 	
-	private Object findVariable(String name, Module mod)
+	private static Object findVariable(String name, Module mod)
 	{
 		ListIterator<VisibleVariable> vars = mod.getVisibleVariables().listIterator();
 		VisibleVariable currentVar;
@@ -403,26 +484,29 @@ public class SBMLParser {
 		return null;
 	}
 	
+	/*
 	private String getVisibleVariableReplacements(VisibleVariable var)
 	{
 		Object outgoingEdges [] = mxGraphModel.getOutgoingEdges(AC_GUI.drawingBoard.getGraph().getModel(), var.getDrawingCell());
 		String portRef;
 		String submodelRef;
-		
-		String output = addSpace(8) + "<comp:listOfReplacedElements>" + eol;
-		
-		for (int i = 0; i < outgoingEdges.length; i++)
+		String output = "";
+		if (outgoingEdges.length != 0)
 		{
-			// <comp:replacedElement comp:portRef="S" comp:submodelRef="A"/>
-			portRef = ((Port)((mxCell)outgoingEdges[i]).getTarget().getValue()).getName();
-			submodelRef = ((Port)((mxCell)outgoingEdges[i]).getTarget().getValue()).getParent().getName();
-			output += addSpace(10) + "<comp:replacedElement ";
-			output += "comp:portRef=\"" + portRef + "\" ";
-			output += "comp:submodelRef=\"" + submodelRef + "\"/>" + eol;
+			output += addSpace(8) + "<comp:listOfReplacedElements>" + eol;
+			
+			for (int i = 0; i < outgoingEdges.length; i++)
+			{
+				// <comp:replacedElement comp:portRef="S" comp:submodelRef="A"/>
+				portRef = ((Port)((mxCell)outgoingEdges[i]).getTarget().getValue()).getName();
+				submodelRef = ((Port)((mxCell)outgoingEdges[i]).getTarget().getValue()).getParent().getName();
+				output += addSpace(10) + "<comp:replacedElement ";
+				output += "comp:portRef=\"" + portRef + "\" ";
+				output += "comp:submodelRef=\"" + submodelRef + "\"/>" + eol;
+			}
+			
+			output += addSpace(8) + "</comp:listOfReplacedElements>" + eol;
 		}
-		
-		output += addSpace(8) + "</comp:listOfReplacedElements>" + eol;
-		
 		Object incomingEdges [] = mxGraphModel.getIncomingEdges(AC_GUI.drawingBoard.getGraph().getModel(), var.getDrawingCell());
 		
 		if (incomingEdges.length != 0)
@@ -434,6 +518,49 @@ public class SBMLParser {
 			output += "comp:portRef=\"" + portRef + "\" ";
 			output += "comp:submodelRef=\"" + submodelRef + "\"/>" + eol;
 		}
+		return output;
+	}
+	*/
+	private String getVisibleVariableReplacements(VisibleVariable var)
+	{
+		Object outgoingEdges [] = mxGraphModel.getOutgoingEdges(AC_GUI.drawingBoard.getGraph().getModel(), var.getDrawingCell());
+		Object incomingEdges [] = mxGraphModel.getIncomingEdges(AC_GUI.drawingBoard.getGraph().getModel(), var.getDrawingCell());
+		String portRef;
+		String submodelRef;
+		String output = "";
+		
+		if ((outgoingEdges.length == 0) && (incomingEdges.length == 0))
+		{
+			return output;
+		}
+		
+		output += addSpace(8) + "<comp:listOfReplacedElements>" + eol;
+		
+		if (outgoingEdges.length != 0)
+		{			
+			for (int i = 0; i < outgoingEdges.length; i++)
+			{
+				// <comp:replacedElement comp:portRef="S" comp:submodelRef="A"/>
+				portRef = ((Port)((mxCell)outgoingEdges[i]).getTarget().getValue()).getName();
+				submodelRef = ((Port)((mxCell)outgoingEdges[i]).getTarget().getValue()).getParent().getName();
+				output += addSpace(10) + "<comp:replacedElement ";
+				output += "comp:portRef=\"" + portRef + "\" ";
+				output += "comp:submodelRef=\"" + submodelRef + "\"/>" + eol;
+			}
+		}
+		
+		if (incomingEdges.length != 0)
+		{
+			// <comp:replacedBy comp:portRef="D_port" comp:submodelRef="B"/>
+			portRef = ((Port)((mxCell)incomingEdges[0]).getSource().getValue()).getName();
+			submodelRef = ((Port)((mxCell)incomingEdges[0]).getSource().getValue()).getParent().getName();
+			output += addSpace(10) + "<comp:replacedElement ";
+			output += "comp:portRef=\"" + portRef + "\" ";
+			output += "comp:submodelRef=\"" + submodelRef + "\"/>" + eol;
+		}
+		
+		output += addSpace(8) + "</comp:listOfReplacedElements>" + eol;
+			
 		return output;
 	}
 	
@@ -459,6 +586,7 @@ public class SBMLParser {
 		
 		return output;
 	}
+	
 	/**
 	 * Write the port information of the given module.
 	 * @param mod the module containing the ports
@@ -548,15 +676,19 @@ public class SBMLParser {
 		return space;
 	}
 	
-	private void printModelCompHeader()
+	private String printModelCompHeader()
 	{
+		String header;
 		String space = addSpace(6);
-		out.println("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
-		out.println("<sbml xmlns=\"http://www.sbml.org/sbml/level3/version1/core\" level=\"3\" version=\"1\" ");
-		out.println(space + "xmlns:comp=\"http://www.sbml.org/sbml/level3/version1/comp/version1\" comp:required=\"true\">");
-		out.println(space + "xmlns:html=\"http://www.w3.org/1999/xhtml\"");
-		out.println(space + "xmlns:jigcell=\"http://www.sbml.org/2001/ns/jigcell\"");
-		out.println(space + "xmlns:math=\"http://www.w3.org/1998/Math/MathML\">\n");
+		header = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" + eol;
+		header += "<sbml xmlns=\"http://www.sbml.org/sbml/level3/version1/core\" level=\"3\" version=\"1\" " + eol;
+		header += space + "xmlns:comp=\"http://www.sbml.org/sbml/level3/version1/comp/version1\" comp:required=\"true\"" + eol;
+		header += space + "xmlns:layout=\"http://www.sbml.org/sbml/level3/version1/layout/version1\" layout:required=\"false\"" + eol;
+		header += space + "xmlns:html=\"http://www.w3.org/1999/xhtml\"" + eol;
+		header += space + "xmlns:jigcell=\"http://www.sbml.org/2001/ns/jigcell\"" + eol;
+		header += space + "xmlns:math=\"http://www.w3.org/1998/Math/MathML\">\n" + eol;
+		
+		return header;
 	}
 	
 	private String removeCOPASIMetaID(String sbml)
@@ -597,7 +729,7 @@ public class SBMLParser {
 			globalQList = sbml.substring(startlistofGlobalQIndex, endlistofGlobalQIndex);
 		}
 		
-		System.out.println(speciesList);
+		//System.out.println(speciesList);
 		String name;
 		String sbmlID = null;
 		VariableType vType;
@@ -618,7 +750,7 @@ public class SBMLParser {
 				break;
 			}
 			
-			System.out.println("Port name: " + name + ".......ID: " + sbmlID);
+			//System.out.println("Port name: " + name + ".......ID: " + sbmlID);
 			if (sbmlID != null)
 			{
 				port.setVariableSBMLid(sbmlID);
@@ -689,55 +821,67 @@ public class SBMLParser {
 	{
 		String name = n.getNodeName();
 		short type = n.getNodeType();
-		if (Node.CDATA_SECTION_NODE == type) {
+		if (Node.CDATA_SECTION_NODE == type) 
+		{
 		  return "<![CDATA[" + n.getNodeValue() + "]]&gt;";
 		}
 		
-		if (name.startsWith("#")) 
-		  return "";
+		if (name.startsWith("#"))
+		{
+			return "";
+		}
 		
 		StringBuffer sb = new StringBuffer();
 		sb.append('<').append(name);
 		
 		NamedNodeMap attrs = n.getAttributes();
-		if (attrs != null) {
-		  for (int i = 0; i < attrs.getLength(); i++) {
-		    Node attr = attrs.item(i);
-		    sb.append(' ').append(attr.getNodeName()).append("=\"").append(attr.getNodeValue()).append(
-		"\"");
-		  }
+		if (attrs != null)
+		{
+			for (int i = 0; i < attrs.getLength(); i++)
+			{
+				Node attr = attrs.item(i);
+				sb.append(' ').append(attr.getNodeName()).append("=\"").append(attr.getNodeValue()).append("\"");
+			}
 		}
 		
 		String textContent = null;
 		NodeList children = n.getChildNodes();
 		
-		if (children.getLength() == 0) {
-		 if ((textContent = n.getTextContent()) != null && !"".equals(textContent)) {
-		sb.append(textContent).append("</").append(name).append('>');
-		    ;
-		  } else {	
-		sb.append("/>").append('\n');
-		  }
-		} else {
-		  sb.append('>').append('\n');
-		  boolean hasValidChildren = false;
-		  for (int i = 0; i < children.getLength(); i++) {
-		    String childToString = elementToString(children.item(i));
-		    if (!"".equals(childToString)) {
-		      sb.append(childToString);
-		      hasValidChildren = true;
-		    }
-		  }
-		
-		  if (!hasValidChildren && ((textContent = n.getTextContent()) != null)) {
-		    sb.append(textContent);
-		  }
-		  sb.append("</").append(name).append('>');
+		if (children.getLength() == 0)
+		{
+			if ((textContent = n.getTextContent()) != null && !"".equals(textContent))
+			{
+				sb.append(textContent).append("</").append(name).append('>');
+			}
+			else
+			{	
+				sb.append("/>").append(eol);
+			}
+		}
+		else
+		{
+			sb.append('>').append(eol);
+			boolean hasValidChildren = false;
+			for (int i = 0; i < children.getLength(); i++)
+			{
+				String childToString = elementToString(children.item(i));
+				if (!"".equals(childToString))
+				{
+					sb.append(childToString);
+					hasValidChildren = true;
+				}
+			}
+			
+			if (!hasValidChildren && ((textContent = n.getTextContent()) != null))
+			{
+				sb.append(textContent);
+			}
+			sb.append("</").append(name).append('>');
 		}
 		return sb.toString();
 	}
 	
-	private static void importContainerModule(Document doc)
+	private static void importContainerModule(Document doc, SBMLDocument sdoc)
 	{
 		String name = "";
 		String sbmlID = "";
@@ -748,7 +892,7 @@ public class SBMLParser {
 		modString += space + "xmlns:html=\"http://www.w3.org/1999/xhtml\"" + eol;
 		modString += space + "xmlns:jigcell=\"http://www.sbml.org/2001/ns/jigcell\"" + eol;
 		modString += space + "xmlns:math=\"http://www.w3.org/1998/Math/MathML\">\n" + eol;
-		System.out.println ("Root element of the doc is " + doc.getDocumentElement().getNodeName());
+		//System.out.println ("Root element of the doc is " + doc.getDocumentElement().getNodeName());
 		NodeList nodeLst = doc.getElementsByTagName("model");
 		assert nodeLst.getLength() == 1;
 		modString += "<model ";
@@ -784,12 +928,95 @@ public class SBMLParser {
 		}
 		modString += eol + "</model>" + eol + "</sbml>";
 		
+		LayoutModelPlugin mplugin = (LayoutModelPlugin)sdoc.getModel().getPlugin("layout");
 		Module mod = AC_GUI.currentGUI.newModule(name, sbmlID, modString);
-		importAllSubmodules(doc, mod);
+		importAllSubmodules(doc, sdoc, mod);
 		//System.out.println(modString);
 	}
 	
-	private static void importAllSubmodules(Document doc, Module parent)
+	private static Module ximportContainerModule(SBMLDocument doc, Module parent)
+	{
+		String name = "";
+		String sbmlID = "";
+		String modString = "";
+		Model containerMod = doc.getModel();
+		name = containerMod.getName();
+		sbmlID = containerMod.getId();
+		
+		CompModelPlugin modelCompPlugin = (CompModelPlugin)containerMod.getPlugin("comp");
+		
+		LayoutModelPlugin lplugin = (LayoutModelPlugin)containerMod.getPlugin("layout");
+		ListOfLayouts layouts = lplugin.getListOfLayouts();
+		Layout layout = layouts.get(0);
+		GeneralGlyph glyph = layout.getGeneralGlyph(sbmlID + "_glyph");
+		
+		/*
+		System.out.println("Submodules number = " + modelCompPlugin.getNumSubmodels());
+		System.out.println("Ports number = " + modelCompPlugin.getNumPorts());
+		System.out.println("Layouts number = " + layouts.size());
+		System.out.println("glyphID: " + glyph.getId());
+		System.out.println("Number of containerMod replacedElements = " + modelCompPlugin.getNumReplacedElements());
+		CompSBasePlugin compartmentCompPlugin = (CompSBasePlugin)containerMod.getListOfCompartments().get(0).getPlugin("comp");
+		System.out.println("Number of compartment replacedElements = " + compartmentCompPlugin.getNumReplacedElements());
+		// compartmentCompPlugin.getListOfReplacedElements().removeFromParentAndDelete();
+		//layout.getListOfAdditionalGraphicalObjects().removeFromParentAndDelete();
+		*/
+		SBMLNamespaces ns = new SBMLNamespaces();
+		ns.addNamespaces(doc.getNamespaces());
+		SBMLDocument newDoc = new SBMLDocument(ns);
+		int setModelCode = newDoc.setModel(containerMod);
+		if(setModelCode != 0)
+		{
+			System.err.println("Error in SBMLParser.importContainerModule: setModelCode = " + setModelCode);
+			System.exit(0);
+		}
+		newDoc.setPackageRequired("layout", false);
+		newDoc.setPackageRequired("comp", false);
+		removePluginData(newDoc.getModel());
+		modString = libsbml.writeSBMLToString(newDoc);
+		//System.out.println(modString);
+		System.out.println("Validate container module: " + containerMod.getId());
+		checkValidSBML(modString);
+		System.out.println("Validation successful.");
+		Module mod = AC_GUI.xnewModule(name, sbmlID, modString, parent, glyph);
+		// add visible variables and equivalence nodes
+		ListOfGraphicalObjects subGlyphs = glyph.getListOfSubGlyphs();
+		GeneralGlyph subGlyph;
+		for (long i = 0; i < glyph.getNumSubGlyphs(); i++)
+		{
+			subGlyph = (GeneralGlyph)subGlyphs.get(i);
+			if (subGlyph.getId().endsWith("_VisibleVariableGlyph"))
+			{
+				importVisibleVariable(mod, subGlyph);
+			}
+			else if (subGlyph.getId().endsWith("_EquivalenceNodeGlyph"))
+			{
+				importEquivalenceNode(mod, subGlyph);
+			}
+		}
+		// add ports
+		if(modelCompPlugin.getNumPorts() > 0)
+		{
+			importPorts(modelCompPlugin.getListOfPorts(), containerMod, glyph, mod);
+		}
+		// add submodules
+		if(modelCompPlugin.getNumSubmodels() > 0)
+		{
+			CompSBMLDocumentPlugin docCompPlugin = (CompSBMLDocumentPlugin)doc.getPlugin("comp");
+			SBMLNamespaces nameSpaces = new SBMLNamespaces();
+			nameSpaces.addNamespaces(doc.getNamespaces());
+			ximportAllSubmodules(modelCompPlugin.getListOfSubmodels(), docCompPlugin.getListOfModelDefinitions(), nameSpaces, glyph, mod);
+		}
+		// add connections
+		if (containerMod.getNumSpecies() > 0)
+		{
+			importReplacementsFromSpecies(containerMod.getListOfSpecies(), mod);
+		}
+		//AC_GUI.changeActiveModule(mod);
+		return mod;
+	}
+	
+	private static void importAllSubmodules(Document doc, SBMLDocument sdoc, Module parent)
 	{
 		String name = "";
 		String sbmlID = "";
@@ -803,7 +1030,7 @@ public class SBMLParser {
 		String modString = prefix;
 		NodeList nodeLst1 = doc.getElementsByTagName("comp:modelDefinition");
 		NodeList nodeLst2;
-		System.out.println("All the models in the file:");
+		//System.out.println("All the models in the file:");
 		Node submoduleNode;
 		for (int i = 0; i < nodeLst1.getLength(); i++) 
 		{
@@ -843,12 +1070,677 @@ public class SBMLParser {
 				{
 					continue;
 				}
+				if(child.getNodeName().equals("layoutlistOfLayouts"))
+				{
+					continue;
+				}
 				modString += elementToString(child);
 			}
 			modString += eol + "</model>" + eol + "</sbml>";
-			System.out.println(modString);
-			AC_GUI.currentGUI.newSubmodule(name, sbmlID, modString, parent);
+			//System.out.println(modString);
+
+			//AC_GUI.currentGUI.newSubmodule(name, sbmlID, modString, parent);
 			modString = prefix;
 		}
+	}
+	
+	private static void ximportAllSubmodules(ListOfSubmodels submodules, ListOfModelDefinitions moduleDefinitions, SBMLNamespaces nameSpaces, GeneralGlyph parentGlyph, Module parent)
+	{
+		ListOfGraphicalObjects subGlyphs = parentGlyph.getListOfSubGlyphs();
+		//System.out.println("Number of subglyphs: " + subGlyphs.size());
+		
+		String name = "";
+		String sbmlID = "";
+		String modelRef = "";
+		String modString = "";
+		Submodel submodule;
+		SBMLNamespaces ns;
+		SBMLDocument newDoc;
+		ModelDefinition moduleDefinition;
+		CompModelPlugin submodulePlugin;
+		GeneralGlyph glyph = null;
+		for(long i = 0; i < submodules.size(); i++)
+		{
+			submodule = (Submodel)submodules.get(i);
+			name = submodule.getName();
+			sbmlID = submodule.getId();
+			modelRef = submodule.getModelRef();
+			moduleDefinition = moduleDefinitions.get(modelRef);
+			glyph = (GeneralGlyph)subGlyphs.get(sbmlID + "_glyph");
+			
+			/*
+			System.out.println("glyphID: " + glyph.getId());
+			System.out.println("sbmlID: " + sbmlID);
+			System.out.println("modelRef: " + modelRef);
+			System.out.println("module Ref name: " + moduleDefinition.getName());
+			System.out.println("module Ref model name: " + moduleDefinition.getModel().getName());
+			*/
+			ns = new SBMLNamespaces(nameSpaces);
+			
+			newDoc = new SBMLDocument(ns);
+			//newDoc.createModel();
+			int setModelCode = newDoc.setModel(moduleDefinition);
+			if(setModelCode != 0)
+			{
+				System.err.println("Error in SBMLParser.importAllSubmodules: setModelCode = " + setModelCode);
+				System.exit(0);
+			}
+			newDoc.setPackageRequired("layout", false);
+			newDoc.setPackageRequired("comp", false);
+			removePluginData(newDoc.getModel());
+			modString = libsbml.writeSBMLToString(newDoc);
+			//System.out.println(modString);
+			System.out.println("Validate submodule: " + moduleDefinition.getId());
+			checkValidSBML(modString);
+			System.out.println("Validation successful.");
+			Module mod = null;
+			if (glyph.getAnnotation() != null)
+			{
+				// the submodule is a MathematicalAggregator
+				XMLNode modAnnotation = glyph.getAnnotation().getChild(0);
+				String inputNumber = modAnnotation.getAttrValue("inputs", "http://www.copasi.org/softwareprojects");
+				String op = modAnnotation.getAttrValue("type", "http://www.copasi.org/softwareprojects");
+				mod = AC_GUI.addMathAggregator(sbmlID, sbmlID, modString, parent, Integer.valueOf(inputNumber), op, glyph);
+				//System.out.println("--------------------");
+				//System.out.println();
+				//System.out.println(modString);
+				//System.out.println();
+			}
+			else
+			{
+				// the submodule is a Submodule
+				mod = AC_GUI.xnewModule(sbmlID, sbmlID, modString, parent, glyph);
+			}
+			
+			submodulePlugin = (CompModelPlugin)moduleDefinition.getPlugin("comp");
+			// add visible variables and equivalence nodes
+			ListOfGraphicalObjects submoduleSubGlyphs = glyph.getListOfSubGlyphs();
+			GeneralGlyph subGlyph;
+			for (long j = 0; j < glyph.getNumSubGlyphs(); j++)
+			{
+				subGlyph = (GeneralGlyph)submoduleSubGlyphs.get(j);
+				if (subGlyph.getId().endsWith("_VisibleVariableGlyph"))
+				{
+					importVisibleVariable(mod, subGlyph);
+				}
+				else if (subGlyph.getId().endsWith("_EquivalenceNodeGlyph"))
+				{
+					importEquivalenceNode(mod, subGlyph);
+				}
+			}
+			// add ports
+			if(submodulePlugin.getNumPorts() > 0)
+			{
+				importPorts(submodulePlugin.getListOfPorts(), moduleDefinition, glyph, mod);
+			}
+			// add submodules
+			if(submodulePlugin.getNumSubmodels() > 0)
+			{
+				ximportAllSubmodules(submodulePlugin.getListOfSubmodels(), moduleDefinitions, nameSpaces, glyph, mod);
+			}
+			// add connections
+			if (moduleDefinition.getNumSpecies() > 0)
+			{
+				importReplacementsFromSpecies(moduleDefinition.getListOfSpecies(), mod);
+			}
+		}
+	}
+	
+	private static void importPorts(ListOfPorts ports, Model parentModule, GeneralGlyph parentGlyph, Module mod)
+	{
+		String portIDRef;
+		String portName;
+		String portRefName;
+		String portType;
+		String varType;
+		org.sbml.libsbml.Port port;
+		ListOfGraphicalObjects subGlyphs = parentGlyph.getListOfSubGlyphs();
+		//System.out.println("parentGlyph name: " + parentGlyph.getName());
+		//System.out.println("Number of subglyphs: " + parentGlyph.getNumSubGlyphs());
+		GeneralGlyph portGlyph;
+		XMLNode portAnnotation;
+		for(long i = 0; i < ports.size(); i++)
+		{
+			port = (org.sbml.libsbml.Port)ports.get(i);
+			portName = port.getId();
+			portIDRef = port.getIdRef();
+			portGlyph = (GeneralGlyph)subGlyphs.get(portName + "_PortGlyph");
+			//System.out.println("port name: " + portName);
+			if(portGlyph == null)
+			{
+				System.err.println("portGlyph = NULL");
+			}
+			//System.out.println("portGlyph name: " + portGlyph.getName());
+			if (portGlyph.getAnnotation() == null)
+			{
+				System.err.println("portGlyph.getAnn = NULL");
+			}
+			portAnnotation = portGlyph.getAnnotation().getChild(0);
+			//System.out.println("portAnnotation name: " + portAnnotation.getName());
+			//System.out.println("portAnnotation namespace uri: " + portAnnotation.getNamespaceURI());
+			portRefName = portAnnotation.getAttrValue("refName", "http://www.copasi.org/softwareprojects");
+			portType = portAnnotation.getAttrValue("pType", "http://www.copasi.org/softwareprojects");
+			varType = portAnnotation.getAttrValue("vType", "http://www.copasi.org/softwareprojects");
+			
+			AC_GUI.xaddPort(mod, portName, portRefName, portType, varType, portGlyph);
+		}
+	}
+	
+	private static void importVisibleVariable(Module parent, GeneralGlyph glyph)
+	{
+		XMLNode annotation = glyph.getAnnotation().getChild(0);
+		String refName = annotation.getAttrValue("name", "http://www.copasi.org/softwareprojects");
+		String vType = annotation.getAttrValue("vType", "http://www.copasi.org/softwareprojects");
+		
+		AC_GUI.addVisibleVariable(parent, refName, vType, glyph);
+	}
+	
+	private static void importEquivalenceNode(Module parent, GeneralGlyph glyph)
+	{
+		XMLNode annotation = glyph.getAnnotation().getChild(0);
+		String refName = annotation.getAttrValue("name", "http://www.copasi.org/softwareprojects");
+		String vType = annotation.getAttrValue("vType", "http://www.copasi.org/softwareprojects");
+		
+		AC_GUI.addEquivalenceNode(parent, refName, glyph);
+	}
+	
+	private static void importReplacementsFromSpecies(ListOfSpecies speciesList, Module mod)
+	{
+		Species spec;
+		CompSBasePlugin specPlugin;
+		ListOfReplacedElements replacedElementsList;
+		ReplacedElement repElement;
+		for (long i = 0; i < speciesList.size(); i++)
+		{
+			spec = speciesList.get(i);
+			specPlugin = (CompSBasePlugin)spec.getPlugin("comp");
+			if (specPlugin.getNumReplacedElements() > 0)
+			{
+				importConnections(specPlugin.getListOfReplacedElements(), spec, mod);
+			}
+		}
+	}
+	
+	private static void importConnections(ListOfReplacedElements replacedElementsList, Species spec, Module mod)
+	{
+		Object node = findVariable(spec.getName(), mod);
+		Object variableDrawingCell;
+		if (node instanceof VisibleVariable)
+		{
+			importVisibleVariableConnections((VisibleVariable)node, replacedElementsList, mod);
+		}
+		else if (node instanceof EquivalenceNode)
+		{
+			importEquivalenceNodeConnections((EquivalenceNode)node, replacedElementsList, mod);
+		}
+	}
+	
+	private static void importVisibleVariableConnections(VisibleVariable var, ListOfReplacedElements replacedElementsList, Module mod)
+	{
+		Object variableDrawingCell = var.getDrawingCell();
+		String portRef;
+		String submoduleRef;
+		Port currentPort;
+		ReplacedElement element;
+		boolean inputToVisibleVariable;
+		Object portDrawingCell;
+		for (long i = 0; i < replacedElementsList.size(); i++)
+		{
+			element = (ReplacedElement)replacedElementsList.get(i);
+			portRef = element.getPortRef();
+			submoduleRef = element.getSubmodelRef();
+			currentPort = findPort(portRef, submoduleRef, mod);
+			if (currentPort == null)
+			{
+				System.err.println("Error SBMLParser.importSingleConnection: Port " + portRef + " not found.");
+				System.exit(0);
+			}
+			
+			switch(currentPort.getType())
+			{
+			case INPUT:
+				if (currentPort.getParent() == var.getParent())
+				{
+					inputToVisibleVariable = true;
+				}
+				else
+				{
+					inputToVisibleVariable = false;
+				}
+				break;
+			case OUTPUT:
+				if (currentPort.getParent() == var.getParent())
+				{
+					inputToVisibleVariable = false;
+				}
+				else
+				{
+					inputToVisibleVariable = true;
+				}
+				break;
+			default: inputToVisibleVariable = false;
+			}
+			
+			portDrawingCell = currentPort.getDrawingCell();
+			if (inputToVisibleVariable)
+			{
+				AC_GUI.addConnection(mod, portDrawingCell, variableDrawingCell, "DashedConnectionEdge");
+			}
+			else
+			{
+				AC_GUI.addConnection(mod, variableDrawingCell, portDrawingCell, "ConnectionEdge");
+			}
+		}
+	}
+	
+	private static void importEquivalenceNodeConnections(EquivalenceNode eNode, ListOfReplacedElements replacedElementsList, Module mod)
+	{
+		Object variableDrawingCell = eNode.getDrawingCell();
+		String portRef;
+		String submoduleRef;
+		Port currentPort;
+		ReplacedElement element;
+		Object portDrawingCell;
+		for (long i = 0; i < replacedElementsList.size(); i++)
+		{
+			element = (ReplacedElement)replacedElementsList.get(i);
+			portRef = element.getPortRef();
+			submoduleRef = element.getSubmodelRef();
+			currentPort = findPort(portRef, submoduleRef, mod);
+			if (currentPort == null)
+			{
+				System.err.println("Error SBMLParser.importSingleConnection: Port " + portRef + " not found.");
+				System.exit(0);
+			}
+			portDrawingCell = currentPort.getDrawingCell();
+			AC_GUI.addConnection(mod, variableDrawingCell, portDrawingCell, "ConnectionEdge");
+		}
+	}
+	
+	private static String fixReactionModifiers(Module mod, String output)
+	{
+		try
+		{
+			DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+			DocumentBuilder db = dbf.newDocumentBuilder();
+			Document doc = db.parse(new InputSource(new StringReader(output)));
+			doc.getDocumentElement().normalize();
+			
+		}
+		catch (Exception e)
+		{
+			e.printStackTrace();
+		}
+		
+		return output;
+	}
+	
+	private static String addLayoutInformation(Module mod, String sbml)
+	{
+		SBMLDocument doc = libsbml.readSBMLFromString(sbml);
+		long numErrors = doc.getNumErrors();
+
+		if (numErrors > 0) {
+			System.err.println("Encountered errors while reading the file. ");
+			System.err.println("Please correct the following errors and try again.");
+			doc.printErrors();
+			System.exit(2);
+		}
+		
+		Model model = doc.getModel();
+		//System.out.println("Model id: " + model.getId());
+		//System.out.println("Model name: " + model.getName());
+		SBasePlugin basePlugin = (model.getPlugin ("layout"));
+		LayoutModelPlugin layoutPlugin = (LayoutModelPlugin)basePlugin;
+		Layout layout = layoutPlugin.createLayout ();
+		layout.setId ("Layout_1");
+		
+		GeneralGlyph gly = layout.createGeneralGlyph();
+		gly.setId(mod.getName() + "_glyph");
+		//gly.setName("GeneralGlyph");
+		BoundingBox box = new BoundingBox();
+		Dimensions dim = new Dimensions ();
+		dim.setHeight(((mxCell)mod.getDrawingCell()).getGeometry().getHeight());
+		dim.setWidth(((mxCell)mod.getDrawingCell()).getGeometry().getWidth());
+		Point point = new Point();
+		point.setX(((mxCell)mod.getDrawingCell()).getGeometry().getX());
+		point.setY(((mxCell)mod.getDrawingCell()).getGeometry().getY());
+		box.setDimensions(dim);
+		box.setPosition(point);
+		gly.setBoundingBox(box);
+		
+		// add ports to the layout
+		if(mod.getPorts().size() > 0)
+		{
+			addPortLayoutInformation(mod, gly);
+		}
+		
+		// add visible variables to the layout
+		if(mod.getVisibleVariables().size() > 0)
+		{
+			addVisibleVariableLayoutInformation(mod, gly);
+		}
+		
+		// add equivalence nodes to the layout
+		if(mod.getEquivalenceNodes().size() > 0)
+		{
+			addEquivalenceNodeLayoutInformation(mod, gly);
+		}
+		
+		// add submodules to the layout
+		if(mod.getChildren().size() > 0)
+		{
+			addSubmoduleLayoutInformation(mod, gly);
+		}
+			
+		return libsbml.writeSBMLToString(doc);
+	}
+	
+	private static void addPortLayoutInformation(Module mod, GeneralGlyph parentGly)
+	{
+		Port port;
+		Point point;
+		BoundingBox box;
+		String portAnnotation;
+		GeneralGlyph gly;
+		ListIterator<Port> listOfPorts = mod.getPorts().listIterator();
+		while(listOfPorts.hasNext())
+		{
+			port = listOfPorts.next();
+			point = new Point();
+			box = new BoundingBox();
+			gly = new GeneralGlyph();
+			
+			point.setX(((mxCell)port.getDrawingCell()).getGeometry().getX());
+			point.setY(((mxCell)port.getDrawingCell()).getGeometry().getY());
+			box.setPosition(point);
+			gly.setBoundingBox(box);
+			gly.setId(port.getName() + "_PortGlyph");
+			portAnnotation = "<ac:portInfo";
+			portAnnotation += " xmlns:ac=\"http://www.copasi.org/softwareprojects\"";
+			portAnnotation += " ac:refName=\"" + port.getRefName() + "\"";
+			portAnnotation += " ac:name=\"" + port.getName() + "\"";
+			portAnnotation += " ac:pType=\"" + port.getType().name() + "\"";
+			portAnnotation += " ac:vType=\"" + port.getVariableType().toString() + "\"";
+			portAnnotation += " ac:parentMod=\"" + port.getParent().getName() + "\"";
+			portAnnotation += "/>";
+			gly.appendAnnotation(XMLNode.convertStringToXMLNode(portAnnotation));
+			
+			parentGly.addSubGlyph(gly);
+		}
+	}
+	
+	private static void addVisibleVariableLayoutInformation(Module mod, GeneralGlyph parentGly)
+	{
+		VisibleVariable currentVar;
+		Point point;
+		BoundingBox box;
+		GeneralGlyph gly;
+		String varAnnotation;
+		ListIterator<VisibleVariable> vars = mod.getVisibleVariables().listIterator();
+		while(vars.hasNext())
+		{
+			currentVar = vars.next();
+			point = new Point();
+			box = new BoundingBox();
+			gly = new GeneralGlyph();
+			
+			point.setX(((mxCell)currentVar.getDrawingCell()).getGeometry().getX());
+			point.setY(((mxCell)currentVar.getDrawingCell()).getGeometry().getY());
+			box.setPosition(point);
+			gly.setBoundingBox(box);
+			gly.setId(currentVar.getRefName() + "_VisibleVariableGlyph");
+			
+			varAnnotation = "<ac:VisibleVariableInfo";
+			varAnnotation += " xmlns:ac=\"http://www.copasi.org/softwareprojects\"";
+			varAnnotation += " ac:name=\"" + currentVar.getRefName() + "\"";
+			varAnnotation += " ac:vType=\"" + currentVar.getVariableType().toString() + "\"";
+			varAnnotation += "/>";
+			gly.appendAnnotation(XMLNode.convertStringToXMLNode(varAnnotation));
+			
+			parentGly.addSubGlyph(gly);
+		}
+	}
+	
+	private static void addEquivalenceNodeLayoutInformation(Module mod, GeneralGlyph parentGly)
+	{
+		EquivalenceNode currenteNode;
+		Point point;
+		BoundingBox box;
+		GeneralGlyph gly;
+		String eNodeAnnotation;
+		ListIterator<EquivalenceNode> eNodes = mod.getEquivalenceNodes().listIterator();
+		while(eNodes.hasNext())
+		{
+			currenteNode = eNodes.next();
+			point = new Point();
+			box = new BoundingBox();
+			gly = new GeneralGlyph();
+			
+			point.setX(((mxCell)currenteNode.getDrawingCell()).getGeometry().getX());
+			point.setY(((mxCell)currenteNode.getDrawingCell()).getGeometry().getY());
+			box.setPosition(point);
+			gly.setBoundingBox(box);
+			gly.setId(currenteNode.getRefName() + "_EquivalenceNodeGlyph");
+			
+			eNodeAnnotation = "<ac:EquivalenceNodeInfo";
+			eNodeAnnotation += " xmlns:ac=\"http://www.copasi.org/softwareprojects\"";
+			eNodeAnnotation += " ac:name=\"" + currenteNode.getRefName() + "\"";
+			eNodeAnnotation += " ac:vType=\"" + "Species" + "\"";
+			eNodeAnnotation += "/>";
+			gly.appendAnnotation(XMLNode.convertStringToXMLNode(eNodeAnnotation));
+			
+			parentGly.addSubGlyph(gly);
+		}
+	}
+	
+	private static void addSubmoduleLayoutInformation(Module mod, GeneralGlyph parentGly)
+	{
+		Module child;
+		Dimensions dim;
+		Point point;
+		BoundingBox box;
+		String submoduleAnnotation;
+		boolean isMathAgg;
+		GeneralGlyph gly;
+		ListIterator<Module> children = mod.getChildren().listIterator();
+		while(children.hasNext())
+		{
+			child = children.next();
+			dim = new Dimensions();
+			point = new Point();
+			box = new BoundingBox();
+			gly = new GeneralGlyph();
+			
+			if (child instanceof MathematicalAggregator)
+			{
+				isMathAgg = true;
+			}
+			else
+			{
+				isMathAgg = false;
+			}
+			
+			dim.setHeight(((mxCell)child.getDrawingCell()).getGeometry().getHeight());
+			dim.setWidth(((mxCell)child.getDrawingCell()).getGeometry().getWidth());
+			point.setX(((mxCell)child.getDrawingCell()).getGeometry().getX());
+			point.setY(((mxCell)child.getDrawingCell()).getGeometry().getY());
+			box.setDimensions(dim);
+			box.setPosition(point);
+			gly.setBoundingBox(box);
+			gly.setId(child.getName() + "_glyph");
+			
+			if (isMathAgg)
+			{
+				submoduleAnnotation = "<ac:MathAggInfo";
+				submoduleAnnotation += " xmlns:ac=\"http://www.copasi.org/softwareprojects\"";
+				submoduleAnnotation += " ac:type=\"" + ((MathematicalAggregator)child).getOperation().toString() + "\"";
+				submoduleAnnotation += " ac:inputs=\"" + ((MathematicalAggregator)child).getNumberofInputs() + "\"";
+				submoduleAnnotation += "/>";
+				gly.appendAnnotation(XMLNode.convertStringToXMLNode(submoduleAnnotation));
+			}
+			
+			// add ports to the layout
+			if(child.getPorts().size() > 0)
+			{
+				addPortLayoutInformation(child, gly);
+			}
+			
+			// add visible variables to the layout
+			if(child.getVisibleVariables().size() > 0)
+			{
+				addVisibleVariableLayoutInformation(child, gly);
+			}
+			
+			// add equivalence nodes to the layout
+			if(child.getEquivalenceNodes().size() > 0)
+			{
+				addEquivalenceNodeLayoutInformation(child, gly);
+			}
+			
+			// add submodules to the layout
+			if(child.getChildren().size() > 0)
+			{
+				addSubmoduleLayoutInformation(child, gly);
+			}
+			
+			parentGly.addSubGlyph(gly);
+		}
+	}
+	
+	private static String getSpeciesName(ListOfSpecies speciesList, String idRef)
+	{
+		Species spec = speciesList.get(idRef);
+		if(spec == null)
+		{
+			System.err.println("Error getSpeciesName(" + idRef + ") returns NULL.");
+			System.exit(0);
+		}
+		return spec.getName();
+	}
+	
+	private static String getGlobalQuantityName(ListOfParameters parameterList, String idRef)
+	{
+		Parameter param = parameterList.get(idRef);
+		if(param == null)
+		{
+			System.err.println("Error getGlobalQuantityName(" + idRef + ") returns NULL.");
+			System.exit(0);
+		}
+		return param.getName();
+	}
+	
+	private static Module findModule(String moduleName, Module mod)
+	{
+		if (moduleName.equalsIgnoreCase(mod.getName()))
+		{
+			return mod;
+		}
+		
+		ListIterator<Module> children = mod.getChildren().listIterator();
+		Module child;
+		
+		while(children.hasNext())
+		{
+			child = children.next();
+			if (moduleName.equalsIgnoreCase(child.getName()))
+			{
+				return child;
+			}
+		}
+		return null;
+	}
+	
+	private static Port findPort(String portName, String parentModuleName, Module mod)
+	{
+		Module portParentMod = findModule(parentModuleName, mod);
+		if (portParentMod == null)
+		{
+			System.err.println("Error SBMLParser.findPort: Module " + parentModuleName + " not found.");
+			System.exit(0);
+		}
+		ListIterator<Port> portList = portParentMod.getPorts().listIterator();
+		Port port;
+		while(portList.hasNext())
+		{
+			port = portList.next();
+			if (portName.equalsIgnoreCase(port.getName()))
+			{
+				return port;
+			}
+		}
+		return null;
+	}
+	
+	private static void removePluginData(Model model)
+	{
+		
+		CompModelPlugin compPlugin = (CompModelPlugin)model.getPlugin("comp");
+		// remove submodels
+		if (compPlugin.getNumSubmodels() > 0)
+		{
+			compPlugin.getListOfSubmodels().removeFromParentAndDelete();
+		}
+		
+		// remove ports
+		if (compPlugin.getNumPorts() > 0)
+		{
+			compPlugin.getListOfPorts().removeFromParentAndDelete();
+		}
+		
+		LayoutModelPlugin layoutPlugin = (LayoutModelPlugin)model.getPlugin("layout");
+		// remove layouts
+		if (layoutPlugin.getNumLayouts() > 0)
+		{
+			layoutPlugin.getListOfLayouts().removeFromParentAndDelete();
+		}
+		
+		// remove replaced elements
+		if (model.getNumCompartments() > 0)
+		{
+			removeReplacedElements(model.getListOfCompartments());
+		}
+		
+		if (model.getNumSpecies() > 0)
+		{
+			removeReplacedElements(model.getListOfSpecies());
+		}
+		
+		if (model.getNumParameters() > 0)
+		{
+			removeReplacedElements(model.getListOfParameters());
+		}
+	}
+	
+	private static void removeReplacedElements(ListOf list)
+	{
+		SBase item;
+		CompSBasePlugin itemPlugin;
+		for (long i = 0; i < list.size(); i++)
+		{
+			item = list.get(i);
+			itemPlugin = (CompSBasePlugin)item.getPlugin("comp");
+			if (itemPlugin.getNumReplacedElements() > 0)
+			{
+				itemPlugin.getListOfReplacedElements().removeFromParentAndDelete();
+			}
+		}
+	}
+	
+	private static void checkValidSBML(String sbml)
+	{
+		SBMLDocument sdoc = libsbml.readSBMLFromString(sbml);
+		System.out.println("Document Level: " + sdoc.getLevel());
+		System.out.println("Document Version: " + sdoc.getVersion());
+		long numErrors = sdoc.getNumErrors();
+
+		if (numErrors > 0) {
+			System.err.println("Encountered errors while reading the file. ");
+			System.err.println("Please correct the following errors and try again.");
+			sdoc.printErrors();
+			System.exit(2);
+		}
+	
+		//libsbml.writeSBMLToFile(sdoc, "_" + sdoc.getModel().getId() + "_debug.xml");
 	}
 }

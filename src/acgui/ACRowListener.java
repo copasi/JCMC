@@ -5,6 +5,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
 import javax.swing.JTable;
+import javax.swing.ListSelectionModel;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
@@ -27,10 +28,12 @@ public class ACRowListener implements ListSelectionListener
 		{
             return;
         }
+		ListSelectionModel lsm = (ListSelectionModel)lse.getSource();
 		int tabSelected = AC_GUI.modelBuilder.getSelectedTabIndex();
-		int rowSelected = lse.getFirstIndex();
-		System.out.println("Selected tab: " + tabSelected + "........Selected row: " + rowSelected);
-
+		int rowSelected = lsm.getLeadSelectionIndex();
+		//System.out.println("Selected tab: " + tabSelected + "........Selected row: " + rowSelected);
+		//System.out.println("Port refname: " + AC_GUI.modelBuilder.getNameFromPortTable(rowSelected));
+		AC_GUI.setSelectedDrawingBoardPort(AC_GUI.modelBuilder.getPortFromPortTable(rowSelected));
 	}
 
 	/*

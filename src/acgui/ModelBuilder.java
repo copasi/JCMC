@@ -97,9 +97,10 @@ public class ModelBuilder
 	
 	public boolean saveToCK(String key)
 	{
+		//System.out.println("Saved COPASI key: " + key);
 		return msmb.saveToCopasiKey(key);
-		
 	}
+	
 	/**
 	 * Return the MSMB panel.
 	 * @return the MSMB panel
@@ -228,11 +229,19 @@ public class ModelBuilder
 		int lastTabIndex = tabPanel.getTabCount() - 1;
 		tabPanel.setSelectedIndex(lastTabIndex);
 		int portIndex = tableModel.getPortIndex(port);
-		jTableCustom.setRowSelectionInterval(portIndex, portIndex);
+		try
+		{
+			jTableCustom.setRowSelectionInterval(portIndex, portIndex);
+		}
+		catch(Exception e)
+		{
+			e.printStackTrace();
+		}
 	}
 	
 	public void setSelectedVariable(String name, VariableType vType)
 	{
+		/*
 		JTabbedPane tabPanel = msmb.getMSMB_MainTabPanel();
 		int tabPanelIndex = 0;
 		
@@ -247,6 +256,18 @@ public class ModelBuilder
 		}
 		
 		tabPanel.setSelectedIndex(tabPanelIndex);
+		*/
+		MSMB_Element type = null;
+		switch(vType)
+		{
+		case SPECIES:
+			type = MSMB_Element.SPECIES;
+			break;
+		case GLOBAL_QUANTITY:
+			type = MSMB_Element.GLOBAL_QUANTITY;
+			break;
+		}
+		msmb.highlightElement(type, name);
 	}
 	
 	public int getSelectedTabIndex()
@@ -259,6 +280,21 @@ public class ModelBuilder
 		msmb.setModelName(newName);
 	}
 
+	public String getNameFromPortTable(int row)
+	{
+		return (String)jTableCustom.getValueAt(row, 1);
+	}
+	
+	public Port getPortFromPortTable(int row)
+	{
+		return tableModel.getPort(row);
+	}
+	
+	public boolean isSpeciesListEmpty()
+	{
+		return msmb.getMSMB_listOfSpecies().isEmpty();
+	}
+	
 	/**
 	 * Display the Port tab with the rest of the MSMB panel.
 	 */
@@ -482,22 +518,6 @@ public class ModelBuilder
 		
 	private void installListeners()
 	{
-		// add a row listener to the species, global quantity, and port tables
-		jTableCustom.getSelectionModel().addListSelectionListener(new ACRowListener());
-		//((CustomJTable)msmb.getSpeciesJTable()).addMouseListener(new ACRowListener());
-		msmb.getSpeciesJTable().getSelectionModel().addListSelectionListener(new ACRowListener());
-		msmb.getGlobalQJTable().getSelectionModel().addListSelectionListener(new ACRowListener());
-		
-		/*
-		JTabbedPane tabPanel = msmb.getMSMB_MainTabPanel();
-		//now you can add your ports tab as a normal jtabbedpanel
-		JPanel panel = (JPanel)tabPanel.getComponentAt(1);
-		System.out.println("Comp count: " + panel.getComponentCount());
-		JScrollPane pane = (JScrollPane)panel.getComponent(0);
-		System.out.println("Vp count: " + pane.getViewport().getComponentCount());
-		JTable table = (JTable)pane.getViewport().getComponent(0);
-		table.getSelectionModel().addListSelectionListener(new ACRowListener());
-		*/
 		
 		msmb.addChangeListener(
 				new ChangeListener() {
@@ -552,6 +572,46 @@ public class ModelBuilder
 				}, 
 				MSMB_Element.FONT);
 		
+		// add a selection listener for the species table
+		msmb.addChangeListener(
+                new ChangeListener() {
+                    @Override
+                    public void stateChanged(ChangeEvent e) {
+                        ChangedElement before = (((MSMB_InterfaceChange)e.getSource()).getElementBefore());
+                        ChangedElement after = (((MSMB_InterfaceChange)e.getSource()).getElementAfter());
+                        //the before of the selection is always going to because you don't need the before for the selection I guess
+                        if(before!=null) System.out.println("Species selection before = " + before.getName());
+                        if(after!=null && !after.getName().isEmpty())
+                        {
+                        	AC_GUI.setSelectedDrawingBoardVariable(after.getName(), VariableType.SPECIES);
+                        	System.out.println("Species selection after = " + after.getName());
+                        }
+                        System.out.println("AC select species after");
+                    }
+                },
+                MSMB_Element.SELECTED_SPECIES);
+		
+		// add a selection listener for the global quantity table
+		msmb.addChangeListener(
+                new ChangeListener() {
+                    @Override
+                    public void stateChanged(ChangeEvent e) {
+                        ChangedElement before = (((MSMB_InterfaceChange)e.getSource()).getElementBefore());
+                        ChangedElement after = (((MSMB_InterfaceChange)e.getSource()).getElementAfter());
+                        //the before of the selection is always going to because you don't need the before for the selection I guess
+                        if(before!=null) System.out.println("GLQ selection before = " + before.getName());
+                        if(after!=null && !after.getName().isEmpty())
+                        {
+                        	AC_GUI.setSelectedDrawingBoardVariable(after.getName(), VariableType.GLOBAL_QUANTITY);
+                        	System.out.println("GLQ selection after = " + after.getName());
+                        }
+                        System.out.println("AC select GLQ after");
+                    }
+                },
+                MSMB_Element.SELECTED_GLOBAL_QUANTITY);
+		
+		// add selection listener for the ports table
+		//jTableCustom.getSelectionModel().addListSelectionListener(new ACRowListener());
 	}
 }
 

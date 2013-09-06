@@ -84,29 +84,7 @@ public class ACMenuListener implements ActionListener
             	File file = fileChooser.getSelectedFile();
                 //inputFile = file.getName().substring(0,file.getName().lastIndexOf("."));
             	String ext = file.getAbsolutePath().substring(file.getAbsolutePath().lastIndexOf("."));
-            	if (ext.equals(".xml") || ext.equals(".cps"))
-        		{
-            		String iName = JOptionPane.showInputDialog("Name of the loaded module:", "Module");
-    				if ((iName != null) && (!iName.isEmpty()))
-    				{
-    					if (AC_GUI.nameValidation(iName))
-    					{
-    						AC_GUI.currentGUI.load(file.getAbsolutePath(), iName);
-    					}
-    					else
-    					{
-    						String message = "Invalid name. Names must adhere to the following rules:" + eol;
-    						message += "\u2022 Names cannot start with a number or punctuation character." + eol;
-    						message += "\u2022 Names cannot start with the letters \"xml\"." + eol;
-    						message += "\u2022 Names cannot contain spaces.";
-    												
-    						JOptionPane.showMessageDialog(null, message);
-    					}
-    				}
-        		}
-            	else{
-            		AC_GUI.currentGUI.load(file.getAbsolutePath(), "");
-            	}
+				AC_GUI.currentGUI.load(file.getAbsolutePath());
             	//AC_GUI.currentGUI.loadTest(file.getAbsolutePath());
             }
 			break;
@@ -176,7 +154,7 @@ public class ACMenuListener implements ActionListener
 		case EXIT:
 			JOptionPane.showMessageDialog(
 					null,
-					"Will exit from the tool after the completing the steps descri bed under the Close menu item (not yet implemented).");
+					"Will exit from the tool after the completing the steps described under the Close menu item (not yet implemented).");
 			break;
 		case ADD_SUBMODULE_NEW:
 			//JOptionPane.showMessageDialog(null, "Will add an empty submodule under the module selected in the TreeView (not yet implemented).");
@@ -261,46 +239,10 @@ public class ACMenuListener implements ActionListener
 			            if (fileChooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) 
 			            {
 			            	File file = fileChooser.getSelectedFile();
-			                //inputFile = file.getName().substring(0,file.getName().lastIndexOf(".")); 
+			                //inputFile = file.getName().substring(0,file.getName().lastIndexOf("."));
 			            	String ext = file.getAbsolutePath().substring(file.getAbsolutePath().lastIndexOf("."));
-			            	if (ext.equals(".xml") || ext.equals(".cps"))
-			        		{
-			            		String iName = JOptionPane.showInputDialog("Name of the loaded module:", "Module");
-			    				while(iName != null)
-								{
-									if (!iName.isEmpty())
-									{
-										if (AC_GUI.nameValidation(iName))
-				    					{
-											if (AC_GUI.submoduleValidation(iName))
-											{
-												AC_GUI.currentGUI.loadSubmodule(file.getAbsolutePath(), AC_GUI.selectedModule, iName);
-												break;
-											}
-											else
-											{
-												String message = "There already exists a submodule with the same name.";
-												JOptionPane.showMessageDialog(null, message);
-											}
-				    					}
-				    					else
-				    					{
-				    						String message = "Invalid name. Names must adhere to the following rules:" + eol;
-				    						message += "\u2022 Names cannot start with a number or punctuation character." + eol;
-				    						message += "\u2022 Names cannot start with the letters \"xml\"." + eol;
-				    						message += "\u2022 Names cannot contain spaces.";
-				    												
-				    						JOptionPane.showMessageDialog(null, message);
-				    					}
-									}
-									iName = JOptionPane.showInputDialog("Name of the loaded module:", iName);
-								}
-			        		}
-			            	else{
-			            		AC_GUI.currentGUI.loadSubmodule(file.getAbsolutePath(), AC_GUI.selectedModule, "");
-			            	}
-			                
-			            	//AC_GUI.currentGUI.loadTest(file.getAbsolutePath(), AC_GUI.selectedModule);
+							AC_GUI.currentGUI.loadSubmodule(file.getAbsolutePath(), AC_GUI.selectedModule);
+			            	//AC_GUI.currentGUI.loadTest(file.getAbsolutePath());
 			            }
 					}
 					else

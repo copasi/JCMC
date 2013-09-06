@@ -187,7 +187,7 @@ public class AC_IO
 		String msmbData = (String)data.get("msmbData");
 		DefaultMutableTreeNode treeNode = (DefaultMutableTreeNode)data.get("treeNode");
 		Object drawingCell = data.get("drawingCell");
-		String datamodelKey = (String)data.get("copasiDatamodelKey");
+		//String datamodelKey = (String)data.get("copasiDatamodelKey");
 		String cellStyle = (String)data.get("drawingCellStyle");
 		mxRectangle oldBounds = (mxRectangle)data.get("drawingCellBounds");
 		mxGeometry oldGeo = (mxGeometry)data.get("drawingCellGeometry");
@@ -216,6 +216,10 @@ public class AC_IO
 		if (parent == null)
 		{
 			AC_GUI.masterModuleList.add(mod);
+		}
+		else
+		{
+			parent.addChild(mod);
 		}
 		AC_GUI.treeView.addNode(mod);
 		AC_GUI.drawingBoard.createCell(mod);
@@ -575,7 +579,21 @@ public class AC_IO
 		
 		CCopasiDataModel dataModel = AC_GUI.copasiUtility.createDataModel();
 		dataModel.getModel().setObjectName(name);
-		MathematicalAggregator mathAgg = new MathematicalAggregator(name, dataModel.getModel().getKey(), inputNumber, op, parent);
+		MathematicalAggregator mathAgg = null;
+		try
+		{
+			mathAgg = new MathematicalAggregator(name, dataModel.getModel().getKey(), msmbData, inputNumber, op, parent);
+		}
+		catch (Exception e)
+		{
+			if (msmbData.isEmpty())
+			{
+				System.err.println("AC_IO.unpackMathAggregator(): The MathematicalAggregator \"" + name + "\" has msmbData which is currently empty.");
+			}
+			e.printStackTrace();
+			System.exit(0);
+		}
+		//MathematicalAggregator mathAgg = new MathematicalAggregator(name, dataModel.getModel().getKey(), inputNumber, op, parent);
 		mathAgg.setDrawingCellStyle(cellStyle);
 		mathAgg.setDrawingCellBounds(newBounds);
 		mathAgg.setDrawingCellGeometry(newGeo);

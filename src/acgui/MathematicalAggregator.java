@@ -1,5 +1,6 @@
 package acgui;
 
+import org.COPASI.CCompartment;
 import org.COPASI.CCopasiDataModel;
 import org.COPASI.CCopasiObjectName;
 import org.COPASI.CCopasiRootContainer;
@@ -41,6 +42,27 @@ public class MathematicalAggregator extends Module{
 	//private CCopasiDataModel dataModel;
 	private int inputNum;
 	
+	public MathematicalAggregator(String iName, String copasiKey, String imsmbData, int num_terms, Operation iOp, Module parent)
+	{
+		super(iName, copasiKey, imsmbData, parent);
+		op = iOp;
+		//dataModel = AC_GUI.copasiUtility.getCopasiModelFromKey(copasiKey);
+		inputNum = num_terms;
+		
+		switch(op) {
+    	case SUM:	
+    			var_math_aggregation = "SumTotal";
+    			break;
+    	case PRODUCT: 
+    			var_math_aggregation = "ProdTotal";
+    			break;
+    	default:
+    		System.err.println("MathematicalAggregator: operation not recognized");
+    		return;
+		}
+		
+	}
+	
 	public MathematicalAggregator(String iName, String copasiKey, int num_terms, Operation iOp, Module parent) 	 {
 		super(iName, copasiKey, parent);
 		String OPERATION = "";
@@ -67,7 +89,8 @@ public class MathematicalAggregator extends Module{
 		
 	    CCopasiDataModel dataModel = AC_GUI.copasiUtility.getCopasiModelFromKey(copasiKey);
 		CModel model = dataModel.getModel();
-	    
+		CCompartment comp = model.createCompartment("cell");
+		
 		String aggregated_expression = new String();
 		
 		for(int i = 0; i < num_terms; i++) {

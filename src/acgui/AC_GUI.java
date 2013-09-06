@@ -31,6 +31,8 @@ import msmb.commonUtilities.ChangedElement;
 
 import org.COPASI.*;
 
+import org.sbml.libsbml.*;
+
 /**
  * Aggregation Connector. This tool is used to connect SBML models together.
  * 
@@ -49,6 +51,7 @@ public class AC_GUI extends JFrame
 	protected static Module activeModule;
 	protected static Module selectedModule;
 	protected static CopasiUtility copasiUtility;
+	String eol;
 
 	/**
 	 * Construct the AC_GUI object.
@@ -75,6 +78,7 @@ public class AC_GUI extends JFrame
 		{
 			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 			addLibraryPath("..\\lib");
+			System.loadLibrary("sbmlj");
 		}
 		catch (Exception e1)
 		{
@@ -114,54 +118,7 @@ public class AC_GUI extends JFrame
 		usrPathsField.set(null, newPaths);
 	}
 	
-	public void load(String fileName, String optName)
-	{
-		CCopasiDataModel dataModel = copasiUtility.createDataModel();
-		Module mod = null;
-		String ext = fileName.substring(fileName.lastIndexOf("."));
-    	
-		try
-		{
-			if (ext.equals(".xml"))
-			{
-				//dataModel.importSBML(fileName);
-				SBMLParser.importSBML(fileName);
-			}
-			else if (ext.equals(".cps"))
-			{
-				dataModel.loadModel(fileName);
-			}
-			else if (ext.equals(".ac"))
-			{
-				mod = AC_IO.loadModule(fileName);
-			}
-				System.out.println("Number of models in the CCopasiRootContainer: " + CCopasiRootContainer.getDatamodelList().size());
-		}
-		catch (java.lang.Exception ex){
-			ex.printStackTrace();
-			System.err.println( "Error while importing the model from file named \"" + fileName + "\"." );
-		}
-		
-		if (ext.equals(".cps"))
-		{
-			dataModel.getModel().setObjectName(optName);
-			mod = new Module(dataModel.getModel().getObjectName(), dataModel.getModel().getKey());
-			masterModuleList.add(mod);
-			treeView.addNode(mod);
-			drawingBoard.createCell(mod);
-		}
-		
-		//drawingBoard.changeModule(mod);
-		if (ext.equals(".cps") || ext.equals(".ac"))
-		{
-			changeActiveModule(mod);
-			//modelBuilder.loadModel(mod.getKey());
-			modelBuilder.setVisible(true);
-			activeModule = mod;
-		}
-	}
-	
-	public void loadSubmodule(String fileName, Module parent, String optName)
+	public void load(String fileName)
 	{
 		CCopasiDataModel dataModel = null;
 		Module mod = null;
@@ -171,8 +128,76 @@ public class AC_GUI extends JFrame
 		{
 			if (ext.equals(".xml"))
 			{
+				//dataModel.importSBML(fileName);
+				mod = SBMLParser.importSBML(fileName);
+			}
+			else if (ext.equals(".cps"))
+			{
 				dataModel = copasiUtility.createDataModel();
-				dataModel.importSBML(fileName);
+				dataModel.loadModel(fileName);
+			}
+			else if (ext.equals(".ac"))
+			{
+				mod = AC_IO.loadModule(fileName);
+			}
+				//System.out.println("Number of models in the CCopasiRootContainer: " + CCopasiRootContainer.getDatamodelList().size());
+		}
+		catch (java.lang.Exception ex){
+			ex.printStackTrace();
+			System.err.println( "Error while importing the model from file named \"" + fileName + "\"." );
+		}
+		
+		if (ext.equals(".cps"))
+		{
+			String modelName = dataModel.getModel().getObjectName();
+			if (modelName == null || modelName.isEmpty())
+			{
+				String newName = JOptionPane.showInputDialog("Name of the loaded module:", "Module");
+				
+				while(!AC_GUI.nameValidation(newName))
+				{
+					String message = "Invalid name. Names must adhere to the following rules:" + eol;
+					message += "\u2022 Names cannot start with a number or punctuation character." + eol;
+					message += "\u2022 Names cannot start with the letters \"xml\"." + eol;
+					message += "\u2022 Names cannot contain spaces.";
+											
+					JOptionPane.showMessageDialog(null, message);
+					newName = JOptionPane.showInputDialog("Name of the loaded module:", "Module");
+				}
+				dataModel.getModel().setObjectName(newName);
+			}
+			mod = new Module(dataModel.getModel().getObjectName(), dataModel.getModel().getKey());
+			masterModuleList.add(mod);
+			treeView.addNode(mod);
+			drawingBoard.createCell(mod);
+		}
+		
+		//drawingBoard.changeModule(mod);
+		/*
+		if (ext.equals(".cps") || ext.equals(".ac"))
+		{
+			changeActiveModule(mod);
+			//modelBuilder.loadModel(mod.getKey());
+			modelBuilder.setVisible(true);
+			activeModule = mod;
+		}
+		*/
+		changeActiveModule(mod);
+		modelBuilder.setVisible(true);
+		//activeModule = mod;
+	}
+	
+	public void loadSubmodule(String fileName, Module parent)
+	{
+		CCopasiDataModel dataModel = null;
+		Module mod = null;
+		String ext = fileName.substring(fileName.lastIndexOf("."));
+    	
+		try
+		{
+			if (ext.equals(".xml"))
+			{
+				mod = SBMLParser.importSBML(fileName, parent);
 			}
 			else if (ext.equals(".cps"))
 			{
@@ -190,6 +215,7 @@ public class AC_GUI extends JFrame
 			System.err.println( "Error while importing the model from file named \"" + fileName + "\"." );
 		}
 		
+		/*
 		if (ext.equals(".xml") || ext.equals(".cps"))
 		{
 			dataModel.getModel().setObjectName(optName);
@@ -199,8 +225,52 @@ public class AC_GUI extends JFrame
 			drawingBoard.createCell(mod);
 			drawingBoard.addCell(mod);
 		}
+		*/
 		
-		parent.addChild(mod);
+		if (ext.equals(".cps"))
+		{
+			String modelName = dataModel.getModel().getObjectName();
+			if (modelName == null || modelName.isEmpty())
+			{
+				String newName = JOptionPane.showInputDialog("Name of the loaded module:", "Module");
+				while(newName != null)
+				{
+					if (!newName.isEmpty())
+					{
+						if (AC_GUI.nameValidation(newName))
+    					{
+							if (AC_GUI.submoduleValidation(newName))
+							{
+								dataModel.getModel().setObjectName(newName);
+								break;
+							}
+							else
+							{
+								String message = "There already exists a submodule with the same name.";
+								JOptionPane.showMessageDialog(null, message);
+							}
+    					}
+    					else
+    					{
+    						String message = "Invalid name. Names must adhere to the following rules:" + eol;
+    						message += "\u2022 Names cannot start with a number or punctuation character." + eol;
+    						message += "\u2022 Names cannot start with the letters \"xml\"." + eol;
+    						message += "\u2022 Names cannot contain spaces.";
+    												
+    						JOptionPane.showMessageDialog(null, message);
+    					}
+					}
+					newName = JOptionPane.showInputDialog("Name of the loaded module:", newName);
+				}
+				dataModel.getModel().setObjectName(newName);
+			}
+			mod = new Module(dataModel.getModel().getObjectName(), dataModel.getModel().getKey(), parent);
+			mod.setDrawingCellStyle("Submodule");
+			treeView.addNode(mod);
+			drawingBoard.createCell(mod);
+			parent.addChild(mod);
+		}
+		
 		changeActiveModule(activeModule);
 	}
 	
@@ -213,6 +283,10 @@ public class AC_GUI extends JFrame
 		*/
 		//copasiUtility.exportModel(key);
 		String code = new String(modelBuilder.saveModel());
+		if (code.isEmpty())
+		{
+			System.err.println("AC_GUI.save(): " + activeModule.getName() + "'s msmb data is NULL.");
+		}
 		activeModule.setMSMBData(code);
 		drawingBoard.saveCurrentPositions();
 		AC_IO.saveModule(activeModule, fileName);
@@ -237,10 +311,12 @@ public class AC_GUI extends JFrame
 	
 	public static void exportSBML(String fileName)
 	{
+		System.out.println("Number of COPASI data models = " + copasiUtility.getNumberOfModels());
 		if (!saveModules())
 		{
-			System.out.println("Problem saving Modules.");
+			System.err.println("Problem saving Modules.");
 		}
+		System.out.println("Number of COPASI data models = " + copasiUtility.getNumberOfModels());
 		SBMLParser output = new SBMLParser();
 		output.exportSBML("", activeModule, fileName);
 	}
@@ -291,6 +367,80 @@ public class AC_GUI extends JFrame
 		return mod;
 	}
 	
+	public static Module newModule(String name, String sbmlID, String copasiData, GeneralGlyph glyph)
+	{
+		CCopasiDataModel dataModel = copasiUtility.createDataModel();
+		dataModel.getModel().setObjectName(name);
+		dataModel.getModel().setSBMLId(sbmlID);
+		
+		try
+		{
+			dataModel.importSBMLFromString(copasiData);
+		}
+		catch (java.lang.Exception ex)
+		{
+			ex.printStackTrace();
+		}
+		//dataModel.importSBMLFromString(copasiData);
+		Module mod = new Module(name, dataModel.getModel().getKey());
+		mod.setDrawingCellStyle("Module");
+		//System.out.println(name + " key = " + mod.getKey());
+		masterModuleList.add(mod);
+		//treeView.setup(mod);
+		//treeView.setup();
+		treeView.addNode(mod);
+		drawingBoard.createCell(mod, glyph);
+		drawingBoard.changeModule(mod);
+		modelBuilder.loadModel(mod.getKey(), true);
+		modelBuilder.setVisible(true);		
+		
+		activeModule = mod;
+		System.out.println("Module created. Name: " + name + "...SBMLid: " + sbmlID + "");
+		return mod;
+	}
+	
+	public static Module xnewModule(String name, String sbmlID, String copasiData, Module parent, GeneralGlyph glyph)
+	{
+		CCopasiDataModel dataModel = copasiUtility.createDataModel();
+		dataModel.getModel().setObjectName(name);
+		dataModel.getModel().setSBMLId(sbmlID);
+		
+		try
+		{
+			dataModel.importSBMLFromString(copasiData);
+		}
+		catch (java.lang.Exception ex)
+		{
+			ex.printStackTrace();
+		}
+		//dataModel.importSBMLFromString(copasiData);
+		Module mod = new Module(name, dataModel.getModel().getKey(), parent);
+		if (parent == null)
+		{
+			mod.setDrawingCellStyle("Module");
+			masterModuleList.add(mod);
+		}
+		else
+		{
+			mod.setDrawingCellStyle("Submodule");
+			parent.addChild(mod);
+		}
+		
+		//System.out.println(name + " key = " + mod.getKey());
+		
+		//treeView.setup(mod);
+		//treeView.setup();
+		treeView.addNode(mod);
+		drawingBoard.createCell(mod, glyph);
+		//drawingBoard.changeModule(mod);
+		//modelBuilder.loadModel(mod.getKey(), true);
+		//modelBuilder.setVisible(true);		
+		
+		//activeModule = mod;
+		System.out.println("Module created. Name: " + name + "...SBMLid: " + sbmlID + "");
+		return mod;
+	}
+	
 	/**
 	 * Create a new submodule in the three panels.
 	 * @param name the name of the new submodule
@@ -311,7 +461,7 @@ public class AC_GUI extends JFrame
 		//printList();
 	}
 	
-	public void newSubmodule(String name, String sbmlID, String copasiData, Module parent)
+	public Module newSubmodule(String name, String sbmlID, String copasiData, Module parent, GeneralGlyph glyph)
 	{
 		CCopasiDataModel dataModel = copasiUtility.createDataModel();
 		dataModel.getModel().setObjectName(name);
@@ -332,9 +482,39 @@ public class AC_GUI extends JFrame
 		parent.addChild(mod);
 		treeView.addNode(mod);
 		drawingBoard.createCell(mod);
-		drawingBoard.addCell(mod);
+		drawingBoard.addCell(mod, glyph);
+		//drawingBoard.addCell(mod);
 		drawingBoard.changeModule(parent);
 		System.out.println("Submodule created. Name: " + name + "...SBMLid: " + sbmlID + "");
+		return mod;
+	}
+	
+	public Module xnewSubmodule(String name, String sbmlID, String copasiData, Module parent, GeneralGlyph glyph)
+	{
+		CCopasiDataModel dataModel = copasiUtility.createDataModel();
+		dataModel.getModel().setObjectName(name);
+		dataModel.getModel().setSBMLId(sbmlID);
+		
+		try
+		{
+			dataModel.importSBMLFromString(copasiData);
+		}
+		catch (java.lang.Exception ex)
+		{
+			ex.printStackTrace();
+		}
+		
+		Module mod = new Module(name, dataModel.getModel().getKey(), parent);
+		mod.setDrawingCellStyle("Submodule");
+		//System.out.println(name + " key = " + mod.getKey());
+		parent.addChild(mod);
+		treeView.addNode(mod);
+		drawingBoard.createCell(mod, glyph);
+		//drawingBoard.addCell(mod, glyph);
+		//drawingBoard.addCell(mod);
+		//drawingBoard.changeModule(parent);
+		System.out.println("Submodule created. Name: " + name + "...SBMLid: " + sbmlID + "");
+		return mod;
 	}
 	
 	public static void addVisibleVariable(String refName)
@@ -352,7 +532,7 @@ public class AC_GUI extends JFrame
 		}
 		else
 		{
-			System.err.println("AC_GUI.addPort: A valid VariableType was not found.");
+			System.err.println("AC_GUI.addVisibleVariable: A valid VariableType was not found.");
 		}
 		
 		VisibleVariable var = new VisibleVariable(activeModule, refName, vType);
@@ -368,6 +548,27 @@ public class AC_GUI extends JFrame
 		
 		//add a new species to msmb
 		modelBuilder.addSpecies(refName);
+	}
+	
+	public static void addVisibleVariable(Module parentMod, String refName, String varType, GeneralGlyph glyph)
+	{
+		VariableType vType= null;
+		if (varType.equalsIgnoreCase(VariableType.SPECIES.toString()))
+		{
+			vType = VariableType.SPECIES;
+		}
+		else if (varType.equalsIgnoreCase(VariableType.GLOBAL_QUANTITY.toString()))
+		{
+			vType = VariableType.GLOBAL_QUANTITY;
+		}
+		else
+		{
+			System.err.println("AC_GUI.addVisibleVariable: A valid VariableType was not found.");
+		}
+		
+		VisibleVariable var = new VisibleVariable(parentMod, refName, vType);
+		drawingBoard.createVisibleVariable(var, glyph);
+		parentMod.addVisibleVariable(var);
 	}
 	
 	public static void removeVisibleVariable(VisibleVariable var)
@@ -444,8 +645,93 @@ public class AC_GUI extends JFrame
 		}
 		
 		Port newPort = new Port(parentMod, refName, pType, vType, name, portCount);
-		drawingBoard.addPort(parentMod, newPort);
 		modelBuilder.addPort(newPort);
+		drawingBoard.addPort(parentMod, newPort);
+		parentMod.addPort(newPort);
+	}
+	
+	public static void addPort(Module parentMod, String name, String refName, String portType, String varType, GeneralGlyph portGlyph)
+	{
+		int portCount = parentMod.getPorts().size();
+		PortType pType = null;
+		VariableType vType= null;
+		
+		if (varType.equalsIgnoreCase(VariableType.SPECIES.toString()))
+		{
+			vType = VariableType.SPECIES;
+		}
+		else if (varType.equalsIgnoreCase(VariableType.GLOBAL_QUANTITY.toString()))
+		{
+			vType = VariableType.GLOBAL_QUANTITY;
+		}
+		else
+		{
+			System.err.println("AC_GUI.addPort: A valid VariableType was not found.");
+		}
+
+		if (portType.equalsIgnoreCase(PortType.INPUT.toString()))
+		{
+			pType = PortType.INPUT;
+		}
+		else if (portType.equalsIgnoreCase(PortType.OUTPUT.toString()))
+		{
+			pType = PortType.OUTPUT;
+		}
+		else if (portType.equalsIgnoreCase(PortType.EQUIVALENCE.toString()))
+		{
+			pType = PortType.EQUIVALENCE;
+		}
+		else
+		{
+			System.err.println("AC_GUI.addPort: A valid PortType was not found.");
+		}
+		
+		Port newPort = new Port(parentMod, refName, pType, vType, name, portCount);
+		modelBuilder.addPort(newPort);
+		drawingBoard.addPort(parentMod, newPort, portGlyph);
+		parentMod.addPort(newPort);
+	}
+	
+	public static void xaddPort(Module parentMod, String name, String refName, String portType, String varType, GeneralGlyph portGlyph)
+	{
+		int portCount = parentMod.getPorts().size();
+		PortType pType = null;
+		VariableType vType= null;
+		
+		if (varType.equalsIgnoreCase(VariableType.SPECIES.toString()))
+		{
+			vType = VariableType.SPECIES;
+		}
+		else if (varType.equalsIgnoreCase(VariableType.GLOBAL_QUANTITY.toString()))
+		{
+			vType = VariableType.GLOBAL_QUANTITY;
+		}
+		else
+		{
+			System.err.println("AC_GUI.addPort: A valid VariableType was not found.");
+		}
+
+		if (portType.equalsIgnoreCase(PortType.INPUT.toString()))
+		{
+			pType = PortType.INPUT;
+		}
+		else if (portType.equalsIgnoreCase(PortType.OUTPUT.toString()))
+		{
+			pType = PortType.OUTPUT;
+		}
+		else if (portType.equalsIgnoreCase(PortType.EQUIVALENCE.toString()))
+		{
+			pType = PortType.EQUIVALENCE;
+		}
+		else
+		{
+			System.err.println("AC_GUI.addPort: A valid PortType was not found.");
+		}
+		
+		Port newPort = new Port(parentMod, refName, pType, vType, name, portCount);
+		//modelBuilder.addPort(newPort);
+		//drawingBoard.addPort(parentMod, newPort, portGlyph);
+		drawingBoard.createPort(newPort, portGlyph);
 		parentMod.addPort(newPort);
 	}
 	
@@ -482,6 +768,13 @@ public class AC_GUI extends JFrame
 		parentMod.addConnection(edge);
 	}
 	
+	public static void addConnection(Module parentMod, Object source, Object target, String drawingCellStyle)
+	{
+		Connection edge = new Connection(parentMod);
+		drawingBoard.createConnection(edge, source, target, drawingCellStyle);
+		parentMod.addConnection(edge);
+	}
+	
 	/**
 	 * Remove the connection from the given module.
 	 * @param parentMod the module containing the connection
@@ -513,6 +806,58 @@ public class AC_GUI extends JFrame
 		activeModule.addChild(mathAgg);
 		treeView.addNode(mathAgg);
 		drawingBoard.addMathAggregator(mathAgg);
+	}
+	
+	public static MathematicalAggregator addMathAggregator(String name, String sbmlID, String copasiData, Module parent, int inputs, String op, GeneralGlyph glyph)
+	{
+		CCopasiDataModel dataModel = copasiUtility.createDataModel();
+		dataModel.getModel().setObjectName(name);
+		dataModel.getModel().setSBMLId(sbmlID);
+		Operation oper = null;
+		
+		try
+		{
+			dataModel.importSBMLFromString(copasiData);
+		}
+		catch (java.lang.Exception ex)
+		{
+			ex.printStackTrace();
+		}
+		
+		if(op.equalsIgnoreCase(Operation.SUM.toString()))
+		{
+			oper = Operation.SUM;
+		}
+		else if(op.equalsIgnoreCase(Operation.PRODUCT.toString()))
+		{
+			oper = Operation.PRODUCT;
+		}
+		else
+		{
+			System.err.println("AC_GUI.addMathAggregator: A valid Operation was not found.");
+		}
+		
+		//Module mod = new Module(name, dataModel.getModel().getKey(), parent);
+		MathematicalAggregator mod = new MathematicalAggregator(name, dataModel.getModel().getKey(), null, inputs, oper, parent);
+		
+		if(op.equalsIgnoreCase(Operation.SUM.toString()))
+		{
+			mod.setDrawingCellStyle("Summation");
+		}
+		else if(op.equalsIgnoreCase(Operation.PRODUCT.toString()))
+		{
+			mod.setDrawingCellStyle("Product");
+		}
+		
+		//System.out.println(name + " key = " + mod.getKey());
+		parent.addChild(mod);
+		treeView.addNode(mod);
+		drawingBoard.createCell(mod);
+		//drawingBoard.addMathAggregator(mod);
+		drawingBoard.addCell(mod, glyph);
+		drawingBoard.changeModule(parent);
+		System.out.println("MathematicalAggregator created. Name: " + name + "...SBMLid: " + sbmlID + "");
+		return mod;
 	}
 	
 	public static void addEquivalenceNode(Module parentMod, Object cell)
@@ -547,6 +892,13 @@ public class AC_GUI extends JFrame
 		
 		//add a new species to msmb
 		modelBuilder.addSpecies(refName);
+	}
+	
+	public static void addEquivalenceNode(Module parentMod, String refName, GeneralGlyph glyph)
+	{
+		EquivalenceNode eNode = new EquivalenceNode(parentMod, refName);
+		drawingBoard.createEquivalenceNode(eNode, glyph);
+		parentMod.addEquivalenceNode(eNode);
 	}
 	
 	public static void removeEquivalenceNode(EquivalenceNode eNode)
@@ -586,14 +938,54 @@ public class AC_GUI extends JFrame
 		setSelectedModule(masterModuleList.findModule(drawingCell));
 	}
 	
-	public void setSelectedPort(String refName)
+	public static void setSelectedDrawingBoardPort(Port portSelected)
 	{
-		
+		/*
+		String name = modelBuilder.getNameFromPortTable(rowSelected);
+		int endRefNameIndex = name.indexOf("-") - 1;
+		int startModNameIndex = name.indexOf("-") + 2;
+		String refName = name.substring(0, endRefNameIndex);
+		String modName = name.substring(startModNameIndex);
+		System.out.println(refName + ", " + modName);
+		*/
+		if (portSelected != null)
+		{
+			drawingBoard.setSelected(portSelected.getDrawingCell());
+		}
 	}
 	
-	public void setSelectedVariable(String refName, VariableType vType)
+	public static void setSelectedModelBuilderVariable(String refName, VariableType vType)
 	{
+		modelBuilder.setSelectedVariable(refName, vType);
+	}
+	
+	public static void setSelectedDrawingBoardVariable(String refName, VariableType vType)
+	{
+		ListIterator<VisibleVariable> vars = activeModule.getVisibleVariables().listIterator();
+		ListIterator<EquivalenceNode> eNodes = activeModule.getEquivalenceNodes().listIterator();
 		
+		System.out.println("Selected variable type: " + vType.toString() + "...name: " + refName);
+		VisibleVariable currentVar;
+		while(vars.hasNext())
+		{
+			currentVar = vars.next();
+			if ((currentVar.getVariableType() == vType) && currentVar.getRefName().equalsIgnoreCase(refName))
+			{
+				drawingBoard.setSelected(currentVar.getDrawingCell());
+				return;
+			}
+		}
+		
+		EquivalenceNode currenteNode;
+		while(eNodes.hasNext())
+		{
+			currenteNode = eNodes.next();
+			if((vType == VariableType.SPECIES) && currenteNode.getRefName().equalsIgnoreCase(refName))
+			{
+				drawingBoard.setSelected(currenteNode.getDrawingCell());
+				return;
+			}
+		}
 	}
 	
 	public static void changeActiveModule(Module mod)
@@ -603,7 +995,8 @@ public class AC_GUI extends JFrame
 			String code = new String(modelBuilder.saveModel());
 			activeModule.setMSMBData(code);
 			
-			System.out.println(activeModule.getName() + " saved to COPASI: " + modelBuilder.saveToCK(activeModule.getKey()));
+			
+			//System.out.println(activeModule.getName() + " saved to COPASI: " + modelBuilder.saveToCK(activeModule.getKey()));
 		}
 			
 		drawingBoard.changeModule(mod);
@@ -622,26 +1015,11 @@ public class AC_GUI extends JFrame
 		}		
 		activeModule = mod;
 		
-		//add activeModule's Ports
-		ListIterator<Port> portList = activeModule.getPorts().listIterator();
-		while (portList.hasNext())
-		{
-			modelBuilder.addPort(portList.next());
-		}
-		
-		//add activeModule's Children's Ports
-		ListIterator<Module> children = activeModule.getChildren().listIterator();
-		while(children.hasNext())
-		{
-			portList = children.next().getPorts().listIterator();
-			while (portList.hasNext())
-			{
-				modelBuilder.addPort(portList.next());
-			}
-		}
+		loadPortsIntoModelBuilder();
 		
 		setSelectedModule(mod);
 	}
+	
 	/**
 	 * Initialize the components within the AC frame.
 	 */
@@ -779,13 +1157,13 @@ public class AC_GUI extends JFrame
 		// create the input ports
 		for(int i = 0; i < inputs; i++)
 		{
-			newPort = new Port(mathAgg, inputPrefix+i, PortType.INPUT, VariableType.GLOBAL_QUANTITY, inputPrefix+i, i);
+			newPort = new Port(mathAgg, inputPrefix+i, PortType.INPUT, VariableType.GLOBAL_QUANTITY, inputPrefix+i+"Port", i);
 			modelBuilder.addPort(newPort);
 			mathAgg.addPort(newPort);
 		}
 		
 		// create the output port
-		newPort = new Port(mathAgg, outputName, PortType.OUTPUT, VariableType.GLOBAL_QUANTITY, "Total", mathAgg.getPorts().size());
+		newPort = new Port(mathAgg, outputName, PortType.OUTPUT, VariableType.GLOBAL_QUANTITY, "TotalPort", mathAgg.getPorts().size());
 		modelBuilder.addPort(newPort);
 		mathAgg.addPort(newPort);
 	}
@@ -797,15 +1175,17 @@ public class AC_GUI extends JFrame
 		String code;
 		byte[] data;
 		
-		// save the activeModule
-		code = new String(modelBuilder.saveModel());
-		activeModule.setMSMBData(code);
-		
+		// save the activeModule to COPASI
+		System.out.println("AC_GUI.saveModules(): " + activeModule.getName() + "'s copasi key = " + activeModule.getKey());
 		successfulSave = modelBuilder.saveToCK(activeModule.getKey());
 		if (!successfulSave)
 		{
 			return false;
 		}
+		
+		// store the activeModule's msmb data
+		code = new String(modelBuilder.saveModel());
+		activeModule.setMSMBData(code);
 		
 		// load and save each of the activeModule's children
 		ListIterator<Module> children = activeModule.getChildren().listIterator();
@@ -821,25 +1201,57 @@ public class AC_GUI extends JFrame
 			}
 			else
 			{
+				//System.err.println("AC_GUI.saveModules(): " + child.getName() + "'s msmb data is NULL.");
+				//System.exit(0);
 				modelBuilder.loadModel(child.getKey(), false);
+				
+				// store the child module's msmb data
+				code = new String(modelBuilder.saveModel());
+				child.setMSMBData(code);
 			}		
 			
-			code = new String(modelBuilder.saveModel());
-			child.setMSMBData(code);
+			// save the child module to COPASI
+			System.out.println("AC_GUI.saveModules(): " + child.getName() + "'s copasi key = " + child.getKey());
 			successfulSave =  modelBuilder.saveToCK(child.getKey());
 			if (!successfulSave)
 			{
 				return false;
 			}
+			
+			// store the child module's msmb data
+			//code = new String(modelBuilder.saveModel());
+			//child.setMSMBData(code);
 		}
 		
 		// reload the original activeModule
 		code = activeModule.getMSMBData();
 		data = activeModule.getMSMBData().getBytes();
-		modelBuilder.loadModel(data, false);
-		
+		modelBuilder.loadModel(data, true);
+		loadPortsIntoModelBuilder();
 		return successfulSave;
 	}
+	
+	private static void loadPortsIntoModelBuilder()
+	{
+		//add activeModule's Ports
+		ListIterator<Port> portList = activeModule.getPorts().listIterator();
+		while (portList.hasNext())
+		{
+			modelBuilder.addPort(portList.next());
+		}
+		
+		//add activeModule's Children's Ports
+		ListIterator<Module> children = activeModule.getChildren().listIterator();
+		while(children.hasNext())
+		{
+			portList = children.next().getPorts().listIterator();
+			while (portList.hasNext())
+			{
+				modelBuilder.addPort(portList.next());
+			}
+		}
+	}
+	
 	/**
 	 * Open the Preferences display from MSMB.
 	 */

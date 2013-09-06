@@ -1,8 +1,8 @@
 package acgui;
 
-import org.COPASI.CCopasiDataModel;
-import org.COPASI.CCopasiRootContainer;
-import org.COPASI.DataModelVector;
+import java.util.ListIterator;
+
+import org.COPASI.*;
 
 /**
  * A utility to handle all things Copasi.
@@ -84,11 +84,75 @@ public class CopasiUtility
 		{
 			model = CCopasiRootContainer.get(index);
 			//System.out.println("F key: " + model.getModel().getKey());
+			
 			if(dataModelKey.equals(model.getModel().getKey()))
 			{
 				return model;
 			}
 		}
 		return null;
+	}
+	
+	public long getNumberOfModels()
+	{
+		return CCopasiRootContainer.getDatamodelList().size();
+	}
+	
+	public void setLayout(Module mod)
+	{
+		ListIterator<Module> children = mod.getChildren().listIterator();
+		Module child;
+		String name = mod.getName() + "_Layout";
+		CCopasiDataModel dataModel = getCopasiModelFromKey(mod.getKey());
+		CListOfLayouts layoutList = dataModel.getListOfLayouts();
+		CLayout modLayout = new CLayout(name, dataModel);
+		CLDimensions dim = new CLDimensions();
+		CLGraphicalObject obj = new CLGraphicalObject("Model1_Fake_Port", dataModel);
+		obj.setPosition(new CLPoint(21.0, 21.0));
+		CLayout childLayout;
+		CLCompartmentGlyph comp;
+		CLPoint pos;
+		double xPos;
+		double yPos;
+		String info = "";
+		info = "Module: " + mod.getName() + "\n";
+		info += "layout key: " + modLayout.getKey() + "\n";
+		System.out.println(info);
+		modLayout.addGraphicalObject(obj);
+		layoutList.addLayout(modLayout);
+		while(children.hasNext())
+		{
+			child = children.next();
+			childLayout = new CLayout(child.getName() + "_Layout", getCopasiModelFromKey(child.getKey()));
+			comp = new CLCompartmentGlyph();
+			comp.setModelObjectKey(child.getKey());
+			xPos = child.getDrawingCellGeometry().getX();
+			yPos = child.getDrawingCellGeometry().getY();
+			pos = new CLPoint(xPos, yPos);
+			comp.setPosition(pos);
+			childLayout.addCompartmentGlyph(comp);
+			
+			info = "Submodule: " + child.getName() + "\n";
+			info += "key: " + child.getKey() + "\n";
+			info += "comp model object name: " + comp.getModelObjectName() + "\n";
+			info += "comp model object display name: " + comp.getModelObjectDisplayName() + "\n";
+			info += "comp model object key: " + comp.getModelObjectKey() + "\n";
+			System.out.println(info);
+			layoutList.add(childLayout);
+		}
+		//obj.setModelObjectKey(mod.getKey());
+		//obj.setPosition(pos);
+		//layout.addGraphicalObject(obj);
+		
+		System.out.println("Number of layouts: " + layoutList.size());
+		for(long index = 0; index < layoutList.size(); index++)
+		{
+			CCopasiObject tlayout = layoutList.get(index);
+			info = "Layout key: " + tlayout.getKey() + "\n";
+			info += "layout object name: " + tlayout.getObjectName() + "\n";
+			info += "layout object type: " + tlayout.getObjectType() + "\n";
+			info += "layout object display name: " + tlayout.getObjectDisplayName() + "\n";
+			System.out.println(info);
+		}
 	}
 }

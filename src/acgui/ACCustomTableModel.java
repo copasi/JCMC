@@ -77,6 +77,11 @@ public class ACCustomTableModel extends CustomTableModel
 		return portsListed.indexOf(port);
 	}
 	
+	public Port getPort(int index)
+	{
+		return portsListed.get(index);
+	}
+	
 	@Override
 	public void clearData()
 	{

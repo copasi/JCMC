@@ -132,6 +132,22 @@ public class Module implements Serializable
 		equivalenceNodes = new ArrayList<EquivalenceNode>();
 	}
 	
+	public Module(String iName, String iKey, String imsmbData, Module iParent)
+	{
+		parent = iParent;
+		name = iName;
+		copasiDatamodelKey = iKey;
+		msmbData = imsmbData;
+		drawingCellStyle = "";
+		treeNode = null;
+		drawingCell = null;
+		children = new ArrayList<Module>();
+		ports = new ArrayList<Port>();
+		connections = new ArrayList<Connection>();
+		visibleVariables = new ArrayList<VisibleVariable>();
+		equivalenceNodes = new ArrayList<EquivalenceNode>();
+	}
+	
 	/**
 	 * Construct a module.
 	 * @param iName the name of the module

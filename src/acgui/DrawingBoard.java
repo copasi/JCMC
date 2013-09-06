@@ -27,6 +27,8 @@ import javax.swing.JPopupMenu;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 
+import org.sbml.libsbml.GeneralGlyph;
+
 import com.mxgraph.model.mxCell;
 import com.mxgraph.model.mxGeometry;
 import com.mxgraph.model.mxGraphModel;
@@ -174,6 +176,75 @@ public class DrawingBoard extends JPanel
 		// obj = graph.getModel().getValue(cobj);
 		// System.out.println("HI");
 	}
+	
+	public void createCell(Module mod, GeneralGlyph glyph)
+	{
+		Object parentCell;
+		mxGeometry geo = new mxGeometry();
+		double x = glyph.getBoundingBox().x();
+		double y = glyph.getBoundingBox().y();
+		double width = glyph.getBoundingBox().width();
+		double height = glyph.getBoundingBox().height();
+		// Determine what the parentCell will be
+		if (mod.getParent() != null)
+		{
+			// The module's parent's drawing cell will be the parentCell
+			parentCell = mod.getParent().getDrawingCell();
+			width = DEFAULT_SUBMODULE_WIDTH;
+			height = DEFAULT_SUBMODULE_HEIGHT;
+		}
+		else
+		{
+			// The module has no parent, the default parent will be the
+			// parentCell
+			parentCell = parent;
+		}
+
+		// Create the cell
+
+		Object cell = graph.createVertex(parentCell, null, mod, 5, 5, 1, 1, "");
+		((mxCell) cell).setConnectable(false);
+
+		/*
+		 * mxGeometry geo = new mxGeometry(5, 5, 10, 10); mxCell cell = null; graph.getModel().beginUpdate(); try { geo
+		 * = new mxGeometry(5, 5, 10, 10); cell = new mxCell(mod, geo, ""); //cell.setParent(((mxCell)parentCell));
+		 * cell.setConnectable(false); cell.setVisible(true); graph.getModel().add(parent, cell, 0);
+		 * //graph.addCell(cell, parentCell); } finally { graph.getModel().endUpdate(); }
+		 */
+		// Assign the created cell to the module
+		Object obj = graph.getModel().getValue(cell);
+		mod.setDrawingCell(cell);
+		// Object cobj = mod.getDrawingCell();
+		// obj = graph.getModel().getValue(cobj);
+		// System.out.println("HI");
+		
+		if (glyph == null)
+		{
+			System.err.println("Glyph is null.");
+		}
+		System.out.println("Glyph id: " + glyph.getId());
+		if (glyph.getBoundingBox() == null)
+		{
+			System.err.println("Glyph boundingbox is null.");
+		}
+		
+		
+		graph.getModel().beginUpdate();
+		try
+		{
+			geo.setX(x);
+			geo.setY(y);
+			geo.setWidth(width);
+			geo.setHeight(height);
+			((mxCell)cell).setGeometry(geo);
+		}
+		finally
+		{
+			graph.getModel().endUpdate();
+		}
+		//mod.setDrawingCellBounds(bounds);
+		mod.setDrawingCellGeometry(geo);
+	}
 
 	/**
 	 * Add the drawing cell representation of the given module to the module's parent.
@@ -218,6 +289,50 @@ public class DrawingBoard extends JPanel
 		mod.setDrawingCellGeometry(geo);
 		// printBoardStats();
 	}
+	
+	/**
+	 * Add the drawing cell representation of the given module to the module's parent.
+	 * 
+	 * @param mod the module to add
+	 */
+	public void addCell(Module mod, GeneralGlyph glyph)
+	{
+		Object parentCell = mod.getParent().getDrawingCell();
+		Object childCell = mod.getDrawingCell();
+		int childCount = mod.getParent().getChildren().size();
+		mxRectangle bounds = new mxRectangle();
+		mxGeometry geo = new mxGeometry();
+		double x = glyph.getBoundingBox().x();
+		double y = glyph.getBoundingBox().y();
+		double width = glyph.getBoundingBox().width();
+		double height = glyph.getBoundingBox().height();
+		
+		graph.getModel().beginUpdate();
+		try
+		{
+			if (!graph.getModel().isVisible(childCell))
+			{
+				// System.out.println("Submodule not visible.");
+				graph.getModel().setVisible(childCell, true);
+			}
+
+			geo.setX(x);
+			geo.setY(y);
+			geo.setWidth(width);
+			geo.setHeight(height);
+			((mxCell)childCell).setGeometry(geo);
+			//graph.resizeCell(childCell, bounds);
+			graph.getModel().add(parentCell, childCell, 0);
+			graph.getModel().setStyle(childCell, mod.getDrawingCellStyle());
+		}
+		finally
+		{
+			graph.getModel().endUpdate();
+		}
+		//mod.setDrawingCellBounds(bounds);
+		mod.setDrawingCellGeometry(geo);
+		// printBoardStats();
+	}
 
 	public void createPort(Port port, mxGeometry geo)
 	{
@@ -226,6 +341,23 @@ public class DrawingBoard extends JPanel
 		geo1.setRelative(true);
 
 		port1 = new mxCell(port, geo1, "Port");
+		port1.setVertex(true);
+		port1.setConnectable(true);
+		
+		port.setDrawingCell(port1);
+	}
+	
+	public void createPort(Port port, GeneralGlyph glyph)
+	{
+		mxCell port1 = null;
+		double x = glyph.getBoundingBox().x();
+		double y = glyph.getBoundingBox().y();
+		double width = DEFAULT_PORT_WIDTH;
+		double height = DEFAULT_PORT_HEIGHT;
+		mxGeometry geo = new mxGeometry(x, y, width, height);
+		geo.setRelative(true);
+		
+		port1 = new mxCell(port, geo, "Port");
 		port1.setVertex(true);
 		port1.setConnectable(true);
 		
@@ -281,6 +413,57 @@ public class DrawingBoard extends JPanel
 		port.setDrawingCell(port1);
 	}
 
+	/**
+	 * Add a drawing cell representation of the given port to the 
+	 * drawing cell representation of the given module.
+	 * 
+	 * @param parentMod the parent module of the port
+	 * @param port the port to be added
+	 */
+	public void addPort(Module parentMod, Port port, GeneralGlyph glyph)
+	{
+		Object cell = parentMod.getDrawingCell();
+		double width = DEFAULT_PORT_WIDTH;
+		double height = DEFAULT_PORT_HEIGHT;
+		double x = glyph.getBoundingBox().x();
+		double y = glyph.getBoundingBox().y();
+		// System.out.println("Cell obj: " + ((mxCell) cell).getValue().toString());
+		// System.out.println("Parentmod obj: " + parentMod.getName());
+		if (cell != activeModule.getDrawingCell())
+		{
+			width = width / 2;
+			height = height / 2;
+		}
+		double offsetX = 0;
+		double offsetY = 0;
+
+		offsetX = -width / 2;
+		offsetY = -height / 2;
+
+		mxCell port1 = null;
+		graph.getModel().beginUpdate();
+		try
+		{
+			mxGeometry geo1 = new mxGeometry(x, y, width, height);
+			geo1.setOffset(new mxPoint(offsetX, offsetY));
+			geo1.setRelative(true);
+
+			port1 = new mxCell(port, geo1, "Port");
+			port1.setVertex(true);
+			port1.setConnectable(true);
+
+			graph.getModel().add(cell, port1, 0);
+			// graph.updatePortOrientation(port1, geo1);
+			graph.updatePortOrientation(port1, geo1);
+		}
+		finally
+		{
+			graph.getModel().endUpdate();
+		}
+
+		port.setDrawingCell(port1);
+	}
+	
 	public void createVisibleVariable(VisibleVariable var)
 	{
 		Object parentCell = var.getParent().getDrawingCell();
@@ -294,6 +477,25 @@ public class DrawingBoard extends JPanel
 		var.setDrawingCell(var1);
 	}
 	
+	public void createVisibleVariable(VisibleVariable var, GeneralGlyph glyph)
+	{
+		Object parentCell = var.getParent().getDrawingCell();
+		mxCell var1 = null;
+		var1 = (mxCell)graph.createVertex(parentCell, null, var, 5, 5, 10, 10, "");
+		//var1 = new mxCell(var);
+		double x = glyph.getBoundingBox().x();
+		double y = glyph.getBoundingBox().y();
+		double width = DEFAULT_VISIBLEVARIABLE_WIDTH;
+		double height = DEFAULT_VISIBLEVARIABLE_HEIGHT;
+		mxGeometry geo = new mxGeometry(x, y, width, height);
+		var1.setGeometry(geo);
+		var1.setVertex(true);
+		var1.setConnectable(true);
+		
+		var.setDrawingCell(var1);
+		var.setDrawingCellGeometry(geo);
+	}
+	
 	public void createEquivalenceNode(EquivalenceNode eNode)
 	{
 		Object parentCell = eNode.getParent().getDrawingCell();
@@ -304,6 +506,24 @@ public class DrawingBoard extends JPanel
 		eNodeCell.setConnectable(true);
 		
 		eNode.setDrawingCell(eNodeCell);
+	}
+	
+	public void createEquivalenceNode(EquivalenceNode eNode, GeneralGlyph glyph)
+	{
+		Object parentCell = eNode.getParent().getDrawingCell();
+		mxCell eNodeCell = null;
+		eNodeCell = (mxCell)graph.createVertex(parentCell, null, eNode, 5, 5, 10, 10, "");
+		double x = glyph.getBoundingBox().x();
+		double y = glyph.getBoundingBox().y();
+		double width = DEFAULT_EQUIVALENCENODE_WIDTH;
+		double height = DEFAULT_EQUIVALENCENODE_HEIGHT;
+		mxGeometry geo = new mxGeometry(x, y, width, height);
+		eNodeCell.setGeometry(geo);
+		eNodeCell.setVertex(true);
+		eNodeCell.setConnectable(true);
+		
+		eNode.setDrawingCell(eNodeCell);
+		eNode.setDrawingCellGeometry(geo);
 	}
 	
 	public void addVisibleVariable(Module parentMod, VisibleVariable var)
@@ -484,6 +704,14 @@ public class DrawingBoard extends JPanel
 		edge.setDrawingCell(edgeCell);
 	}
 	
+	public void createConnection(Connection edge, Object source, Object target, String drawingCellStyle)
+	{
+		Object parentCell = edge.getParent().getDrawingCell();
+		//Object edgeCell = graph.createEdge(parentCell, null, edge, source, target, drawingCellStyle);
+		Object edgeCell = graph.insertEdge(parentCell, null, edge, source, target, drawingCellStyle);
+		edge.setDrawingCell(edgeCell);
+	}
+	
 	/**
 	 * Remove the given drawing cell, and its children, from the drawing board.
 	 * 
@@ -606,6 +834,8 @@ public class DrawingBoard extends JPanel
 	public void changeModule(Module mod)
 	{
 		saveCurrentPositions();
+		double xPosition = 25;
+		double yPosition = 25;
 		double width = graphComponent.getVisibleRect().getWidth() - 50;
 		double height = graphComponent.getVisibleRect().getHeight() - 50;
 		//mxRectangle bounds = new mxRectangle(25, 25, width, height);
@@ -623,7 +853,18 @@ public class DrawingBoard extends JPanel
 			 * if (!graph.getModel().isVisible(cell)) { //System.out.println("Module not visible.");
 			 * graph.getModel().setVisible(cell, true); }
 			 */
+			//geo = mod.getDrawingCellGeometry();
+			//bounds = child.getDrawingCellBounds();
+			//bounds = new mxRectangle();
+			geo = new mxGeometry();
+			xPosition = 25;
+			yPosition = 25;
+			geo.setX(xPosition);
+			geo.setY(yPosition);
+			geo.setWidth(width);
+			geo.setHeight(height);
 			((mxCell)cell).setGeometry(geo);
+			//graph.resizeCell(childCell, bounds);
 			graph.getModel().add(parent, cell, 0);
 			//graph.resizeCell(cell, bounds);
 			graph.getModel().setStyle(cell, "Module");
@@ -1162,6 +1403,13 @@ public class DrawingBoard extends JPanel
 			graph.getModel().beginUpdate();
 			try
 			{
+				/*
+				if (!graph.getModel().isVisible(connectionCell))
+				{
+					System.err.println("Connection not visible.");
+					graph.getModel().setVisible(connectionCell, true);
+				}
+				*/
 				graph.getModel().add(parentCell, connectionCell, 0);
 			}
 			finally
@@ -1703,12 +1951,12 @@ public class DrawingBoard extends JPanel
 					if (cell.getValue() instanceof VisibleVariable)
 					{
 						VisibleVariable var = (VisibleVariable)cell.getValue();
-						AC_GUI.modelBuilder.setSelectedVariable(var.getRefName(), var.getVariableType());
+						AC_GUI.setSelectedModelBuilderVariable(var.getRefName(), var.getVariableType());
 					}
 					
 					if (cell.getValue() instanceof EquivalenceNode)
 					{
-						AC_GUI.modelBuilder.setSelectedVariable(((EquivalenceNode)cell.getValue()).getRefName(), VariableType.SPECIES);
+						AC_GUI.setSelectedModelBuilderVariable(((EquivalenceNode)cell.getValue()).getRefName(), VariableType.SPECIES);
 					}
 					
 					if (SwingUtilities.isRightMouseButton(e))
