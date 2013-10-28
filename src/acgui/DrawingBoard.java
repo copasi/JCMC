@@ -39,7 +39,6 @@ import com.mxgraph.util.mxEvent;
 import com.mxgraph.util.mxEventObject;
 import com.mxgraph.util.mxEventSource.mxIEventListener;
 import com.mxgraph.util.mxPoint;
-import com.mxgraph.util.mxRectangle;
 import com.mxgraph.view.mxStylesheet;
 
 /**
@@ -64,6 +63,8 @@ public class DrawingBoard extends JPanel
 	private final int DEFAULT_AGGREGATOR_WIDTH = 90;
 	private final int DEFAULT_EQUIVALENCENODE_HEIGHT = 60;
 	private final int DEFAULT_EQUIVALENCENODE_WIDTH = 60;
+	private final int DEFAULT_BUTTON_HEIGHT = 20;
+	private final int DEFAULT_BUTTON_WIDTH = 20;
 	
 	private ACGraph graph;
 	private Object parent;
@@ -160,7 +161,7 @@ public class DrawingBoard extends JPanel
 
 		// Create the cell
 
-		Object cell = graph.createVertex(parentCell, null, mod, 5, 5, 1, 1, "");
+		Object cell = graph.createVertex(parentCell, null, mod, 0, 0, 1, 1, "");
 		((mxCell) cell).setConnectable(false);
 
 		/*
@@ -190,8 +191,11 @@ public class DrawingBoard extends JPanel
 		{
 			// The module's parent's drawing cell will be the parentCell
 			parentCell = mod.getParent().getDrawingCell();
-			width = DEFAULT_SUBMODULE_WIDTH;
-			height = DEFAULT_SUBMODULE_HEIGHT;
+			if (!(mod instanceof MathematicalAggregator))
+			{
+				width = DEFAULT_SUBMODULE_WIDTH;
+				height = DEFAULT_SUBMODULE_HEIGHT;
+			}
 		}
 		else
 		{
@@ -202,7 +206,7 @@ public class DrawingBoard extends JPanel
 
 		// Create the cell
 
-		Object cell = graph.createVertex(parentCell, null, mod, 5, 5, 1, 1, "");
+		Object cell = graph.createVertex(parentCell, null, mod, 0, 0, 1, 1, "");
 		((mxCell) cell).setConnectable(false);
 
 		/*
@@ -256,7 +260,6 @@ public class DrawingBoard extends JPanel
 		Object parentCell = mod.getParent().getDrawingCell();
 		Object childCell = mod.getDrawingCell();
 		int childCount = mod.getParent().getChildren().size();
-		mxRectangle bounds = new mxRectangle();
 		mxGeometry geo = new mxGeometry();
 		double xPosition;
 		double yPosition;
@@ -270,8 +273,10 @@ public class DrawingBoard extends JPanel
 				graph.getModel().setVisible(childCell, true);
 			}
 			
-			xPosition = 40 + (childCount * 20);
-			yPosition = 40 + (childCount * 20);
+			//xPosition = 40 + (childCount * 20);
+			//yPosition = 40 + (childCount * 20);
+			xPosition = 0.2 + (childCount * 0.01);
+			yPosition = 0.2 + (childCount * 0.01);
 			geo.setX(xPosition);
 			geo.setY(yPosition);
 			geo.setWidth(DEFAULT_SUBMODULE_WIDTH);
@@ -300,7 +305,6 @@ public class DrawingBoard extends JPanel
 		Object parentCell = mod.getParent().getDrawingCell();
 		Object childCell = mod.getDrawingCell();
 		int childCount = mod.getParent().getChildren().size();
-		mxRectangle bounds = new mxRectangle();
 		mxGeometry geo = new mxGeometry();
 		double x = glyph.getBoundingBox().x();
 		double y = glyph.getBoundingBox().y();
@@ -321,7 +325,6 @@ public class DrawingBoard extends JPanel
 			geo.setWidth(width);
 			geo.setHeight(height);
 			((mxCell)childCell).setGeometry(geo);
-			//graph.resizeCell(childCell, bounds);
 			graph.getModel().add(parentCell, childCell, 0);
 			graph.getModel().setStyle(childCell, mod.getDrawingCellStyle());
 		}
@@ -468,7 +471,7 @@ public class DrawingBoard extends JPanel
 	{
 		Object parentCell = var.getParent().getDrawingCell();
 		mxCell var1 = null;
-		var1 = (mxCell)graph.createVertex(parentCell, null, var, 5, 5, 10, 10, "");
+		var1 = (mxCell)graph.createVertex(parentCell, null, var, 0, 0, 10, 10, "");
 		//var1 = new mxCell(var);
 		var1.setGeometry(var.getDrawingCellGeometry());
 		var1.setVertex(true);
@@ -500,7 +503,7 @@ public class DrawingBoard extends JPanel
 	{
 		Object parentCell = eNode.getParent().getDrawingCell();
 		mxCell eNodeCell = null;
-		eNodeCell = (mxCell)graph.createVertex(parentCell, null, eNode, 5, 5, 10, 10, "");
+		eNodeCell = (mxCell)graph.createVertex(parentCell, null, eNode, 0, 0, 10, 10, "");
 		eNodeCell.setGeometry(eNode.getDrawingCellGeometry());
 		eNodeCell.setVertex(true);
 		eNodeCell.setConnectable(true);
@@ -531,7 +534,6 @@ public class DrawingBoard extends JPanel
 		//System.out.println("Time to add a visible variable:");
 		//System.out.println("Variable Ref Name: " + var.getRefName());
 		Object cell = parentMod.getDrawingCell();
-		mxRectangle bounds = new mxRectangle();
 		double xPosition;
 		double yPosition;
 		double width = DEFAULT_VISIBLEVARIABLE_WIDTH;
@@ -558,14 +560,8 @@ public class DrawingBoard extends JPanel
 			var1.setConnectable(true);
 			//graph.getModel().add(cell, var1, 0);
 			
-			
-			bounds = new mxRectangle();
 			xPosition = 40 + (varIndex * 20);
 			yPosition = 40 + (varIndex * 20);
-			bounds.setX(xPosition);
-			bounds.setY(yPosition);
-			bounds.setWidth(DEFAULT_VISIBLEVARIABLE_WIDTH);
-			bounds.setHeight(DEFAULT_VISIBLEVARIABLE_HEIGHT);
 
 			mxGeometry geo = new mxGeometry(xPosition, yPosition, DEFAULT_VISIBLEVARIABLE_WIDTH, DEFAULT_VISIBLEVARIABLE_HEIGHT);
 			var1.setGeometry(geo);
@@ -592,7 +588,6 @@ public class DrawingBoard extends JPanel
 		Object parentCell = mathAgg.getParent().getDrawingCell();
 		Object childCell = mathAgg.getDrawingCell();
 		int childCount = mathAgg.getParent().getChildren().size();
-		mxRectangle bounds = new mxRectangle();
 		mxGeometry geo = new mxGeometry();
 		double xPosition;
 		double yPosition;
@@ -632,7 +627,6 @@ public class DrawingBoard extends JPanel
 	{
 		Module parentMod = eNode.getParent();
 		Object cell = parentMod.getDrawingCell();
-		//mxRectangle bounds = new mxRectangle();
 		mxGeometry formerGeo = ((mxCell)formerEdge).getGeometry();
 		double xPosition;
 		double yPosition;
@@ -659,20 +653,13 @@ public class DrawingBoard extends JPanel
 			eNodeCell.setConnectable(true);
 			//graph.getModel().add(cell, var1, 0);
 			
-			
-			//bounds = new mxRectangle();
 			xPosition = (formerGeo.getSourcePoint().getX() + formerGeo.getTargetPoint().getX()) / 2 - (width/2);
 			yPosition = (formerGeo.getSourcePoint().getY() + formerGeo.getTargetPoint().getY()) / 2 - (height/2);
-			//bounds.setX(xPosition);
-			//bounds.setY(yPosition);
-			//bounds.setWidth(DEFAULT_VISIBLEVARIABLE_WIDTH);
-			//bounds.setHeight(DEFAULT_VISIBLEVARIABLE_HEIGHT);
 
 			mxGeometry geo = new mxGeometry(xPosition, yPosition, width, height);
 			//geo.setOffset(new mxPoint(offsetX, offsetY));
 			eNodeCell.setGeometry(geo);
 			graph.getModel().add(cell, eNodeCell, 0);
-			//graph.resizeCell(var1, bounds);
 			graph.getModel().setStyle(eNodeCell, "EquivalenceNode");
 			// graph.updatePortOrientation(port1, geo1);
 			//graph.updatePortOrientation(port1, geo1);
@@ -838,7 +825,6 @@ public class DrawingBoard extends JPanel
 		double yPosition = 25;
 		double width = graphComponent.getVisibleRect().getWidth() - 50;
 		double height = graphComponent.getVisibleRect().getHeight() - 50;
-		//mxRectangle bounds = new mxRectangle(25, 25, width, height);
 		mxGeometry geo = new mxGeometry(25, 25, width, height);
 		//mod.setDrawingCellGeometry(geo);
 		Object cell = mod.getDrawingCell();
@@ -854,8 +840,6 @@ public class DrawingBoard extends JPanel
 			 * graph.getModel().setVisible(cell, true); }
 			 */
 			//geo = mod.getDrawingCellGeometry();
-			//bounds = child.getDrawingCellBounds();
-			//bounds = new mxRectangle();
 			geo = new mxGeometry();
 			xPosition = 25;
 			yPosition = 25;
@@ -913,7 +897,6 @@ public class DrawingBoard extends JPanel
 			ListIterator<Module> children = activeModule.getChildren().listIterator();
 			Module child;
 			Object childCell;
-			mxRectangle bounds;
 			mxGeometry geo;
 
 			while (children.hasNext())
@@ -921,8 +904,6 @@ public class DrawingBoard extends JPanel
 				child = children.next();
 				childCell = child.getDrawingCell();
 
-				//bounds = graph.getBoundingBox(childCell);
-				//child.setDrawingCellBounds(bounds);
 				geo = ((mxCell)childCell).getGeometry();
 				child.setDrawingCellGeometry(geo);
 			}
@@ -935,8 +916,6 @@ public class DrawingBoard extends JPanel
 				var = vars.next();
 				varCell = var.getDrawingCell();
 				
-				//bounds = graph.getBoundingBox(varCell);
-				//var.setDrawingCellBounds(bounds);
 				geo = ((mxCell)varCell).getGeometry();
 				var.setDrawingCellGeometry(geo);
 				//var.setDrawingCellGeometry(((mxCell)varCell).getGeometry());
@@ -1112,7 +1091,6 @@ public class DrawingBoard extends JPanel
 		Module child;
 		Object parentCell;
 		Object childCell;
-		mxRectangle bounds;
 		mxGeometry geo;
 		double xPosition;
 		double yPosition;
@@ -1136,10 +1114,8 @@ public class DrawingBoard extends JPanel
 			try
 			{				
 				geo = child.getDrawingCellGeometry();
-				//bounds = child.getDrawingCellBounds();
 				if (geo == null || (geo.getHeight() <= 10))
 				{
-					//bounds = new mxRectangle();
 					geo = new mxGeometry();
 					xPosition = 40 + (childIndex * 20);
 					yPosition = 40 + (childIndex * 20);
@@ -1149,11 +1125,10 @@ public class DrawingBoard extends JPanel
 					geo.setHeight(DEFAULT_SUBMODULE_HEIGHT);
 				}
 				((mxCell)childCell).setGeometry(geo);
-				//graph.resizeCell(childCell, bounds);
 				graph.getModel().add(parentCell, childCell, 0);
 				if(child.getDrawingCellStyle().equals(""))
 				{
-					child.setDrawingCellStyle("Submodule");
+					child.setDrawingCellStyle("Submodule_No_Show_Information");
 				}
 				graph.getModel().setStyle(childCell, child.getDrawingCellStyle());
 			}
@@ -1162,6 +1137,10 @@ public class DrawingBoard extends JPanel
 				graph.getModel().endUpdate();
 			}
 			//child.setDrawingCellBounds(bounds);
+			if (!(child instanceof MathematicalAggregator))
+			{
+				drawSubmoduleButton(childCell);
+			}
 			// draw the ports of the current child
 			drawPorts(child);
 			/*
@@ -1252,7 +1231,6 @@ public class DrawingBoard extends JPanel
 		double offsetY;
 		VisibleVariable var;
 		int varIndex;
-		mxRectangle bounds;
 		mxGeometry geo;
 		double xPosition;
 		double yPosition;
@@ -1289,10 +1267,8 @@ public class DrawingBoard extends JPanel
 				*/
 				
 				geo = var.getDrawingCellGeometry();
-				//bounds = var.getDrawingCellBounds();
 				if (geo == null)
 				{
-					//bounds = new mxRectangle();
 					geo = new mxGeometry();
 					xPosition = 40 + (varIndex * 20);
 					yPosition = 40 + (varIndex * 20);
@@ -1302,7 +1278,6 @@ public class DrawingBoard extends JPanel
 					geo.setHeight(DEFAULT_VISIBLEVARIABLE_HEIGHT);
 				}
 				((mxCell)varCell).setGeometry(geo);
-				//graph.resizeCell(varCell, bounds);
 				graph.getModel().add(cell, varCell, 0);
 				graph.getModel().setStyle(varCell, "VisibleVariable");
 				//graph.getModel().setGeometry(varCell, geo);
@@ -1332,7 +1307,6 @@ public class DrawingBoard extends JPanel
 		double offsetY;
 		EquivalenceNode eNode;
 		int eNodeIndex;
-		mxRectangle bounds;
 		mxGeometry geo;
 		double xPosition;
 		double yPosition;
@@ -1356,10 +1330,8 @@ public class DrawingBoard extends JPanel
 			try
 			{				
 				geo = eNode.getDrawingCellGeometry();
-				//bounds = var.getDrawingCellBounds();
 				if (geo == null)
 				{
-					//bounds = new mxRectangle();
 					geo = new mxGeometry();
 					xPosition = 40 + (eNodeIndex * 20);
 					yPosition = 40 + (eNodeIndex * 20);
@@ -1369,7 +1341,6 @@ public class DrawingBoard extends JPanel
 					geo.setHeight(DEFAULT_EQUIVALENCENODE_HEIGHT);
 				}
 				((mxCell)eNodeCell).setGeometry(geo);
-				//graph.resizeCell(eNodeCell, bounds);
 				graph.getModel().add(cell, eNodeCell, 0);
 				graph.getModel().setStyle(eNodeCell, "EquivalenceNode");
 				//graph.getModel().setGeometry(eNodeCell, geo);
@@ -1417,6 +1388,34 @@ public class DrawingBoard extends JPanel
 				graph.getModel().endUpdate();
 			}
 		}
+	}
+	
+	private void drawSubmoduleButton(Object parentCell)
+	{
+		mxCell buttonCell;
+		mxGeometry geo = new mxGeometry(0, 0, DEFAULT_BUTTON_WIDTH, DEFAULT_BUTTON_HEIGHT);
+		geo.setRelative(true);
+		
+		graph.getModel().beginUpdate();
+		try
+		{
+			buttonCell = (mxCell)graph.createVertex(null, null, null, 0, 0, 10, 10, "");
+			buttonCell.setConnectable(false);
+			
+			graph.getModel().add(parentCell, buttonCell, 0);
+			graph.getModel().setGeometry(buttonCell, geo);
+			graph.getModel().setValue(buttonCell, "+");
+			graph.getModel().setStyle(buttonCell, "InactiveButton");
+		}
+		finally
+		{
+			graph.getModel().endUpdate();
+		}
+	}
+	
+	private void drawSubmoduleChildren(Module mod)
+	{
+		
 	}
 	
 	private void drawMathAggregatorPorts(MathematicalAggregator mathAgg)
@@ -1724,8 +1723,30 @@ public class DrawingBoard extends JPanel
 		cell.put(mxConstants.STYLE_FOLDABLE, "0");
 		cell.put(mxConstants.STYLE_WHITE_SPACE, "wrap");
 
-		styleSheet.putCellStyle("Submodule", cell);
+		styleSheet.putCellStyle("Submodule_No_Show_Information", cell);
 
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_STROKECOLOR, "blue");
+		cell.put(mxConstants.STYLE_FILLCOLOR, "white");
+		cell.put(mxConstants.STYLE_STROKEWIDTH, "3.0");
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		//cell.put(mxConstants.STYLE_ALIGN, mxConstants.ALIGN_CENTER);
+		//cell.put(mxConstants.STYLE_VERTICAL_ALIGN, mxConstants.ALIGN_TOP);
+		//cell.put(mxConstants.STYLE_VERTICAL_LABEL_POSITION, mxConstants.ALIGN_MIDDLE);
+		//cell.put(mxConstants.STYLE_LABEL_BACKGROUNDCOLOR, "white");
+		//cell.put(mxConstants.STYLE_LABEL_BORDERCOLOR, "red");
+		//cell.put(mxConstants.STYLE_SPACING_TOP, "-10");
+		//cell.put(mxConstants.STYLE_FONTFAMILY, "Times New Roman");
+		//cell.put(mxConstants.STYLE_FONTSIZE, "12");
+		//cell.put(mxConstants.STYLE_FONTSTYLE, "1");
+		//cell.put(mxConstants.STYLE_FONTCOLOR, "black");
+		cell.put(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_RECTANGLE);
+		cell.put(mxConstants.STYLE_ROUNDED, "true");
+		cell.put(mxConstants.STYLE_FOLDABLE, "0");
+		//cell.put(mxConstants.STYLE_WHITE_SPACE, "wrap");
+
+		styleSheet.putCellStyle("Submodule_Show_Information", cell);
+		
 		cell = new HashMap<String, Object>();
 		cell.put(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_ELLIPSE);
 		cell.put(mxConstants.STYLE_STROKECOLOR, "black");
@@ -1913,6 +1934,80 @@ public class DrawingBoard extends JPanel
 		cell.put(mxConstants.STYLE_DASHED, "1");
 		
 		styleSheet.putCellStyle("DashedConnectionEdge", cell);
+		
+		cell = new HashMap<String, Object>();
+		//cell.put(mxConstants.STYLE_STROKECOLOR, "white");
+		cell.put(mxConstants.STYLE_FILLCOLOR, "white");
+		cell.put(mxConstants.STYLE_GRADIENTCOLOR, "gray");
+		cell.put(mxConstants.STYLE_GRADIENT_DIRECTION, mxConstants.DIRECTION_SOUTH);
+		//cell.put(mxConstants.STYLE_OPACITY, "50.0");
+		cell.put(mxConstants.STYLE_STROKEWIDTH, "1.0");
+		cell.put(mxConstants.STYLE_ALIGN, mxConstants.ALIGN_CENTER);
+		//cell.put(mxConstants.STYLE_VERTICAL_ALIGN, mxConstants.ALIGN_TOP);
+		cell.put(mxConstants.STYLE_VERTICAL_LABEL_POSITION, mxConstants.ALIGN_MIDDLE);
+		//cell.put(mxConstants.STYLE_LABEL_BACKGROUNDCOLOR, "white");
+		//cell.put(mxConstants.STYLE_LABEL_BORDERCOLOR, "red");
+		//cell.put(mxConstants.STYLE_SPACING_TOP, "-10");
+		cell.put(mxConstants.STYLE_FONTFAMILY, "Times New Roman");
+		cell.put(mxConstants.STYLE_FONTSIZE, "16");
+		cell.put(mxConstants.STYLE_FONTSTYLE, "1");
+		cell.put(mxConstants.STYLE_FONTCOLOR, "black");
+		cell.put(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_RECTANGLE);
+		cell.put(mxConstants.STYLE_ROUNDED, "true");
+		cell.put(mxConstants.STYLE_FOLDABLE, "0");
+		cell.put(mxConstants.STYLE_WHITE_SPACE, "wrap");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+
+		styleSheet.putCellStyle("InactiveButton", cell);
+		
+		cell = new HashMap<String, Object>();
+		//cell.put(mxConstants.STYLE_STROKECOLOR, "white");
+		cell.put(mxConstants.STYLE_FILLCOLOR, "white");
+		cell.put(mxConstants.STYLE_GRADIENTCOLOR, "gray");
+		cell.put(mxConstants.STYLE_GRADIENT_DIRECTION, mxConstants.DIRECTION_SOUTH);
+		//cell.put(mxConstants.STYLE_OPACITY, "50.0");
+		cell.put(mxConstants.STYLE_STROKEWIDTH, "1.0");
+		cell.put(mxConstants.STYLE_ALIGN, mxConstants.ALIGN_CENTER);
+		//cell.put(mxConstants.STYLE_VERTICAL_ALIGN, mxConstants.ALIGN_TOP);
+		cell.put(mxConstants.STYLE_VERTICAL_LABEL_POSITION, mxConstants.ALIGN_MIDDLE);
+		//cell.put(mxConstants.STYLE_LABEL_BACKGROUNDCOLOR, "white");
+		//cell.put(mxConstants.STYLE_LABEL_BORDERCOLOR, "red");
+		//cell.put(mxConstants.STYLE_SPACING_TOP, "-10");
+		cell.put(mxConstants.STYLE_FONTFAMILY, "Times New Roman");
+		cell.put(mxConstants.STYLE_FONTSIZE, "16");
+		cell.put(mxConstants.STYLE_FONTSTYLE, "1");
+		cell.put(mxConstants.STYLE_FONTCOLOR, "black");
+		cell.put(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_RECTANGLE);
+		cell.put(mxConstants.STYLE_ROUNDED, "true");
+		cell.put(mxConstants.STYLE_FOLDABLE, "0");
+		cell.put(mxConstants.STYLE_WHITE_SPACE, "wrap");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+
+		styleSheet.putCellStyle("ActiveButton", cell);
+		
+		cell = new HashMap<String, Object>();
+		//cell.put(mxConstants.STYLE_STROKECOLOR, "blue");
+		cell.put(mxConstants.STYLE_FILLCOLOR, "green");
+		cell.put(mxConstants.STYLE_OPACITY, "50.0");
+		//cell.put(mxConstants.STYLE_STROKEWIDTH, "3.0");
+		cell.put(mxConstants.STYLE_ALIGN, mxConstants.ALIGN_CENTER);
+		//cell.put(mxConstants.STYLE_VERTICAL_ALIGN, mxConstants.ALIGN_TOP);
+		//cell.put(mxConstants.STYLE_VERTICAL_LABEL_POSITION, mxConstants.ALIGN_MIDDLE);
+		//cell.put(mxConstants.STYLE_LABEL_BACKGROUNDCOLOR, "white");
+		//cell.put(mxConstants.STYLE_LABEL_BORDERCOLOR, "red");
+		//cell.put(mxConstants.STYLE_SPACING_TOP, "-10");
+		//cell.put(mxConstants.STYLE_FONTFAMILY, "Times New Roman");
+		//cell.put(mxConstants.STYLE_FONTSIZE, "12");
+		//cell.put(mxConstants.STYLE_FONTSTYLE, "1");
+		//cell.put(mxConstants.STYLE_FONTCOLOR, "black");
+		cell.put(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_RECTANGLE);
+		cell.put(mxConstants.STYLE_ROUNDED, "true");
+		cell.put(mxConstants.STYLE_FOLDABLE, "0");
+		//cell.put(mxConstants.STYLE_WHITE_SPACE, "wrap");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		
+		styleSheet.putCellStyle("Submodule_Mini", cell);
 	}
 
 	/**
@@ -1968,6 +2063,65 @@ public class DrawingBoard extends JPanel
 					}
 				}
 
+			}
+			
+			public void mouseClicked(MouseEvent e)
+			{
+				mxCell cell = (mxCell) graphComponent.getCellAt(e.getX(), e.getY());
+				String newButtonStyle = "";
+				String newButtonValue = "";
+				String newSubmoduleStyle = "";
+				mxCell parentCell;
+				Module parentMod;
+				boolean buttonPushed = false;
+				
+				if (cell != null)
+				{
+					parentCell = (mxCell) graph.getModel().getParent(cell);
+					
+					if ((parentCell == parent) || (parentCell == AC_GUI.activeModule.getDrawingCell()))
+					{
+						return;
+					}
+					
+					parentMod = (Module)parentCell.getValue();
+					
+					if (graph.getModel().getStyle(cell).equalsIgnoreCase("InactiveButton"))
+					{
+						System.out.println("A button was clicked.");
+						newButtonStyle = "ActiveButton";
+						newButtonValue = "-";
+						newSubmoduleStyle = "Submodule_Show_Information";
+						//AC_GUI.modelBuilder.loadModel(parentMod.getMSMBData().getBytes(), true, true);
+						AC_GUI.loadModelBuilder(parentMod, true, true);
+						buttonPushed = true;
+					}
+					else if (graph.getModel().getStyle(cell).equalsIgnoreCase("ActiveButton"))
+					{
+						System.out.println("A button was clicked.");
+						newButtonStyle = "InactiveButton";
+						newButtonValue = "+";
+						newSubmoduleStyle = "Submodule_No_Show_Information";
+						//AC_GUI.modelBuilder.loadModel(AC_GUI.activeModule.getMSMBData().getBytes(), false, true);
+						AC_GUI.loadModelBuilder(AC_GUI.activeModule, false, true);
+						buttonPushed = true;
+					}
+					
+					if (buttonPushed)
+					{
+						graph.getModel().beginUpdate();
+						try
+						{
+							graph.getModel().setValue(cell, newButtonValue);
+							graph.getModel().setStyle(cell, newButtonStyle);
+							graph.getModel().setStyle(parentCell, newSubmoduleStyle);
+						}
+						finally
+						{
+							graph.getModel().endUpdate();
+						}
+					}
+				}
 			}
 		});
 		

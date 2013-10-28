@@ -50,19 +50,8 @@ public class ACMenuListener implements ActionListener
 				name = JOptionPane.showInputDialog("Name of the new module:", "Module");
 				if ((name != null) && (!name.isEmpty()))
 				{
-					if (AC_GUI.nameValidation(name))
-					{
-						AC_GUI.currentGUI.newModule(name);
-					}
-					else
-					{
-						String message = "Invalid name. Names must adhere to the following rules:" + eol;
-						message += "\u2022 Names cannot start with a number or punctuation character." + eol;
-						message += "\u2022 Names cannot start with the letters \"xml\"." + eol;
-						message += "\u2022 Names cannot contain spaces.";
-												
-						JOptionPane.showMessageDialog(null, message);
-					}
+					name = AC_GUI.nameValidation(name);
+					AC_GUI.currentGUI.newModule(name);
 				}
 			}
 			else
@@ -171,35 +160,8 @@ public class ACMenuListener implements ActionListener
 					if (parentMod == AC_GUI.drawingBoard.getActiveModule())
 					{
 						name = JOptionPane.showInputDialog("Name of the new submodule:", "Submodule");
-						while(name != null)
-						{
-							if (!name.isEmpty())
-							{
-								if (AC_GUI.nameValidation(name))
-		    					{
-									if (AC_GUI.submoduleValidation(name))
-									{
-										AC_GUI.currentGUI.newSubmodule(name, parentMod);
-										break;
-									}
-									else
-									{
-										String message = "There already exists a submodule with the same name.";
-										JOptionPane.showMessageDialog(null, message);
-									}
-		    					}
-		    					else
-		    					{
-		    						String message = "Invalid name. Names must adhere to the following rules:" + eol;
-		    						message += "\u2022 Names cannot start with a number or punctuation character." + eol;
-		    						message += "\u2022 Names cannot start with the letters \"xml\"." + eol;
-		    						message += "\u2022 Names cannot contain spaces.";
-		    												
-		    						JOptionPane.showMessageDialog(null, message);
-		    					}
-							}
-							name = JOptionPane.showInputDialog("Name of the new submodule:", name);
-						}
+						name = AC_GUI.nameValidation(name);
+						AC_GUI.currentGUI.newSubmodule(name, parentMod);
 					}
 					else
 					{
@@ -221,6 +183,12 @@ public class ACMenuListener implements ActionListener
 			}
 			break;
 		case ADD_SUBMODULE_TEMPLATE:
+			
+			TemplateAddEditor tae = new TemplateAddEditor(AC_GUI.drawingBoard.graphComponent);
+			tae.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+			tae.setModal(true);
+			tae.setVisible(true);
+			/*
 			//JOptionPane.showMessageDialog(null,"Will open up a file selection dialog box to select an already saved template model and will add that as a submodule under the selected module (not yet implemented).");
 			name = null;
 			//node = AC_GUI.selectedModule.getTreeNode();
@@ -263,6 +231,7 @@ public class ACMenuListener implements ActionListener
 				JOptionPane.showMessageDialog(null,
 						"Please create a new module first.");
 			}
+			*/
 			break;
 		case ADD_SUMMATION_MODULE:
 			MathAggregatorAddEditor mathAdd1 = new MathAggregatorAddEditor(AC_GUI.drawingBoard.graphComponent, Operation.SUM);
@@ -339,6 +308,12 @@ public class ACMenuListener implements ActionListener
 		case HELP_CONTENTS:
 			JOptionPane.showMessageDialog(null,
 					"Will display some sort of help tool (not yet implemented).");
+			/*
+			TemplateAddEditor tae = new TemplateAddEditor(AC_GUI.drawingBoard.graphComponent);
+			tae.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+			tae.setModal(true);
+			tae.setVisible(true);
+			*/
 			break;
 		case ABOUT_AGGREGATION_CONNECTOR:
 			JOptionPane.showMessageDialog(null,

@@ -98,7 +98,7 @@ public class CopasiUtility
 		return CCopasiRootContainer.getDatamodelList().size();
 	}
 	
-	public void setLayout(Module mod)
+	private void setLayout(Module mod)
 	{
 		ListIterator<Module> children = mod.getChildren().listIterator();
 		Module child;
@@ -118,7 +118,7 @@ public class CopasiUtility
 		info = "Module: " + mod.getName() + "\n";
 		info += "layout key: " + modLayout.getKey() + "\n";
 		System.out.println(info);
-		modLayout.addGraphicalObject(obj);
+		//modLayout.addGraphicalObject(obj);
 		layoutList.addLayout(modLayout);
 		while(children.hasNext())
 		{

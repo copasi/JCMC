@@ -13,7 +13,6 @@ import javax.swing.tree.DefaultMutableTreeNode;
 
 import org.COPASI.CCopasiDataModel;
 
-import com.mxgraph.util.mxRectangle;
 import com.mxgraph.model.mxCell;
 import com.mxgraph.model.mxGeometry;
 
@@ -88,7 +87,6 @@ public class AC_IO
 		data.put("drawingCell", mod.getDrawingCell());
 		data.put("copasiDatamodelKey", mod.getKey());
 		data.put("drawingCellStyle", mod.getDrawingCellStyle());
-		data.put("drawingCellBounds", mod.getDrawingCellBounds());
 		data.put("drawingCellGeometry", mod.getDrawingCellGeometry());
 		
 		if(mod instanceof MathematicalAggregator)
@@ -189,14 +187,7 @@ public class AC_IO
 		Object drawingCell = data.get("drawingCell");
 		//String datamodelKey = (String)data.get("copasiDatamodelKey");
 		String cellStyle = (String)data.get("drawingCellStyle");
-		mxRectangle oldBounds = (mxRectangle)data.get("drawingCellBounds");
 		mxGeometry oldGeo = (mxGeometry)data.get("drawingCellGeometry");
-		
-		mxRectangle newBounds = null;
-		if(oldBounds != null)
-		{
-			newBounds = new mxRectangle(oldBounds.getX(), oldBounds.getY(), oldBounds.getWidth(), oldBounds.getHeight());
-		}
 		
 		mxGeometry newGeo = null;
 		if(oldGeo != null)
@@ -204,22 +195,22 @@ public class AC_IO
 			newGeo = new mxGeometry(oldGeo.getX(), oldGeo.getY(), oldGeo.getWidth(), oldGeo.getHeight());
 		}
 		
+		if (cellStyle.equals("Submodule"))
+		{
+			cellStyle = "Submodule_No_Show_Information";
+		}
 		if (cellStyle.equals("Module") && (parent!=null))
 		{
-			cellStyle = "Submodule";
+			cellStyle = "Submodule_No_Show_Information";
 		}
 		CCopasiDataModel dataModel = AC_GUI.copasiUtility.createDataModel();
 		dataModel.getModel().setObjectName(name);
-		Module mod = new Module(name, dataModel.getModel().getKey(), msmbData, treeNode, drawingCell, newBounds, newGeo, cellStyle, parent);
+		Module mod = new Module(name, dataModel.getModel().getKey(), msmbData, treeNode, drawingCell, newGeo, cellStyle, parent);
 		//((mxCell)drawingCell).setValue(mod);
 		//treeNode.setUserObject(mod);
 		if (parent == null)
 		{
 			AC_GUI.masterModuleList.add(mod);
-		}
-		else
-		{
-			parent.addChild(mod);
 		}
 		AC_GUI.treeView.addNode(mod);
 		AC_GUI.drawingBoard.createCell(mod);
@@ -339,7 +330,6 @@ public class AC_IO
 		data.put("refName", var.getRefName());
 		data.put("variableType", var.getVariableType().toString());
 		data.put("drawingCell", var.getDrawingCell());
-		data.put("drawingCellBounds", var.getDrawingCellBounds());
 		data.put("drawingCellGeometry", var.getDrawingCellGeometry());
 		
 		return data;
@@ -350,14 +340,7 @@ public class AC_IO
 		String refName = (String)data.get("refName");
 		String variableType = (String)data.get("variableType");
 		Object drawingCell = data.get("drawingCell");
-		mxRectangle oldBounds = (mxRectangle)data.get("drawingCellBounds");
 		mxGeometry oldGeo = (mxGeometry)data.get("drawingCellGeometry");
-		
-		mxRectangle newBounds = null;
-		if(oldBounds != null)
-		{
-			newBounds = new mxRectangle(oldBounds.getX(), oldBounds.getY(), oldBounds.getWidth(), oldBounds.getHeight());
-		}
 		
 		mxGeometry newGeo = null;
 		if(oldGeo != null)
@@ -374,7 +357,7 @@ public class AC_IO
 			vType = VariableType.GLOBAL_QUANTITY;
 		}
 		
-		VisibleVariable var = new VisibleVariable(parent, refName, drawingCell, newBounds, newGeo, vType);
+		VisibleVariable var = new VisibleVariable(parent, refName, drawingCell, newGeo, vType);
 		//((mxCell)drawingCell).setValue(var);
 		AC_GUI.drawingBoard.createVisibleVariable(var);
 		
@@ -560,16 +543,9 @@ public class AC_IO
 		Object drawingCell = data.get("drawingCell");
 		String datamodelKey = (String)data.get("copasiDatamodelKey");
 		String cellStyle = (String)data.get("drawingCellStyle");
-		mxRectangle oldBounds = (mxRectangle)data.get("drawingCellBounds");
 		mxGeometry oldGeo = (mxGeometry)data.get("drawingCellGeometry");
 		int inputNumber = (Integer)data.get("inputNumber");
 		Operation op = (Operation)data.get("operation");
-		
-		mxRectangle newBounds = null;
-		if(oldBounds != null)
-		{
-			newBounds = new mxRectangle(oldBounds.getX(), oldBounds.getY(), oldBounds.getWidth(), oldBounds.getHeight());
-		}
 		
 		mxGeometry newGeo = null;
 		if(oldGeo != null)
@@ -595,7 +571,6 @@ public class AC_IO
 		}
 		//MathematicalAggregator mathAgg = new MathematicalAggregator(name, dataModel.getModel().getKey(), inputNumber, op, parent);
 		mathAgg.setDrawingCellStyle(cellStyle);
-		mathAgg.setDrawingCellBounds(newBounds);
 		mathAgg.setDrawingCellGeometry(newGeo);
 		AC_GUI.treeView.addNode(mathAgg);
 		AC_GUI.drawingBoard.createCell(mathAgg);

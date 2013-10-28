@@ -103,9 +103,9 @@ public class MathAggregatorAddEditor extends JDialog
 				}
 				else
 				{
-					if (AC_GUI.nameValidation(name))
+					if (AC_GUI.sbmlNameValidation(name))
 					{
-						if (AC_GUI.submoduleValidation(name))
+						if (AC_GUI.submoduleNameValidation(name))
 						{
 							AC_GUI.addMathAggregator(textfield1.getText(), Integer.parseInt(textfield2.getText()), op);
 							dispose();

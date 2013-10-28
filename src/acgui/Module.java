@@ -30,7 +30,6 @@ public class Module implements Serializable
 	private ArrayList<Connection> connections;
 	private ArrayList<VisibleVariable> visibleVariables;
 	private ArrayList<EquivalenceNode> equivalenceNodes;
-	private mxRectangle drawingCellBounds;
 	private mxGeometry drawingCellGeometry;
 	private String drawingCellStyle;
 	private String msmbData;
@@ -179,14 +178,13 @@ public class Module implements Serializable
 	 * @param iCellStyle the drawing cell style
 	 * @param iParent the parent to the module
 	 */
-	public Module(String iName, String iKey, String imsmbData, DefaultMutableTreeNode tNode, Object dCell, mxRectangle iCellBounds, mxGeometry iCellGeometry, String iCellStyle, Module iParent)
+	public Module(String iName, String iKey, String imsmbData, DefaultMutableTreeNode tNode, Object dCell, mxGeometry iCellGeometry, String iCellStyle, Module iParent)
 	{
 		parent = iParent;
 		name = iName;
 		msmbData = imsmbData;
 		copasiDatamodelKey = iKey;
 		drawingCellStyle = iCellStyle;
-		drawingCellBounds = iCellBounds;
 		drawingCellGeometry = iCellGeometry;
 		treeNode = tNode;
 		drawingCell = dCell;
@@ -407,24 +405,6 @@ public class Module implements Serializable
 	public ArrayList<EquivalenceNode> getEquivalenceNodes()
 	{
 		return equivalenceNodes;
-	}
-	
-	/**
-	 * Set the location for the submodule representation.
-	 * @param bounds the location of the submodule representation
-	 */
-	public void setDrawingCellBounds(mxRectangle bounds)
-	{
-		drawingCellBounds = bounds;
-	}
-	
-	/**
-	 * Return the submodule bounds.
-	 * @return the submodule bounds
-	 */
-	public mxRectangle getDrawingCellBounds()
-	{
-		return drawingCellBounds;
 	}
 	
 	public void setDrawingCellGeometry(mxGeometry geo)

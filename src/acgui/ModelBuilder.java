@@ -41,6 +41,7 @@ public class ModelBuilder
 {	
 
 	final MSMB_Interface msmb;
+	private Module loadedModule;
 	private static CustomJTable jTableCustom;
 	private static ACCustomTableModel tableModel;
 	private Vector<String> refNames;
@@ -52,6 +53,7 @@ public class ModelBuilder
 	public ModelBuilder()
 	{
 		msmb = new MainGui();
+		loadedModule = null;
 		refNames = new Vector<String>();
 		addPortTab();
 		installListeners();
@@ -61,11 +63,11 @@ public class ModelBuilder
 	 * Load the given Copasi model into the model builder.
 	 * @param key the unique Copasi key referencing the model
 	 */
-	public void loadModel(String key, boolean display)
+	public void loadModel(String key, boolean uneditable, boolean display)
 	{
 		try 
 		{
-			 msmb.loadFromCopasiKey(key);
+			 msmb.loadFromCopasiKey(key, uneditable);
 		} catch (Exception e) {
 			 //I still don't know which exception I need to push to your part... probably it is enough for me to catch them and
 			 //display the usual error message that I already show... but I'm not sure, so I left the throw expception in the
@@ -79,9 +81,9 @@ public class ModelBuilder
 		}
 	}
 	
-	public void loadModel(byte[] msmbCode, boolean display)
+	public void loadModel(byte[] msmbCode, boolean uneditable, boolean display)
 	{
-		msmb.loadFromMSMB(msmbCode);
+		msmb.loadFromMSMB(msmbCode, uneditable);
 		if (display)
 		{
 			tableModel.clearData();
@@ -293,6 +295,11 @@ public class ModelBuilder
 	public boolean isSpeciesListEmpty()
 	{
 		return msmb.getMSMB_listOfSpecies().isEmpty();
+	}
+	
+	public Module getLoadedModule()
+	{
+		return loadedModule;
 	}
 	
 	/**
@@ -577,16 +584,19 @@ public class ModelBuilder
                 new ChangeListener() {
                     @Override
                     public void stateChanged(ChangeEvent e) {
-                        ChangedElement before = (((MSMB_InterfaceChange)e.getSource()).getElementBefore());
-                        ChangedElement after = (((MSMB_InterfaceChange)e.getSource()).getElementAfter());
-                        //the before of the selection is always going to because you don't need the before for the selection I guess
-                        if(before!=null) System.out.println("Species selection before = " + before.getName());
-                        if(after!=null && !after.getName().isEmpty())
-                        {
-                        	AC_GUI.setSelectedDrawingBoardVariable(after.getName(), VariableType.SPECIES);
-                        	System.out.println("Species selection after = " + after.getName());
-                        }
-                        System.out.println("AC select species after");
+                    	if (AC_GUI.activeModule.getName().equals(msmb.getModelName()))
+                    	{
+	                        ChangedElement before = (((MSMB_InterfaceChange)e.getSource()).getElementBefore());
+	                        ChangedElement after = (((MSMB_InterfaceChange)e.getSource()).getElementAfter());
+	                        //the before of the selection is always going to because you don't need the before for the selection I guess
+	                        if(before!=null) System.out.println("Species selection before = " + before.getName());
+	                        if(after!=null && !after.getName().isEmpty())
+	                        {
+	                        	AC_GUI.setSelectedDrawingBoardVariable(after.getName(), VariableType.SPECIES);
+	                        	System.out.println("Species selection after = " + after.getName());
+	                        }
+	                        System.out.println("AC select species after");
+                    	}
                     }
                 },
                 MSMB_Element.SELECTED_SPECIES);
@@ -596,19 +606,36 @@ public class ModelBuilder
                 new ChangeListener() {
                     @Override
                     public void stateChanged(ChangeEvent e) {
-                        ChangedElement before = (((MSMB_InterfaceChange)e.getSource()).getElementBefore());
-                        ChangedElement after = (((MSMB_InterfaceChange)e.getSource()).getElementAfter());
-                        //the before of the selection is always going to because you don't need the before for the selection I guess
-                        if(before!=null) System.out.println("GLQ selection before = " + before.getName());
-                        if(after!=null && !after.getName().isEmpty())
-                        {
-                        	AC_GUI.setSelectedDrawingBoardVariable(after.getName(), VariableType.GLOBAL_QUANTITY);
-                        	System.out.println("GLQ selection after = " + after.getName());
-                        }
-                        System.out.println("AC select GLQ after");
+                    	if (AC_GUI.activeModule.getName().equals(msmb.getModelName()))
+                    	{
+	                        ChangedElement before = (((MSMB_InterfaceChange)e.getSource()).getElementBefore());
+	                        ChangedElement after = (((MSMB_InterfaceChange)e.getSource()).getElementAfter());
+	                        //the before of the selection is always going to because you don't need the before for the selection I guess
+	                        if(before!=null) System.out.println("GLQ selection before = " + before.getName());
+	                        if(after!=null && !after.getName().isEmpty())
+	                        {
+	                        	AC_GUI.setSelectedDrawingBoardVariable(after.getName(), VariableType.GLOBAL_QUANTITY);
+	                        	System.out.println("GLQ selection after = " + after.getName());
+	                        }
+	                        System.out.println("AC select GLQ after");
+                    	}
                     }
                 },
                 MSMB_Element.SELECTED_GLOBAL_QUANTITY);
+		
+		// add a listener for when something has been changed in the ModelBuilder
+		msmb.addChangeListener(
+				new ChangeListener() {
+					@Override
+					public void stateChanged(ChangeEvent e) {
+						//ChangedElement before = (((MSMB_InterfaceChange)e.getSource()).getElementBefore());
+						//ChangedElement after = (((MSMB_InterfaceChange)e.getSource()).getElementAfter());
+						//if(before!=null) System.out.println("Model name before = " + before.getName());
+						//if(after!=null)  System.out.println("Model name after = " + after.getName());
+						System.out.println("Something has changed in the ModelBuilder.");
+					}
+				}, 
+				MSMB_Element.SOMETHING_CHANGED);
 		
 		// add selection listener for the ports table
 		//jTableCustom.getSelectionModel().addListSelectionListener(new ACRowListener());

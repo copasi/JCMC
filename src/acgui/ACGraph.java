@@ -113,6 +113,149 @@ public class ACGraph extends mxGraph
 	{
 
 		mxGeometry geo = model.getGeometry(cell);
+		Object value = model.getValue(cell);
+		double currentX = geo.getX();
+		double currentY = geo.getY();
+		
+		if (geo != null)
+		{
+			System.out.println("Geo is not null. dx=" + dx + " dy=" + dy);
+			geo = (mxGeometry) geo.clone();
+			geo.translate(dx, dy);
+
+			/*
+			if (model.isVertex(cell) && !isAllowNegativeCoordinates())
+			{
+				geo.setX(Math.max(0, geo.getX()));
+				geo.setY(Math.max(0, geo.getY()));
+			}
+			*/
+			
+			if (value instanceof acgui.Port)
+			{
+				Object cellParent = model.getParent(cell);
+				if (cellParent == getDefaultParent() || cellParent == getCurrentRoot())
+				{
+					System.err.println("Problem: Parent cell is defaultParent or currentRoot.");
+					System.exit(0);
+				}
+				else if (cellParent != null)
+				{
+					mxGeometry parentGeo = model.getGeometry(cellParent);
+					if (parentGeo != null)
+					{
+						double parentWidth = parentGeo.getWidth();
+						double parentHeight = parentGeo.getHeight();
+						double relativeDx = 0.0;
+						double relativeDy = 0.0;
+						double newX = 0.0;
+						double newY = 0.0;
+
+						if (((currentX == 0.0) || (currentX == 1.0)) && ((currentY != 0.0) && (currentY != 1.0)))
+						{
+							// port is on left or right side of the parent
+
+							// normalize the Y translation
+							relativeDy = dy / parentHeight;
+						}
+						else if (((currentY == 0.0) || (currentY == 1.0)) && ((currentX != 0.0) && (currentX != 1.0)))
+						{
+							// port is on the top or bottom of the parent
+
+							// normalize the X translation
+							relativeDx = dx / parentWidth;
+						}
+						else
+						{
+							// port is in a corner
+							//System.out.println("port is in a corner");
+							if (Math.abs(dx) > Math.abs(dy))
+							{
+								relativeDx = dx / parentWidth;
+							}
+							else
+							{
+								relativeDy = dy / parentHeight;
+							}
+						}
+
+						// Calculate the relative translation
+
+						if (relativeDx < 0) // the port was translated to the left
+						{
+							// ensure the port stays on the parent border
+							newX = Math.max(0.0, (currentX + relativeDx));
+						}
+						else if (relativeDx > 0) // the port was translated to the right
+						{
+							// ensure the port stays on the parent border
+							newX = Math.min(1.0, (currentX + relativeDx));
+						}
+						else
+						{
+							// no horizontal translation occurred
+							newX = currentX;
+						}
+
+						if (relativeDy < 0) // the port was translated down
+						{
+							// ensure the port stays on the parent border
+							newY = Math.max(0.0, (currentY + relativeDy));
+						}
+						else if (relativeDy > 0) // the port was translated up
+						{
+							// ensure the port stays on the parent border
+							newY = Math.min(1.0, (currentY + relativeDy));
+						}
+						else
+						{
+							// no vertical translation occurred
+							newY = currentY;
+						}
+
+						// set the new coordinates
+						geo.setX(newX);
+						geo.setY(newY);
+
+						// update the port orientation
+						updatePortOrientation(cell, geo);
+					}
+					else
+					{
+						System.out.println("Problem: Parent geometry is null.");
+						System.exit(0);
+					}
+				}
+				else
+				{
+					System.out.println("Problem: Parent cell is null.");
+					System.exit(0);
+				}
+			}
+
+			model.beginUpdate();
+			try
+			{
+				model.setGeometry(cell, geo);
+			}
+			finally
+			{
+				model.endUpdate();
+			}
+		}
+	}
+	
+	/**
+	 * Translates the geometry of the given cell and stores the new, translated geometry in the model as an atomic
+	 * change.
+	 * @param cell the object to translate
+	 * @param dx the change in the x position
+	 * @param dy the change in the y position
+	 */
+	public void xtranslateCell(Object cell, double dx, double dy)
+	{
+
+		mxGeometry geo = model.getGeometry(cell);
 		double currentX = geo.getX();
 		double currentY = geo.getY();
 

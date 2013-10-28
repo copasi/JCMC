@@ -114,6 +114,7 @@ public class PortAddEditor extends JDialog
 		addButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e)
 			{
+				/*
 				int checkPorts = AC_GUI.portValidation(textfield.getText(), (String)comboBox1.getSelectedItem());
 				//System.out.println("checkPorts = " + checkPorts);
 				String msg;
@@ -138,6 +139,13 @@ public class PortAddEditor extends JDialog
 				default:
 					
 				}
+				*/
+				boolean validPort = AC_GUI.portValidation(textfield.getText(), (String)comboBox1.getSelectedItem());
+				if (validPort)
+				{
+					dispose();
+					AC_GUI.currentGUI.addPort(module, (String)comboBox1.getSelectedItem(), textfield.getText(), (PortType)comboBox2.getSelectedItem());
+				}
 			}
 		});
 		lowerPanel.add(addButton);
@@ -154,7 +162,7 @@ public class PortAddEditor extends JDialog
 		getContentPane().add(upperPanel, BorderLayout.CENTER);
 		getContentPane().add(lowerPanel, BorderLayout.SOUTH);
 
-		setTitle("Add a new port ...");
+		setTitle("Add Port");
 		setSize(650, 500);
 		pack();
 		setLocationRelativeTo(graphComponent);

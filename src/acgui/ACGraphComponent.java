@@ -1,6 +1,3 @@
-/**
- * 
- */
 package acgui;
 
 import java.util.EventObject;

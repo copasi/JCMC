@@ -20,7 +20,6 @@ public class VisibleVariable implements Serializable
 	private String refName;
 	private VariableType variableType;
 	private Object drawingCell;
-	private mxRectangle drawingCellBounds;
 	private mxGeometry drawingCellGeometry;
 	
 	/**
@@ -41,12 +40,11 @@ public class VisibleVariable implements Serializable
 		variableType = vType;
 	}
 	
-	public VisibleVariable(Module iParent, String iRefName, Object iDrawingCell, mxRectangle iCellBounds, mxGeometry iCellGeo, VariableType vType)
+	public VisibleVariable(Module iParent, String iRefName, Object iDrawingCell, mxGeometry iCellGeo, VariableType vType)
 	{
 		parent = iParent;
 		refName = iRefName;
 		drawingCell = iDrawingCell;
-		drawingCellBounds = iCellBounds;
 		drawingCellGeometry = iCellGeo;
 		variableType = vType;
 	}
@@ -74,24 +72,6 @@ public class VisibleVariable implements Serializable
 	public String getRefName()
 	{
 		return refName;
-	}
-	
-	/**
-	 * Set the location for the submodule representation.
-	 * @param bounds the location of the submodule representation
-	 */
-	public void setDrawingCellBounds(mxRectangle bounds)
-	{
-		drawingCellBounds = bounds;
-	}
-	
-	/**
-	 * Return the submodule bounds.
-	 * @return the submodule bounds
-	 */
-	public mxRectangle getDrawingCellBounds()
-	{
-		return drawingCellBounds;
 	}
 	
 	public void setDrawingCellGeometry(mxGeometry geo)

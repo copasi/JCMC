@@ -94,13 +94,6 @@ public class VariableAddEditor extends JDialog
 						AC_GUI.addVisibleVariable((String)comboBox1.getSelectedItem());
 						dispose();
 					}
-					else
-					{
-						msg = "\"" + (String)comboBox1.getSelectedItem() + "\"";
-						msg += " is already visible.";
-						msg += " Cannot show the same variable multiple times.";
-						JOptionPane.showMessageDialog(null, msg);
-					}
 				}
 			}
 		});
