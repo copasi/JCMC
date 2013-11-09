@@ -276,18 +276,20 @@ public class AC_GUI extends JFrame
 	public static void exportSBML(String fileName)
 	{
 		System.out.println("Number of COPASI data models = " + copasiUtility.getNumberOfModels());
-		/*
+		
 		if (!saveModules())
 		{
 			System.err.println("Problem saving Modules.");
 		}
 		System.out.println("Number of COPASI data models = " + copasiUtility.getNumberOfModels());
-		*/
-		System.out.println(copasiUtility.getSBML(activeModule.getKey()));
-		if (!modelBuilder.saveToCK(activeModule.getKey()))
+		
+		/*
+		System.out.println(copasiUtility.getSBML(activeModule.getName()));
+		if (!modelBuilder.saveToCopasi(activeModule.getName()))
 		{
 			System.err.println("Problem saving Module.");
 		}
+		*/
 		SBMLParser.exportSBML(activeModule, fileName);
 	}
 	
@@ -308,7 +310,8 @@ public class AC_GUI extends JFrame
 		treeView.addNode(mod);
 		drawingBoard.createCell(mod);
 		drawingBoard.changeModule(mod);
-		modelBuilder.loadModel(mod.getKey(), false, true);
+		//modelBuilder.loadModel(mod.getKey(), false, true);
+		modelBuilder.loadModel(mod, false, false, true);
 		modelBuilder.setVisible(true);		
 		
 		activeModule = mod;
@@ -329,7 +332,8 @@ public class AC_GUI extends JFrame
 		treeView.addNode(mod);
 		drawingBoard.createCell(mod);
 		drawingBoard.changeModule(mod);
-		modelBuilder.loadModel(mod.getKey(), false, true);
+		//modelBuilder.loadModel(mod.getKey(), false, true);
+		modelBuilder.loadModel(mod, false, false, true);
 		modelBuilder.setVisible(true);		
 		
 		activeModule = mod;
@@ -361,7 +365,8 @@ public class AC_GUI extends JFrame
 		treeView.addNode(mod);
 		drawingBoard.createCell(mod, glyph);
 		drawingBoard.changeModule(mod);
-		modelBuilder.loadModel(mod.getKey(), false, true);
+		//modelBuilder.loadModel(mod.getKey(), false, true);
+		modelBuilder.loadModel(mod, false, false, true);
 		modelBuilder.setVisible(true);		
 		
 		activeModule = mod;
@@ -460,7 +465,8 @@ public class AC_GUI extends JFrame
 		treeView.addNode(mod);
 		drawingBoard.createCell(mod, glyph);
 		//drawingBoard.changeModule(mod);
-		modelBuilder.loadModel(mod.getKey(), false, true);
+		//modelBuilder.loadModel(mod.getKey(), false, true);
+		modelBuilder.loadModel(mod, false, false, true);
 		//modelBuilder.setVisible(true);		
 		
 		//activeModule = mod;
@@ -1018,8 +1024,24 @@ public class AC_GUI extends JFrame
 	
 	public static void loadModelBuilder(Module mod, boolean uneditable, boolean display)
 	{
-		AC_GUI.modelBuilder.loadModel(mod.getMSMBData().getBytes(), uneditable, display);
+		//AC_GUI.modelBuilder.loadModel(mod.getMSMBData().getBytes(), uneditable, display);
+		modelBuilder.loadModel(mod, true, uneditable, display);
 		loadPortsIntoModelBuilder(mod);
+	}
+	
+	public static void displaySubmoduleInfoView(Module mod, mxCell buttonCell)
+	{
+		drawingBoard.drawSubmoduleMiniComponents(mod, buttonCell);
+		loadModelBuilder(mod, true, true);
+	}
+	
+	public static void removeSubmoduleInfoView(mxCell buttonCell, boolean showActiveModule)
+	{
+		drawingBoard.removeSubmoduleMiniComponents(buttonCell);
+		if (showActiveModule)
+		{
+			loadModelBuilder(AC_GUI.activeModule, false, true);
+		}
 	}
 	
 	public static void changeActiveModule(Module mod)
@@ -1041,11 +1063,13 @@ public class AC_GUI extends JFrame
 		if (newCode != null)
 		{
 			byte[] data = mod.getMSMBData().getBytes();
-			modelBuilder.loadModel(data, false, true);
+			//modelBuilder.loadModel(data, false, true);
+			modelBuilder.loadModel(mod, true, false, true);
 		}
 		else
 		{
-			modelBuilder.loadModel(mod.getKey(), false, true);
+			//modelBuilder.loadModel(mod.getKey(), false, true);
+			modelBuilder.loadModel(mod, false, false, true);
 		}		
 		activeModule = mod;
 		
@@ -1208,20 +1232,30 @@ public class AC_GUI extends JFrame
 		Module child;
 		String code;
 		byte[] data;
+		CCopasiDataModel dmodel;
 		
+		System.out.println();
+		System.out.println("The CopasiDataModel list before saving model: " + activeModule.getName());
+		copasiUtility.printDataModelList();
 		// save the activeModule to COPASI
-		System.out.println("AC_GUI.saveModules(): " + activeModule.getName() + "'s copasi key = " + activeModule.getKey());
-		CCopasiDataModel dmodel = copasiUtility.getCopasiModelFromKey(activeModule.getKey());
+		//System.out.println("AC_GUI.saveModules(): " + activeModule.getName() + "'s copasi key = " + activeModule.getKey());
+		dmodel = copasiUtility.getCopasiModelFromModelName(activeModule.getName());
 		if (dmodel == null)
 		{
-			System.err.println("The COPASI datamodel for " + activeModule.getName() + " is null.");
+			System.out.println("The COPASI datamodel for " + activeModule.getName() + " is null BEFORE saving.");
 		}
-		System.out.println(activeModule.getName() + "'s datamodel is not null.");
-		successfulSave = modelBuilder.saveToCK(activeModule.getKey());
+		successfulSave = modelBuilder.saveToCopasi(activeModule.getName());
+		dmodel = copasiUtility.getCopasiModelFromModelName(activeModule.getName());
+		if (dmodel == null)
+		{
+			System.out.println("The COPASI datamodel for " + activeModule.getName() + " is null AFTER saving.");
+		}
 		if (!successfulSave)
 		{
 			return false;
 		}
+		System.out.println("The CopasiDataModel list after saving model: " + activeModule.getName());
+		copasiUtility.printDataModelList();
 		
 		// store the activeModule's msmb data
 		code = new String(modelBuilder.saveModel());
@@ -1237,27 +1271,43 @@ public class AC_GUI extends JFrame
 			if (code != null)
 			{
 				data = child.getMSMBData().getBytes();
-				modelBuilder.loadModel(data, false, false);
+				//modelBuilder.loadModel(data, false, false);
+				modelBuilder.loadModel(child, true, false, false);
 			}
 			else
 			{
 				//System.err.println("AC_GUI.saveModules(): " + child.getName() + "'s msmb data is NULL.");
 				//System.exit(0);
-				modelBuilder.loadModel(child.getKey(), false, false);
+				//modelBuilder.loadModel(child.getKey(), false, false);
+				modelBuilder.loadModel(child, false, false, false);
 				
 				// store the child module's msmb data
 				code = new String(modelBuilder.saveModel());
 				child.setMSMBData(code);
 			}		
 			
+			System.out.println("The CopasiDataModel list before saving model: " + child.getName());
+			copasiUtility.printDataModelList();
+			
 			// save the child module to COPASI
-			System.out.println("AC_GUI.saveModules(): " + child.getName() + "'s copasi key = " + child.getKey());
-			successfulSave =  modelBuilder.saveToCK(child.getKey());
+			//System.out.println("AC_GUI.saveModules(): " + child.getName() + "'s copasi key = " + child.getKey());
+			dmodel = copasiUtility.getCopasiModelFromModelName(child.getName());
+			if (dmodel == null)
+			{
+				System.err.println("The COPASI datamodel for " + child.getName() + " is null BEFORE saving.");
+			}
+			successfulSave =  modelBuilder.saveToCopasi(child.getName());
+			dmodel = copasiUtility.getCopasiModelFromModelName(child.getName());
+			if (dmodel == null)
+			{
+				System.out.println("The COPASI datamodel for " + child.getName() + " is null AFTER saving.");
+			}
 			if (!successfulSave)
 			{
 				return false;
 			}
-			
+			System.out.println("The CopasiDataModel list after saving model: " + child.getName());
+			copasiUtility.printDataModelList();
 			// store the child module's msmb data
 			//code = new String(modelBuilder.saveModel());
 			//child.setMSMBData(code);
@@ -1266,8 +1316,11 @@ public class AC_GUI extends JFrame
 		// reload the original activeModule
 		code = activeModule.getMSMBData();
 		data = activeModule.getMSMBData().getBytes();
-		modelBuilder.loadModel(data, false, true);
+		//modelBuilder.loadModel(data, false, true);
+		modelBuilder.loadModel(activeModule, true, false, true);
 		loadPortsIntoModelBuilder(activeModule);
+		
+		copasiUtility.printDataModelList();
 		return successfulSave;
 	}
 	

@@ -42,7 +42,7 @@ public class ModelBuilder
 
 	final MSMB_Interface msmb;
 	private Module loadedModule;
-	private static CustomJTable jTableCustom;
+	private static ACCustomJTable jTableCustom;
 	private static ACCustomTableModel tableModel;
 	private Vector<String> refNames;
 	
@@ -62,34 +62,35 @@ public class ModelBuilder
 	/**
 	 * Load the given Copasi model into the model builder.
 	 * @param key the unique Copasi key referencing the model
-	 */
-	public void loadModel(String key, boolean uneditable, boolean display)
+	 */	
+	public void loadModel(Module mod, boolean fromMSMBData, boolean uneditable, boolean display)
 	{
-		try 
+		if (fromMSMBData)
 		{
-			 msmb.loadFromCopasiKey(key, uneditable);
-		} catch (Exception e) {
-			 //I still don't know which exception I need to push to your part... probably it is enough for me to catch them and
-			 //display the usual error message that I already show... but I'm not sure, so I left the throw expception in the
-			 //method declaration
-			 e.printStackTrace();
+			msmb.loadFromMSMB(mod.getMSMBData().getBytes(), uneditable);
 		}
+		else
+		{
+			try 
+			{
+				 msmb.loadFromCopasiModelName(mod.getName(), uneditable);
+			} catch (Exception e) {
+				 //I still don't know which exception I need to push to your part... probably it is enough for me to catch them and
+				 //display the usual error message that I already show... but I'm not sure, so I left the throw expception in the
+				 //method declaration
+				 e.printStackTrace();
+			}
+		}
+		
 		if (display)
 		{
 			tableModel.clearData();
 			updateRefNameColumn();
+			tableModel.setUneditableTable(uneditable);
+			jTableCustom.setUneditableTable(uneditable);
+			//jTableCustom.setEnabled(!uneditable);
 		}
-	}
-	
-	public void loadModel(byte[] msmbCode, boolean uneditable, boolean display)
-	{
-		msmb.loadFromMSMB(msmbCode, uneditable);
-		if (display)
-		{
-			tableModel.clearData();
-			updateRefNameColumn();
-		}
-		//installListeners();
+		loadedModule = mod;
 	}
 	
 	public byte[] saveModel()
@@ -97,10 +98,10 @@ public class ModelBuilder
 		return msmb.saveToMSMB();
 	}
 	
-	public boolean saveToCK(String key)
+	public boolean saveToCopasi(String name)
 	{
-		//System.out.println("Saved COPASI key: " + key);
-		return msmb.saveToCopasiKey(key);
+		//System.out.println("Save COPASI Model name: " + name);
+		return msmb.saveToCopasiModelName(name);
 	}
 	
 	/**
@@ -325,7 +326,8 @@ public class ModelBuilder
 		tableModel.setColumnNames(col, new Vector());
 		tableModel.initializeTableModel();
 		
-		jTableCustom = new CustomJTable();
+		//jTableCustom = new CustomJTable();
+		jTableCustom = new ACCustomJTable();
 		jTableCustom.initializeCustomTable(tableModel);
 		jTableCustom.setModel(tableModel);
 		jTableCustom.getTableHeader().setFont(msmb.getCustomFont()); //font for the header
@@ -584,7 +586,7 @@ public class ModelBuilder
                 new ChangeListener() {
                     @Override
                     public void stateChanged(ChangeEvent e) {
-                    	if (AC_GUI.activeModule.getName().equals(msmb.getModelName()))
+                    	if (AC_GUI.activeModule == loadedModule)
                     	{
 	                        ChangedElement before = (((MSMB_InterfaceChange)e.getSource()).getElementBefore());
 	                        ChangedElement after = (((MSMB_InterfaceChange)e.getSource()).getElementAfter());
@@ -606,7 +608,7 @@ public class ModelBuilder
                 new ChangeListener() {
                     @Override
                     public void stateChanged(ChangeEvent e) {
-                    	if (AC_GUI.activeModule.getName().equals(msmb.getModelName()))
+                    	if (AC_GUI.activeModule == loadedModule)
                     	{
 	                        ChangedElement before = (((MSMB_InterfaceChange)e.getSource()).getElementBefore());
 	                        ChangedElement after = (((MSMB_InterfaceChange)e.getSource()).getElementAfter());

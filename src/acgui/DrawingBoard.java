@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Vector;
 
 import javax.swing.AbstractAction;
 import javax.swing.BorderFactory;
@@ -51,8 +52,8 @@ public class DrawingBoard extends JPanel
 {
 	private static final long serialVersionUID = 1L;
 
-	private final int DEFAULT_MODULE_HEIGHT = 400;
-	private final int DEFAULT_MODULE_WIDTH = 350;
+	private final int DEFAULT_MODULE_HEIGHT = 450;
+	private final int DEFAULT_MODULE_WIDTH = 643;
 	private final int DEFAULT_SUBMODULE_HEIGHT = 100;
 	private final int DEFAULT_SUBMODULE_WIDTH = 120;
 	private final int DEFAULT_PORT_HEIGHT = 60;
@@ -69,6 +70,8 @@ public class DrawingBoard extends JPanel
 	private ACGraph graph;
 	private Object parent;
 	private Module activeModule;
+	private Module submoduleView;
+	private mxCell activeSubmoduleButtonCell;
 	mxGraphComponent graphComponent;
 	ArrayList<Object> cells = new ArrayList<Object>();
 
@@ -81,6 +84,8 @@ public class DrawingBoard extends JPanel
 		this.styleSetup();
 		graph.setDropEnabled(false);
 		parent = graph.getDefaultParent();
+		submoduleView = null;
+		activeSubmoduleButtonCell = null;
 		this.setBackground(Color.WHITE);
 		this.setLayout(new BorderLayout());
 		this.setVisible(true);
@@ -273,10 +278,10 @@ public class DrawingBoard extends JPanel
 				graph.getModel().setVisible(childCell, true);
 			}
 			
-			//xPosition = 40 + (childCount * 20);
-			//yPosition = 40 + (childCount * 20);
-			xPosition = 0.2 + (childCount * 0.01);
-			yPosition = 0.2 + (childCount * 0.01);
+			xPosition = 40 + (childCount * 20);
+			yPosition = 40 + (childCount * 20);
+			//xPosition = 0.2 + (childCount * 0.01);
+			//yPosition = 0.2 + (childCount * 0.01);
 			geo.setX(xPosition);
 			geo.setY(yPosition);
 			geo.setWidth(DEFAULT_SUBMODULE_WIDTH);
@@ -406,7 +411,7 @@ public class DrawingBoard extends JPanel
 
 			graph.getModel().add(cell, port1, 0);
 			// graph.updatePortOrientation(port1, geo1);
-			graph.updatePortOrientation(port1, geo1);
+			graph.updatePortOrientation(port1, geo1, false);
 		}
 		finally
 		{
@@ -457,7 +462,7 @@ public class DrawingBoard extends JPanel
 
 			graph.getModel().add(cell, port1, 0);
 			// graph.updatePortOrientation(port1, geo1);
-			graph.updatePortOrientation(port1, geo1);
+			graph.updatePortOrientation(port1, geo1, false);
 		}
 		finally
 		{
@@ -689,6 +694,7 @@ public class DrawingBoard extends JPanel
 		}
 		Object edgeCell = graph.insertEdge(parentCell, null, edge, source, target, drawingCellStyle);
 		edge.setDrawingCell(edgeCell);
+		edge.setDrawingCellStyle(drawingCellStyle);
 	}
 	
 	public void createConnection(Connection edge, Object source, Object target, String drawingCellStyle)
@@ -697,6 +703,7 @@ public class DrawingBoard extends JPanel
 		//Object edgeCell = graph.createEdge(parentCell, null, edge, source, target, drawingCellStyle);
 		Object edgeCell = graph.insertEdge(parentCell, null, edge, source, target, drawingCellStyle);
 		edge.setDrawingCell(edgeCell);
+		edge.setDrawingCellStyle(drawingCellStyle);
 	}
 	
 	/**
@@ -767,7 +774,7 @@ public class DrawingBoard extends JPanel
 	
 	public void updatePort(Object portCell)
 	{
-		graph.updatePortOrientation(portCell, ((mxCell)portCell).getGeometry());
+		graph.updatePortOrientation(portCell, ((mxCell)portCell).getGeometry(), false);
 		graph.refresh();
 	}
 
@@ -812,6 +819,78 @@ public class DrawingBoard extends JPanel
 		return graph;
 	}
  
+	public void setSubmoduleInfoView(Module mod)
+	{
+		submoduleView = mod;
+	}
+	
+	public Module getSubmoduleInfoView()
+	{
+		return submoduleView;
+	}
+	
+	public void drawSubmoduleMiniComponents(Module mod, mxCell buttonCell)
+	{
+		Object submoduleCell = mod.getDrawingCell();
+		
+		String buttonStyle = "ActiveButton";
+		String buttonValue = "-";
+		String submoduleStyle = "Submodule_Show_Information";
+		
+		graph.getModel().beginUpdate();
+		try
+		{
+			graph.getModel().setStyle(buttonCell, buttonStyle);
+			graph.getModel().setValue(buttonCell, buttonValue);
+			graph.getModel().setStyle(submoduleCell, submoduleStyle);
+		}
+		finally
+		{
+			graph.getModel().endUpdate();
+		}
+		submoduleView = mod;
+		activeSubmoduleButtonCell = buttonCell;
+		drawSubmoduleMiniChildren(mod);
+	}
+
+	public void removeSubmoduleMiniComponents(mxCell buttonCell)
+	{
+		if (submoduleView != null)
+		{
+			Object submoduleCell = submoduleView.getDrawingCell();
+			
+			String buttonStyle = "InactiveButton";
+			String buttonValue = "+";
+			String submoduleStyle = "Submodule_No_Show_Information";
+			
+			graph.getModel().beginUpdate();
+			try
+			{
+				graph.getModel().setStyle(buttonCell, buttonStyle);
+				graph.getModel().setValue(buttonCell, buttonValue);
+				graph.getModel().setStyle(submoduleCell, submoduleStyle);
+			}
+			finally
+			{
+				graph.getModel().endUpdate();
+			}
+			
+			if (hasMiniComponents(submoduleView))
+			{		
+				Object submoduleComponents [] = graph.getChildCells(submoduleCell);
+				String cellStyleMatch = "Mini";
+				for (int i = 0; i < submoduleComponents.length; i++)
+				{
+					if (graph.getModel().getStyle(submoduleComponents[i]).endsWith(cellStyleMatch))
+					{
+						graph.getModel().remove(submoduleComponents[i]);
+					}
+				}
+			}
+			submoduleView = null;
+			activeSubmoduleButtonCell = null;
+		}
+	}
 	
 	/**
 	 * Change the current module displayed.
@@ -825,6 +904,7 @@ public class DrawingBoard extends JPanel
 		double yPosition = 25;
 		double width = graphComponent.getVisibleRect().getWidth() - 50;
 		double height = graphComponent.getVisibleRect().getHeight() - 50;
+		System.out.println("width = " + width + " height = " + height);
 		mxGeometry geo = new mxGeometry(25, 25, width, height);
 		//mod.setDrawingCellGeometry(geo);
 		Object cell = mod.getDrawingCell();
@@ -1124,13 +1204,14 @@ public class DrawingBoard extends JPanel
 					geo.setWidth(DEFAULT_SUBMODULE_WIDTH);
 					geo.setHeight(DEFAULT_SUBMODULE_HEIGHT);
 				}
-				((mxCell)childCell).setGeometry(geo);
+				//((mxCell)childCell).setGeometry(geo);
 				graph.getModel().add(parentCell, childCell, 0);
 				if(child.getDrawingCellStyle().equals(""))
 				{
 					child.setDrawingCellStyle("Submodule_No_Show_Information");
 				}
 				graph.getModel().setStyle(childCell, child.getDrawingCellStyle());
+				graph.getModel().setGeometry(childCell, geo);
 			}
 			finally
 			{
@@ -1208,7 +1289,7 @@ public class DrawingBoard extends JPanel
 				geo.setRelative(true);
 				graph.getModel().add(cell, portCell, 0);
 				graph.getModel().setGeometry(portCell, geo);
-				graph.updatePortOrientation(portCell, geo);
+				graph.updatePortOrientation(portCell, geo, false);
 			}
 			finally
 			{
@@ -1277,10 +1358,10 @@ public class DrawingBoard extends JPanel
 					geo.setWidth(DEFAULT_VISIBLEVARIABLE_WIDTH);
 					geo.setHeight(DEFAULT_VISIBLEVARIABLE_HEIGHT);
 				}
-				((mxCell)varCell).setGeometry(geo);
+				//((mxCell)varCell).setGeometry(geo);
 				graph.getModel().add(cell, varCell, 0);
 				graph.getModel().setStyle(varCell, "VisibleVariable");
-				//graph.getModel().setGeometry(varCell, geo);
+				graph.getModel().setGeometry(varCell, geo);
 			}
 			finally
 			{
@@ -1340,10 +1421,10 @@ public class DrawingBoard extends JPanel
 					geo.setWidth(DEFAULT_EQUIVALENCENODE_WIDTH);
 					geo.setHeight(DEFAULT_EQUIVALENCENODE_HEIGHT);
 				}
-				((mxCell)eNodeCell).setGeometry(geo);
+				//((mxCell)eNodeCell).setGeometry(geo);
 				graph.getModel().add(cell, eNodeCell, 0);
 				graph.getModel().setStyle(eNodeCell, "EquivalenceNode");
-				//graph.getModel().setGeometry(eNodeCell, geo);
+				graph.getModel().setGeometry(eNodeCell, geo);
 			}
 			finally
 			{
@@ -1362,13 +1443,15 @@ public class DrawingBoard extends JPanel
 		ListIterator<Connection> connections;
 		Object parentCell = mod.getDrawingCell();
 		Object connectionCell;
+		Connection currentConnection;
 		
 		// get the list of connections
 		connections = mod.getConnections().listIterator();
 		
 		while(connections.hasNext())
 		{
-			connectionCell = connections.next().getDrawingCell();
+			currentConnection = connections.next();
+			connectionCell = currentConnection.getDrawingCell();
 			
 			// draw the current connection cell
 			graph.getModel().beginUpdate();
@@ -1382,6 +1465,7 @@ public class DrawingBoard extends JPanel
 				}
 				*/
 				graph.getModel().add(parentCell, connectionCell, 0);
+				graph.getModel().setStyle(connectionCell, currentConnection.getDrawingCellStyle());
 			}
 			finally
 			{
@@ -1413,9 +1497,338 @@ public class DrawingBoard extends JPanel
 		}
 	}
 	
-	private void drawSubmoduleChildren(Module mod)
+	private void drawSubmoduleMiniChildren(Module mod)
 	{
+		ListIterator<Module> children;
+		Module child;
+		Object parentCell;
+		Object childCell;
+		mxGeometry geo;
+		mxGeometry geo_mini;
+		double xPosition;
+		double yPosition;
+		double xPosition_mini;
+		double yPosition_mini;
+		double width_mini;
+		double height_mini;
+		int childIndex;
+
+		// get the list of children modules
+		children = mod.getChildren().listIterator();
+
+		// get the parent drawing cell where the children cells will be added
+		parentCell = mod.getDrawingCell();
+
+		while (children.hasNext())
+		{
+			// get the current child, its drawing cell, and its index
+			child = children.next();
+			childCell = child.getDrawingCell();
+			childIndex = children.nextIndex();
+
+			// draw the current child cell
+			graph.getModel().beginUpdate();
+			try
+			{				
+				geo = child.getDrawingCellGeometry();
+				if (geo == null || (geo.getHeight() <= 10))
+				{
+					geo = new mxGeometry();
+					xPosition = 40 + (childIndex * 20);
+					yPosition = 40 + (childIndex * 20);
+					geo.setX(xPosition);
+					geo.setY(yPosition);
+					geo.setWidth(DEFAULT_SUBMODULE_WIDTH);
+					geo.setHeight(DEFAULT_SUBMODULE_HEIGHT);
+				}
+				xPosition_mini = (geo.getX() - 25)/DEFAULT_MODULE_WIDTH;
+				//System.out.print("xPosition_mini = ");
+				//System.out.print("( " + geo.getX() + "- 25 )");
+				//System.out.println("/ " + DEFAULT_MODULE_WIDTH);
+				yPosition_mini = (geo.getY() - 25)/DEFAULT_MODULE_HEIGHT;
+				//System.out.print("yPosition_mini = ");
+				//System.out.print("( " + geo.getY() + "- 25 )");
+				//System.out.println("/ " + DEFAULT_MODULE_HEIGHT);
+				width_mini = geo.getWidth() * (geo.getWidth() / DEFAULT_MODULE_WIDTH);
+				height_mini = geo.getHeight() * (geo.getHeight() / DEFAULT_MODULE_HEIGHT);
+				geo_mini = new mxGeometry(xPosition_mini, yPosition_mini, width_mini, height_mini);
+				geo_mini.setRelative(true);
+				((mxCell)childCell).setGeometry(geo_mini);
+				graph.getModel().add(parentCell, childCell, 0);
+				graph.getModel().setStyle(childCell, "Submodule_Mini");
+			}
+			finally
+			{
+				graph.getModel().endUpdate();
+			}
+			// draw the ports of the current child
+			drawSubmoduleMiniPorts(child);
+		}
+	}
+	
+	private void drawSubmoduleMiniPorts(Module mod)
+	{
+		ListIterator<Port> ports;
+		Object parentCell;
+		Object portCell;
+		mxGeometry parentGeo;
+		mxGeometry geo;
+		mxGeometry geo_mini;
+		double x;
+		double y;
+		double width;
+		double height;
+		double width_mini;
+		double height_mini;
+		double offsetX;
+		double offsetY;
+
+		// get the list of ports
+		ports = mod.getPorts().listIterator();
+
+		// get the drawing cell where the ports will be added
+		parentCell = mod.getDrawingCell();
+
+		// loop through each port of the module
+		while (ports.hasNext())
+		{
+			// get the drawing cell of the current port
+			portCell = (mxCell) ports.next().getDrawingCell();
+
+			// draw the current port
+			graph.getModel().beginUpdate();
+			try
+			{
+				parentGeo = graph.getModel().getGeometry(parentCell);
+				x = ((mxCell) portCell).getGeometry().getX();
+				y = ((mxCell) portCell).getGeometry().getY();
+				width = DEFAULT_PORT_WIDTH / 2;
+				height = DEFAULT_PORT_HEIGHT / 2;
+				width_mini = width * (width / parentGeo.getWidth());
+				height_mini = height * (height / parentGeo.getHeight());
+				offsetX = -width_mini / 2;
+				offsetY = -height_mini / 2;
+				//geo = new mxGeometry(x, y, width, height);
+				//geo.setOffset(new mxPoint(offsetX, offsetY));
+				//geo.setRelative(true);
+				geo_mini = new mxGeometry(x, y, width_mini, height_mini);
+				geo_mini.setOffset(new mxPoint(offsetX, offsetY));
+				geo_mini.setRelative(true);
+				graph.getModel().add(parentCell, portCell, 0);
+				graph.getModel().setGeometry(portCell, geo_mini);
+				graph.updatePortOrientation(portCell, geo_mini, true);
+			}
+			finally
+			{
+				graph.getModel().endUpdate();
+			}
+		}
+	}
+	
+	private void drawSubmoduleMiniVisibleVariables(Module mod)
+	{
+		ListIterator<VisibleVariable> vars;
+		Object cell;
+		Object varCell;
+		//mxGeometry geo;
+		double x;
+		double y;
+		double width;
+		double height;
+		double offsetX;
+		double offsetY;
+		VisibleVariable var;
+		int varIndex;
+		mxGeometry geo;
+		double xPosition;
+		double yPosition;
+		double xPosition_mini;
+		double yPosition_mini;
+		double width_mini;
+		double height_mini;
+		mxGeometry geo_mini;
 		
+		// get the list of visible variables
+		vars = mod.getVisibleVariables().listIterator();
+
+		// get the drawing cell where the visible variables will be added
+		cell = mod.getDrawingCell();
+
+		// loop through each visible variable of the module
+		while (vars.hasNext())
+		{
+			// get the index of the next visible variable
+			varIndex = vars.nextIndex();
+			// get the next visible variable
+			var = vars.next();
+			// get the drawing cell of the current visible variable
+			varCell = var.getDrawingCell();
+
+			// draw the current visible variable
+			graph.getModel().beginUpdate();
+			try
+			{
+				/*
+				x = ((mxCell) varCell).getGeometry().getX();
+				y = ((mxCell) varCell).getGeometry().getY();
+				
+				//offsetX = -width / 2;
+				//offsetY = -height / 2;
+				geo = new mxGeometry(x, y, width, height);
+				geo.setOffset(new mxPoint(offsetX, offsetY));
+				geo.setRelative(true);
+				*/
+				
+				geo = var.getDrawingCellGeometry();
+				if (geo == null)
+				{
+					geo = new mxGeometry();
+					xPosition = 40 + (varIndex * 20);
+					yPosition = 40 + (varIndex * 20);
+					geo.setX(xPosition);
+					geo.setY(yPosition);
+					geo.setWidth(DEFAULT_VISIBLEVARIABLE_WIDTH);
+					geo.setHeight(DEFAULT_VISIBLEVARIABLE_HEIGHT);
+				}
+				//((mxCell)varCell).setGeometry(geo);
+				xPosition_mini = (geo.getX() - 25)/DEFAULT_MODULE_WIDTH;
+				yPosition_mini = (geo.getY() - 25)/DEFAULT_MODULE_HEIGHT;
+				width_mini = geo.getWidth() * (geo.getWidth() / DEFAULT_MODULE_WIDTH);
+				height_mini = geo.getHeight() * (geo.getHeight() / DEFAULT_MODULE_HEIGHT);
+				geo_mini = new mxGeometry(xPosition_mini, yPosition_mini, width_mini, height_mini);
+				geo_mini.setRelative(true);
+				graph.getModel().add(cell, varCell, 0);
+				graph.getModel().setStyle(varCell, "VisibleVariable_Mini");
+				graph.getModel().setGeometry(varCell, geo_mini);
+			}
+			finally
+			{
+				graph.getModel().endUpdate();
+			}
+		}
+	}
+	
+	private void drawSubmoduleMiniEquivalenceNodes(Module mod)
+	{
+		ListIterator<EquivalenceNode> eNodes;
+		Object cell;
+		Object eNodeCell;
+		//mxGeometry geo;
+		double x;
+		double y;
+		double width;
+		double height;
+		double offsetX;
+		double offsetY;
+		EquivalenceNode eNode;
+		int eNodeIndex;
+		mxGeometry geo;
+		double xPosition;
+		double yPosition;
+		double xPosition_mini;
+		double yPosition_mini;
+		double width_mini;
+		double height_mini;
+		mxGeometry geo_mini;
+		
+		// get the list of equivalence nodes
+		eNodes = mod.getEquivalenceNodes().listIterator();
+		
+		// get the drawing cell where the equivalence nodes will be added
+		cell = mod.getDrawingCell();
+		
+		// loop through each visible variable of the module
+		while (eNodes.hasNext())
+		{
+			// get the index of the next visible variable
+			eNodeIndex = eNodes.nextIndex();
+			// get the next visible variable
+			eNode = eNodes.next();
+			// get the drawing cell of the current visible variable
+			eNodeCell = eNode.getDrawingCell();
+			graph.getModel().beginUpdate();
+			try
+			{				
+				geo = eNode.getDrawingCellGeometry();
+				if (geo == null)
+				{
+					geo = new mxGeometry();
+					xPosition = 40 + (eNodeIndex * 20);
+					yPosition = 40 + (eNodeIndex * 20);
+					geo.setX(xPosition);
+					geo.setY(yPosition);
+					geo.setWidth(DEFAULT_EQUIVALENCENODE_WIDTH);
+					geo.setHeight(DEFAULT_EQUIVALENCENODE_HEIGHT);
+				}
+				//((mxCell)eNodeCell).setGeometry(geo);
+				xPosition_mini = (geo.getX() - 25)/DEFAULT_MODULE_WIDTH;
+				yPosition_mini = (geo.getY() - 25)/DEFAULT_MODULE_HEIGHT;
+				width_mini = geo.getWidth() * (geo.getWidth() / DEFAULT_MODULE_WIDTH);
+				height_mini = geo.getHeight() * (geo.getHeight() / DEFAULT_MODULE_HEIGHT);
+				geo_mini = new mxGeometry(xPosition_mini, yPosition_mini, width_mini, height_mini);
+				geo_mini.setRelative(true);
+				graph.getModel().add(cell, eNodeCell, 0);
+				graph.getModel().setStyle(eNodeCell, "EquivalenceNode_Mini");
+				graph.getModel().setGeometry(eNodeCell, geo);
+			}
+			finally
+			{
+				graph.getModel().endUpdate();
+			}
+			
+		}
+	}
+	
+	private void drawSubmoduleMiniConnections(Module mod)
+	{
+		ListIterator<Connection> connections;
+		Object parentCell = mod.getDrawingCell();
+		Object connectionCell;
+		Connection currentConnection;
+		
+		// get the list of connections
+		connections = mod.getConnections().listIterator();
+		
+		while(connections.hasNext())
+		{
+			currentConnection = connections.next();
+			connectionCell = currentConnection.getDrawingCell();
+			
+			// draw the current connection cell
+			graph.getModel().beginUpdate();
+			try
+			{
+				/*
+				if (!graph.getModel().isVisible(connectionCell))
+				{
+					System.err.println("Connection not visible.");
+					graph.getModel().setVisible(connectionCell, true);
+				}
+				*/
+				graph.getModel().add(parentCell, connectionCell, 0);
+				graph.getModel().setStyle(connectionCell, currentConnection.getDrawingCellStyle() + "_Mini");
+			}
+			finally
+			{
+				graph.getModel().endUpdate();
+			}
+		}
+	}
+	
+	/**
+	 * Check if the given module has components.
+	 * @param mod, the module to check
+	 * @return true if this module has submodules, equivalence nodes, visible variable nodes, or connections,
+	 * false otherwise.
+	 */
+	private boolean hasMiniComponents(Module mod)
+	{
+		int submoduleComponentCount = mod.getChildren().size();
+		submoduleComponentCount += mod.getEquivalenceNodes().size();
+		submoduleComponentCount += mod.getVisibleVariables().size();
+		submoduleComponentCount += mod.getConnections().size();
+		
+		return submoduleComponentCount > 0;
 	}
 	
 	private void drawMathAggregatorPorts(MathematicalAggregator mathAgg)
@@ -1495,7 +1908,7 @@ public class DrawingBoard extends JPanel
 	
 				graph.getModel().add(cell, portCell, 0);
 				graph.getModel().setGeometry(portCell, geo);
-				graph.updatePortOrientation(portCell, geo);
+				graph.updatePortOrientation(portCell, geo, false);
 			}
 			finally
 			{
@@ -1565,7 +1978,7 @@ public class DrawingBoard extends JPanel
 	
 				graph.getModel().add(cell, portCell, 0);
 				// graph.updatePortOrientation(port1, geo1);
-				graph.updatePortOrientation(portCell, geo);
+				graph.updatePortOrientation(portCell, geo, false);
 			}
 			finally
 			{
@@ -2008,6 +2421,161 @@ public class DrawingBoard extends JPanel
 		cell.put(mxConstants.STYLE_NOLABEL, "1");
 		
 		styleSheet.putCellStyle("Submodule_Mini", cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_TRIANGLE);
+		cell.put(mxConstants.STYLE_DIRECTION, mxConstants.DIRECTION_NORTH);
+		cell.put(mxConstants.STYLE_FILLCOLOR, "red");
+		cell.put(mxConstants.STYLE_PERIMETER, "trianglePerimeter");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+
+		styleSheet.putCellStyle("InputPort_North_Mini", cell);
+
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_TRIANGLE);
+		cell.put(mxConstants.STYLE_DIRECTION, mxConstants.DIRECTION_SOUTH);
+		cell.put(mxConstants.STYLE_FILLCOLOR, "red");
+		cell.put(mxConstants.STYLE_PERIMETER, "trianglePerimeter");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+
+		styleSheet.putCellStyle("InputPort_South_Mini", cell);
+
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_TRIANGLE);
+		cell.put(mxConstants.STYLE_DIRECTION, mxConstants.DIRECTION_EAST);
+		cell.put(mxConstants.STYLE_FILLCOLOR, "red");
+		cell.put(mxConstants.STYLE_PERIMETER, "trianglePerimeter");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		
+		styleSheet.putCellStyle("InputPort_East_Mini", cell);
+
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_TRIANGLE);
+		cell.put(mxConstants.STYLE_DIRECTION, mxConstants.DIRECTION_WEST);
+		cell.put(mxConstants.STYLE_FILLCOLOR, "red");
+		cell.put(mxConstants.STYLE_PERIMETER, "trianglePerimeter");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		
+		styleSheet.putCellStyle("InputPort_West_Mini", cell);
+
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_TRIANGLE);
+		cell.put(mxConstants.STYLE_DIRECTION, mxConstants.DIRECTION_NORTH);
+		cell.put(mxConstants.STYLE_FILLCOLOR, "blue");
+		cell.put(mxConstants.STYLE_PERIMETER, "trianglePerimeter");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		
+		styleSheet.putCellStyle("OutputPort_North_Mini", cell);
+
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_TRIANGLE);
+		cell.put(mxConstants.STYLE_DIRECTION, mxConstants.DIRECTION_SOUTH);
+		cell.put(mxConstants.STYLE_FILLCOLOR, "blue");
+		cell.put(mxConstants.STYLE_PERIMETER, "trianglePerimeter");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		
+		styleSheet.putCellStyle("OutputPort_South_Mini", cell);
+
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_TRIANGLE);
+		cell.put(mxConstants.STYLE_DIRECTION, mxConstants.DIRECTION_EAST);
+		cell.put(mxConstants.STYLE_FILLCOLOR, "blue");
+		cell.put(mxConstants.STYLE_PERIMETER, "trianglePerimeter");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		
+		styleSheet.putCellStyle("OutputPort_East_Mini", cell);
+
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_TRIANGLE);
+		cell.put(mxConstants.STYLE_DIRECTION, mxConstants.DIRECTION_WEST);
+		cell.put(mxConstants.STYLE_FILLCOLOR, "blue");
+		cell.put(mxConstants.STYLE_PERIMETER, "trianglePerimeter");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		
+		styleSheet.putCellStyle("OutputPort_West_Mini", cell);
+
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_RHOMBUS);
+		cell.put(mxConstants.STYLE_DIRECTION, mxConstants.DIRECTION_NORTH);
+		cell.put(mxConstants.STYLE_FILLCOLOR, "yellow");
+		cell.put(mxConstants.STYLE_PERIMETER, "rhombusPerimeter");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		
+		styleSheet.putCellStyle("EquivalencePort_North_Mini", cell);
+
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_RHOMBUS);
+		cell.put(mxConstants.STYLE_DIRECTION, mxConstants.DIRECTION_SOUTH);
+		cell.put(mxConstants.STYLE_FILLCOLOR, "yellow");
+		cell.put(mxConstants.STYLE_PERIMETER, "rhombusPerimeter");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		
+		styleSheet.putCellStyle("EquivalencePort_South_Mini", cell);
+
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_RHOMBUS);
+		cell.put(mxConstants.STYLE_DIRECTION, mxConstants.DIRECTION_EAST);
+		cell.put(mxConstants.STYLE_FILLCOLOR, "yellow");
+		cell.put(mxConstants.STYLE_PERIMETER, "rhombusPerimeter");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		
+		styleSheet.putCellStyle("EquivalencePort_East_Mini", cell);
+
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_RHOMBUS);
+		cell.put(mxConstants.STYLE_DIRECTION, mxConstants.DIRECTION_WEST);
+		cell.put(mxConstants.STYLE_FILLCOLOR, "yellow");
+		cell.put(mxConstants.STYLE_PERIMETER, "rhombusPerimeter");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		
+		styleSheet.putCellStyle("EquivalencePort_West_Mini", cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_ELLIPSE);
+		cell.put(mxConstants.STYLE_STROKECOLOR, "black");
+		cell.put(mxConstants.STYLE_FILLCOLOR, "white");
+		cell.put(mxConstants.STYLE_FOLDABLE, "0");
+		cell.put(mxConstants.STYLE_PERIMETER, "ellipsePerimeter");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+
+		styleSheet.putCellStyle("VisibleVariable_Mini", cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_RHOMBUS);
+		cell.put(mxConstants.STYLE_FILLCOLOR, "yellow");
+		cell.put(mxConstants.STYLE_PERIMETER, "rhombusPerimeter");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+
+		styleSheet.putCellStyle("EquivalenceNode_Mini", cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		
+		styleSheet.putCellStyle("ConnectionEdge_Mini", cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		cell.put(mxConstants.STYLE_DASHED, "1");
+		
+		styleSheet.putCellStyle("DashedConnectionEdge_Mini", cell);
 	}
 
 	/**
@@ -2027,13 +2595,6 @@ public class DrawingBoard extends JPanel
 				
 				if (cell != null)
 				{
-					if (cell.getValue() instanceof Port)
-					{
-						// System.out.println("port=" + ((mxCell) cell).getValue().toString());
-						// p = (Port) ((mxCell)cell).getValue();
-						AC_GUI.modelBuilder.setSelectedPort((Port)cell.getValue());
-					}
-
 					if (cell.getValue() instanceof Module)
 					{
 						// System.out.println("cell=" + graph.getLabel(cell));
@@ -2043,15 +2604,37 @@ public class DrawingBoard extends JPanel
 						//printCellCount(cell);
 					}
 					
-					if (cell.getValue() instanceof VisibleVariable)
+					if (AC_GUI.activeModule == AC_GUI.modelBuilder.getLoadedModule())
 					{
-						VisibleVariable var = (VisibleVariable)cell.getValue();
-						AC_GUI.setSelectedModelBuilderVariable(var.getRefName(), var.getVariableType());
+						if (cell.getValue() instanceof VisibleVariable)
+						{
+							VisibleVariable var = (VisibleVariable)cell.getValue();
+							AC_GUI.setSelectedModelBuilderVariable(var.getRefName(), var.getVariableType());
+						}
+						
+						if (cell.getValue() instanceof EquivalenceNode)
+						{
+							AC_GUI.setSelectedModelBuilderVariable(((EquivalenceNode)cell.getValue()).getRefName(), VariableType.SPECIES);
+						}
+						
+						if (cell.getValue() instanceof Port)
+						{
+							// System.out.println("port=" + ((mxCell) cell).getValue().toString());
+							// p = (Port) ((mxCell)cell).getValue();
+							AC_GUI.modelBuilder.setSelectedPort((Port)cell.getValue());
+						}
 					}
-					
-					if (cell.getValue() instanceof EquivalenceNode)
+					else
 					{
-						AC_GUI.setSelectedModelBuilderVariable(((EquivalenceNode)cell.getValue()).getRefName(), VariableType.SPECIES);
+						if (cell.getValue() instanceof Port)
+						{
+							// System.out.println("port=" + ((mxCell) cell).getValue().toString());
+							Port port = (Port) ((mxCell)cell).getValue();
+							if (port.getParent() == AC_GUI.modelBuilder.getLoadedModule())
+							{
+								AC_GUI.modelBuilder.setSelectedPort((Port)cell.getValue());
+							}
+						}
 					}
 					
 					if (SwingUtilities.isRightMouseButton(e))
@@ -2068,12 +2651,8 @@ public class DrawingBoard extends JPanel
 			public void mouseClicked(MouseEvent e)
 			{
 				mxCell cell = (mxCell) graphComponent.getCellAt(e.getX(), e.getY());
-				String newButtonStyle = "";
-				String newButtonValue = "";
-				String newSubmoduleStyle = "";
 				mxCell parentCell;
 				Module parentMod;
-				boolean buttonPushed = false;
 				
 				if (cell != null)
 				{
@@ -2089,37 +2668,21 @@ public class DrawingBoard extends JPanel
 					if (graph.getModel().getStyle(cell).equalsIgnoreCase("InactiveButton"))
 					{
 						System.out.println("A button was clicked.");
-						newButtonStyle = "ActiveButton";
-						newButtonValue = "-";
-						newSubmoduleStyle = "Submodule_Show_Information";
-						//AC_GUI.modelBuilder.loadModel(parentMod.getMSMBData().getBytes(), true, true);
-						AC_GUI.loadModelBuilder(parentMod, true, true);
-						buttonPushed = true;
+						AC_GUI.setSelectedModule(parentMod);
+						if (submoduleView != null)
+						{
+							// another submoduleView is active
+							// remove the current submoduleView
+							AC_GUI.removeSubmoduleInfoView(activeSubmoduleButtonCell, false);
+						}
+						// display the submodule info
+						AC_GUI.displaySubmoduleInfoView(parentMod, cell);
 					}
 					else if (graph.getModel().getStyle(cell).equalsIgnoreCase("ActiveButton"))
 					{
 						System.out.println("A button was clicked.");
-						newButtonStyle = "InactiveButton";
-						newButtonValue = "+";
-						newSubmoduleStyle = "Submodule_No_Show_Information";
-						//AC_GUI.modelBuilder.loadModel(AC_GUI.activeModule.getMSMBData().getBytes(), false, true);
-						AC_GUI.loadModelBuilder(AC_GUI.activeModule, false, true);
-						buttonPushed = true;
-					}
-					
-					if (buttonPushed)
-					{
-						graph.getModel().beginUpdate();
-						try
-						{
-							graph.getModel().setValue(cell, newButtonValue);
-							graph.getModel().setStyle(cell, newButtonStyle);
-							graph.getModel().setStyle(parentCell, newSubmoduleStyle);
-						}
-						finally
-						{
-							graph.getModel().endUpdate();
-						}
+						AC_GUI.setSelectedModule(parentMod);
+						AC_GUI.removeSubmoduleInfoView(cell, true);
 					}
 				}
 			}
@@ -3622,7 +4185,7 @@ public class DrawingBoard extends JPanel
 							}
 	
 							mxGeometry geo = ((mxCell) cell).getGeometry();
-							graph.updatePortOrientation(cell, geo);
+							graph.updatePortOrientation(cell, geo, false);
 						}
 					});
 	

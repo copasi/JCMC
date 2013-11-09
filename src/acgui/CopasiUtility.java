@@ -33,11 +33,11 @@ public class CopasiUtility
 		return CCopasiRootContainer.addDatamodel();
 	}
 	
-	public String getSBML(String dataModelKey)
+	public String getSBML(String dataModelName)
 	{
 		String sbmlModel = "";
-		CCopasiDataModel dataModel = getCopasiModelFromKey(dataModelKey);
-
+		CCopasiDataModel dataModel = getCopasiModelFromModelName(dataModelName);
+		
 		if(dataModel == null)
 		{
 			System.out.println("Error accessing Copasi Data Models.");
@@ -57,9 +57,9 @@ public class CopasiUtility
 	}
 	
 	
-	public void exportModel(String dataModelKey)
+	public void exportModel(String dataModelName)
 	{
-		CCopasiDataModel dataModel = getCopasiModelFromKey(dataModelKey);
+		CCopasiDataModel dataModel = getCopasiModelFromModelName(dataModelName);
 
 		try
 		{
@@ -74,7 +74,7 @@ public class CopasiUtility
 		System.out.println("SBMLID: " + dataModel.getModel().getSBMLId());
 	}
 	
-	
+	/*
 	public CCopasiDataModel getCopasiModelFromKey(String dataModelKey)
 	{
 		//System.out.println("G key: " + dataModelKey);
@@ -83,6 +83,7 @@ public class CopasiUtility
 		for(long index = 0; index < modelList.size(); index++)
 		{
 			model = CCopasiRootContainer.get(index);
+			
 			//System.out.println("F key: " + model.getModel().getKey());
 			
 			if(dataModelKey.equals(model.getModel().getKey()))
@@ -92,10 +93,44 @@ public class CopasiUtility
 		}
 		return null;
 	}
+	*/
+	
+	public CCopasiDataModel getCopasiModelFromModelName(String dataModelName) {
+		String searchFor = "CN=Root,Model="+dataModelName;
+	 
+		DataModelVector modelList = CCopasiRootContainer.getDatamodelList();
+		CCopasiDataModel model = null;
+		for(long index = 0; index < modelList.size(); index++)
+		{
+			model = CCopasiRootContainer.get(index);
+			//System.out.println("model cn: " + model.getModel().getCN().getString());
+			CObjectInterface whatsit = model.getObject(new CCopasiObjectName(searchFor));
+			if (whatsit == null) {
+							//System.out.println("dont have a: " + searchFor);
+			} else {
+				return model;
+			}
+		}
+		
+		return null;
+	}
 	
 	public long getNumberOfModels()
 	{
 		return CCopasiRootContainer.getDatamodelList().size();
+	}
+	
+	public void printDataModelList()
+	{
+		DataModelVector modelList = CCopasiRootContainer.getDatamodelList();
+		CCopasiDataModel model = null;
+		System.out.println("Number of CCopasiDataModels: " + modelList.size());
+		for(long index = 0; index < modelList.size(); index++)
+		{
+			model = CCopasiRootContainer.get(index);
+			System.out.println("model[" + index + "] cn: " + model.getModel().getCN().getString());
+		}
+		System.out.println();
 	}
 	
 	private void setLayout(Module mod)
@@ -103,7 +138,7 @@ public class CopasiUtility
 		ListIterator<Module> children = mod.getChildren().listIterator();
 		Module child;
 		String name = mod.getName() + "_Layout";
-		CCopasiDataModel dataModel = getCopasiModelFromKey(mod.getKey());
+		CCopasiDataModel dataModel = getCopasiModelFromModelName(mod.getName());
 		CListOfLayouts layoutList = dataModel.getListOfLayouts();
 		CLayout modLayout = new CLayout(name, dataModel);
 		CLDimensions dim = new CLDimensions();
@@ -123,7 +158,7 @@ public class CopasiUtility
 		while(children.hasNext())
 		{
 			child = children.next();
-			childLayout = new CLayout(child.getName() + "_Layout", getCopasiModelFromKey(child.getKey()));
+			childLayout = new CLayout(child.getName() + "_Layout", getCopasiModelFromModelName(child.getName()));
 			comp = new CLCompartmentGlyph();
 			comp.setModelObjectKey(child.getKey());
 			xPos = child.getDrawingCellGeometry().getX();

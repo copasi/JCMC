@@ -218,7 +218,7 @@ public class ACGraph extends mxGraph
 						geo.setY(newY);
 
 						// update the port orientation
-						updatePortOrientation(cell, geo);
+						updatePortOrientation(cell, geo, false);
 					}
 					else
 					{
@@ -357,7 +357,7 @@ public class ACGraph extends mxGraph
 						geo.setY(newY);
 
 						// update the port orientation
-						updatePortOrientation(cell, geo);
+						updatePortOrientation(cell, geo, false);
 					}
 					else
 					{
@@ -384,7 +384,7 @@ public class ACGraph extends mxGraph
 		}
 	}
 
-	public void updatePortOrientation(Object cell, mxGeometry geo)
+	public void updatePortOrientation(Object cell, mxGeometry geo, boolean isMini)
 	{
 		//mxGeometry geo = ((mxCell) cell).getGeometry();
 		double xCoord = geo.getX();
@@ -438,6 +438,11 @@ public class ACGraph extends mxGraph
 
 		newStyle = portType.toString() + "Port_" + shapeOrientation;
 
+		if (isMini)
+		{
+			newStyle += "_Mini";
+		}
+		
 		model.beginUpdate();
 		try
 		{

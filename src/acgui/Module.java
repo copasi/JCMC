@@ -33,6 +33,7 @@ public class Module implements Serializable
 	private mxGeometry drawingCellGeometry;
 	private String drawingCellStyle;
 	private String msmbData;
+	private String id;
 
 	/**
 	 * Construct a module.
@@ -50,6 +51,7 @@ public class Module implements Serializable
 		connections = new ArrayList<Connection>();
 		visibleVariables = new ArrayList<VisibleVariable>();
 		equivalenceNodes = new ArrayList<EquivalenceNode>();
+		id = "";
 	}
 
 	/**
@@ -69,6 +71,7 @@ public class Module implements Serializable
 		connections = new ArrayList<Connection>();
 		visibleVariables = new ArrayList<VisibleVariable>();
 		equivalenceNodes = new ArrayList<EquivalenceNode>();
+		id = "";
 	}
 
 	/**
@@ -89,6 +92,7 @@ public class Module implements Serializable
 		connections = new ArrayList<Connection>();
 		visibleVariables = new ArrayList<VisibleVariable>();
 		equivalenceNodes = new ArrayList<EquivalenceNode>();
+		id = "";
 	}
 	
 	/**
@@ -109,6 +113,7 @@ public class Module implements Serializable
 		connections = new ArrayList<Connection>();
 		visibleVariables = new ArrayList<VisibleVariable>();
 		equivalenceNodes = new ArrayList<EquivalenceNode>();
+		id = "";
 	}
 	
 	/**
@@ -129,6 +134,7 @@ public class Module implements Serializable
 		connections = new ArrayList<Connection>();
 		visibleVariables = new ArrayList<VisibleVariable>();
 		equivalenceNodes = new ArrayList<EquivalenceNode>();
+		id = "";
 	}
 	
 	public Module(String iName, String iKey, String imsmbData, Module iParent)
@@ -145,6 +151,7 @@ public class Module implements Serializable
 		connections = new ArrayList<Connection>();
 		visibleVariables = new ArrayList<VisibleVariable>();
 		equivalenceNodes = new ArrayList<EquivalenceNode>();
+		id = "";
 	}
 	
 	/**
@@ -165,6 +172,7 @@ public class Module implements Serializable
 		connections = new ArrayList<Connection>();
 		visibleVariables = new ArrayList<VisibleVariable>();
 		equivalenceNodes = new ArrayList<EquivalenceNode>();
+		id = "";
 	}
 	
 	/**
@@ -193,6 +201,7 @@ public class Module implements Serializable
 		connections = new ArrayList<Connection>();
 		visibleVariables = new ArrayList<VisibleVariable>();
 		equivalenceNodes = new ArrayList<EquivalenceNode>();
+		id = "";
 	}
 
 	/**
@@ -425,6 +434,16 @@ public class Module implements Serializable
 	public String getMSMBData()
 	{
 		return msmbData;
+	}
+	
+	public void setID(String newID)
+	{
+		id = newID;
+	}
+	
+	public String getID()
+	{
+		return id;
 	}
 	
 	/**

@@ -49,6 +49,10 @@ public class SBMLParser {
 	
 	public static void exportSBML(Module rootModule, String fName)
 	{
+		System.out.println("generateModuleIDs() start.");
+		generateModuleIDs(rootModule);
+		System.out.println("generateModuleIDs() end.");
+		
 		System.out.println("getContainerDefinition() start.");
 		SBMLDocument sdoc = exportContainerDefinition(rootModule);
 		System.out.println("getContainerDefinition() end.");
@@ -114,13 +118,13 @@ public class SBMLParser {
 		
 		String modSBML = "";
 		CCopasiDataModel dataModel;
-		System.out.println("getCopasiModelFromKey() start.");
-		dataModel = AC_GUI.copasiUtility.getCopasiModelFromKey(containerModule.getKey());
+		System.out.println("getCopasiModelFromName() start. " + containerModule.getName());
+		dataModel = AC_GUI.copasiUtility.getCopasiModelFromModelName(containerModule.getName());
 		if (dataModel == null)
 		{
 			System.err.println(containerModule.getName() + "'s dataModel is empty");
 		}
-		System.out.println("getCopasiModelFromKey() end.");
+		System.out.println("getCopasiModelFromName() end. " + containerModule.getName());
 		
 		try
 		{
@@ -164,10 +168,6 @@ public class SBMLParser {
 		setSBMLNamespaces(sdoc, tempDoc.getNamespaces());
 		sdoc.getModel().setId(containerModule.getKey());
 		
-		if (sdoc.getModel() == null)
-		{
-			System.err.println("sdoc.getModel() is null.");
-		}
 		sdoc.getModel().enablePackage("http://www.sbml.org/sbml/level3/version1/comp/version1", "comp", true);
 		sdoc.getModel().enablePackage("http://www.sbml.org/sbml/level3/version1/layout/version1", "layout", true);
 		sdoc.setPackageRequired("layout", false);
@@ -222,7 +222,7 @@ public class SBMLParser {
 		while(children.hasNext())
 		{
 			child = children.next();
-			dataModel = AC_GUI.copasiUtility.getCopasiModelFromKey(child.getKey());
+			dataModel = AC_GUI.copasiUtility.getCopasiModelFromModelName(child.getName());
 			if (dataModel == null)
 			{
 				System.err.println(child.getName() + "'s dataModel is empty");
@@ -1536,5 +1536,32 @@ public class SBMLParser {
 		
 		// set the namespaces for the document
 		System.out.println("set namespaces: " + doc.setNamespaces(sbmlns.getNamespaces()));
+	}
+	
+	private static void generateModuleIDs(Module mod)
+	{
+		int count;
+		String prefix;
+		String id;
+
+		count = 0;
+		prefix = "Model_";
+		
+		id = prefix + count;
+		mod.setID(id);
+		
+		ListIterator<Module> children = mod.getChildren().listIterator();
+		Module child;
+	
+		count++;
+		while(children.hasNext())
+		{
+			child = children.next();
+			id = prefix + count;
+			
+			child.setID(id);
+			
+			count++;
+		}
 	}
 }

@@ -3,11 +3,14 @@
  */
 package acgui;
 
+import java.awt.Component;
 import java.util.Vector;
 
 import javax.swing.JOptionPane;
+import javax.swing.table.TableCellRenderer;
 
 import msmb.commonUtilities.tables.CustomTableModel;
+import msmb.gui.MainGui;
 
 /**
  * @author Thomas
@@ -20,6 +23,7 @@ public class ACCustomTableModel extends CustomTableModel
 	 */
 	private static final long serialVersionUID = 1L;
 	private Vector<Port> portsListed;
+	private boolean displayUneditableTable;
 
 	/**
 	 * @param name
@@ -29,6 +33,7 @@ public class ACCustomTableModel extends CustomTableModel
 	{
 		super(name, alwaysEmptyRow);
 		portsListed = new Vector<Port>();
+		displayUneditableTable = false;
 		// TODO Auto-generated constructor stub
 	}
 
@@ -80,6 +85,20 @@ public class ACCustomTableModel extends CustomTableModel
 	public Port getPort(int index)
 	{
 		return portsListed.get(index);
+	}
+	
+	public void setUneditableTable(boolean uneditable)
+	{
+		displayUneditableTable = uneditable;
+	}
+	
+	@Override
+	public boolean isCellEditable(int row, int column) {
+		if(displayUneditableTable)
+		{
+			return false;
+		}
+		return super.isCellEditable(row, column);
 	}
 	
 	@Override

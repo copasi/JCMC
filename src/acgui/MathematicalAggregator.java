@@ -87,7 +87,7 @@ public class MathematicalAggregator extends Module{
 	    		return;
 	    }
 		
-	    CCopasiDataModel dataModel = AC_GUI.copasiUtility.getCopasiModelFromKey(copasiKey);
+	    CCopasiDataModel dataModel = AC_GUI.copasiUtility.getCopasiModelFromModelName(iName);
 		CModel model = dataModel.getModel();
 		CCompartment comp = model.createCompartment("cell");
 		

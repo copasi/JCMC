@@ -1,6 +1,3 @@
-/**
- * 
- */
 package acgui;
 
 import java.awt.BorderLayout;
@@ -137,6 +134,7 @@ public class TemplateAddEditor extends JDialog implements ListSelectionListener,
 		border2.setTitleJustification(TitledBorder.LEFT);
 		externalTemplate.setBorder(border2);
 		
+		
 		JRadioButton localButton = new JRadioButton("Existing Template");
 	    localButton.setActionCommand("local");
 
@@ -158,8 +156,10 @@ public class TemplateAddEditor extends JDialog implements ListSelectionListener,
 		labelPanel.add(label);
 		labelPanel.add(new JPanel());
 		upperPanel.add(labelPanel, BorderLayout.NORTH);
-        upperPanel.add(localButton, BorderLayout.WEST);
+        
+		upperPanel.add(localButton, BorderLayout.WEST);
         upperPanel.add(externalButton, BorderLayout.EAST);
+        
         //upperPanel.setBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED));
         
         templatePanel = new JPanel();
