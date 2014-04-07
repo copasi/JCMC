@@ -68,11 +68,11 @@ public class ACGraph extends mxGraph
 					+ convertValueToString(model.getTerminal(cell, false));
 		}
 
-		if(((mxCell)cell).getValue() instanceof Port)
+		if(((mxCell)cell).getValue() instanceof PortNode)
 		{
-			if(((Port)((mxCell)cell).getValue()).getParent() == AC_GUI.activeModule)
+			if(((PortNode)((mxCell)cell).getValue()).getParent() == AC_GUI.activeModule)
 			{
-				return ((Port)((mxCell)cell).getValue()).getRefName() + " = " + AC_GUI.modelBuilder.getValue(((Port)((mxCell)cell).getValue()).getRefName());
+				//return ((PortNode)((mxCell)cell).getValue()).getPortDefinition().getRefName() + " = " + AC_GUI.modelBuilder.getValue(((PortNode)((mxCell)cell).getValue()).getPortDefinition().getRefName());
 			}
 		}
 		
@@ -119,7 +119,7 @@ public class ACGraph extends mxGraph
 		
 		if (geo != null)
 		{
-			System.out.println("Geo is not null. dx=" + dx + " dy=" + dy);
+			//System.out.println("Geo is not null. dx=" + dx + " dy=" + dy);
 			geo = (mxGeometry) geo.clone();
 			geo.translate(dx, dy);
 
@@ -131,7 +131,7 @@ public class ACGraph extends mxGraph
 			}
 			*/
 			
-			if (value instanceof acgui.Port)
+			if (value instanceof acgui.PortNode)
 			{
 				Object cellParent = model.getParent(cell);
 				if (cellParent == getDefaultParent() || cellParent == getCurrentRoot())
@@ -386,6 +386,7 @@ public class ACGraph extends mxGraph
 
 	public void updatePortOrientation(Object cell, mxGeometry geo, boolean isMini)
 	{
+		
 		//mxGeometry geo = ((mxCell) cell).getGeometry();
 		double xCoord = geo.getX();
 		double yCoord = geo.getY();
@@ -394,8 +395,8 @@ public class ACGraph extends mxGraph
 		String shapeOrientation = "";
 		String shapeColor = "";
 
-		Port port = (Port) ((mxCell) cell).getValue();
-		PortType portType = port.getType();
+		PortNode port = (PortNode) ((mxCell) cell).getValue();
+		PortType portType = port.getPortDefinition().getType();
 
 		if (portType == PortType.OUTPUT)
 		{
@@ -452,6 +453,7 @@ public class ACGraph extends mxGraph
 		{
 			model.endUpdate();
 		}
+		port.setDrawingCellStyle(newStyle);
 	}
 	
 	/**
@@ -502,12 +504,12 @@ public class ACGraph extends mxGraph
 			}
 		}
 		*/
-		if (sourceObject instanceof VisibleVariable)
+		if (sourceObject instanceof VisibleVariableNode)
 		{
 			// the source is a visible variable
-			VisibleVariable sourceVisibleVariable = (VisibleVariable)sourceObject;
+			VisibleVariableNode sourceVisibleVariable = (VisibleVariableNode)sourceObject;
 			
-			if (targetObject instanceof VisibleVariable)
+			if (targetObject instanceof VisibleVariableNode)
 			{
 				// the source is a visible variable
 				// the target is a visible variable
@@ -519,12 +521,12 @@ public class ACGraph extends mxGraph
 				// the target is an equivalence node
 				return "A variable cannot connect to an equivalence node.";
 			}
-			else if (targetObject instanceof Port)
+			else if (targetObject instanceof PortNode)
 			{
 				// the source is a visible variable
 				// the target is a port
-				Port targetPort = (Port)targetObject;
-				PortType targetPortType = ((Port)targetObject).getType();
+				PortNode targetPort = (PortNode)targetObject;
+				PortType targetPortType = ((PortNode)targetObject).getPortDefinition().getType();
 				Module targetModule = targetPort.getParent();
 				
 				if(targetModule == AC_GUI.activeModule)
@@ -540,6 +542,10 @@ public class ACGraph extends mxGraph
 						if (mxGraphModel.getDirectedEdgeCount(model, target, false, edge) != 0)
 						{
 							return "An output port cannot have more than one incoming connection.";
+						}
+						if (createsPortLoop((mxCell)source, (mxCell)target, (mxCell)edge))
+						{
+							return "This connection would create a port loop.";
 						}
 						return null;
 					case EQUIVALENCE:
@@ -559,6 +565,10 @@ public class ACGraph extends mxGraph
 						if (mxGraphModel.getDirectedEdgeCount(model, target, false, edge) != 0)
 						{
 							return "An input port cannot have more than one incoming connection.";
+						}
+						if (createsPortLoop((mxCell)source, (mxCell)target, (mxCell)edge))
+						{
+							return "This connection would create a port loop.";
 						}
 						return null;
 					case OUTPUT:
@@ -582,7 +592,7 @@ public class ACGraph extends mxGraph
 				// the target is an equivalence node
 				return "An equivalence node cannot connect to another equivalence node.";
 			}
-			if (targetObject instanceof VisibleVariable)
+			if (targetObject instanceof VisibleVariableNode)
 			{
 				// the source is an equivalence node
 				// the target is a visible variable
@@ -592,12 +602,12 @@ public class ACGraph extends mxGraph
 				}
 				return null;
 			}
-			else if (targetObject instanceof Port)
+			else if (targetObject instanceof PortNode)
 			{
 				// the source is an equivalence node
 				// the target is a port
-				Port targetPort = (Port)targetObject;
-				PortType targetPortType = ((Port)targetObject).getType();
+				PortNode targetPort = (PortNode)targetObject;
+				PortType targetPortType = ((PortNode)targetObject).getPortDefinition().getType();
 				Module targetModule = targetPort.getParent();
 				
 				if (targetModule == AC_GUI.activeModule)
@@ -652,11 +662,11 @@ public class ACGraph extends mxGraph
 				}
 			}
 		}
-		else if (sourceObject instanceof Port)
+		else if (sourceObject instanceof PortNode)
 		{
 			// the source is a port
-			Port sourcePort = (Port)sourceObject;
-			PortType sourcePortType = sourcePort.getType();
+			PortNode sourcePort = (PortNode)sourceObject;
+			PortType sourcePortType = sourcePort.getPortDefinition().getType();
 			Module sourceModule = sourcePort.getParent();
 			
 			if (sourceModule == AC_GUI.activeModule)
@@ -670,7 +680,7 @@ public class ACGraph extends mxGraph
 					// the target is an equivalence node
 					return "A module port cannot connect to an equivalence node.";
 				}
-				else if (targetObject instanceof VisibleVariable)
+				else if (targetObject instanceof VisibleVariableNode)
 				{
 					// the source is a port
 					// the sourceModule is the active module
@@ -682,6 +692,10 @@ public class ACGraph extends mxGraph
 						{
 							return "A variable cannot have more than one incoming connection.";
 						}
+						if (createsPortLoop((mxCell)source, (mxCell)target, (mxCell)edge))
+						{
+							return "This connection would create a port loop.";
+						}
 						return null;
 					case OUTPUT:
 						return "A module output port cannot connect to a variable.";
@@ -690,18 +704,22 @@ public class ACGraph extends mxGraph
 						{
 							return "A variable cannot have more than one incoming connection.";
 						}
+						if (createsPortLoop((mxCell)source, (mxCell)target, (mxCell)edge))
+						{
+							return "This connection would create a port loop.";
+						}
 						return null;
 					default:
 							
 					}
 				}
-				else if (targetObject instanceof Port)
+				else if (targetObject instanceof PortNode)
 				{
 					// the source is a port
 					// the sourceModule is the active module
 					// the target is a port
-					Port targetPort = (Port)targetObject;
-					PortType targetPortType = targetPort.getType();
+					PortNode targetPort = (PortNode)targetObject;
+					PortType targetPortType = targetPort.getPortDefinition().getType();
 					Module targetModule = targetPort.getParent();
 					
 					if (sourceModule == targetModule)
@@ -779,7 +797,7 @@ public class ACGraph extends mxGraph
 					// the target is an equivalence node
 					return "A submodule port cannot connect to an equivalence node.";
 				}
-				else if (targetObject instanceof VisibleVariable)
+				else if (targetObject instanceof VisibleVariableNode)
 				{
 					// the source is a port
 					// the sourceModule is a submodule
@@ -793,23 +811,31 @@ public class ACGraph extends mxGraph
 						{
 							return "A variable cannot have more than one incoming connection.";
 						}
+						if (createsPortLoop((mxCell)source, (mxCell)target, (mxCell)edge))
+						{
+							return "This connection would create a port loop.";
+						}
 						return null;
 					case EQUIVALENCE:
 						if (mxGraphModel.getDirectedEdgeCount(model, target, false, edge) != 0)
 						{
 							return "A variable cannot have more than one incoming connection.";
 						}
+						if (createsPortLoop((mxCell)source, (mxCell)target, (mxCell)edge))
+						{
+							return "This connection would create a port loop.";
+						}
 						return null;
 					default:
 					}
 				}
-				else if (targetObject instanceof Port)
+				else if (targetObject instanceof PortNode)
 				{
 					// the source is a port
 					// the sourceModule is a submodule
 					// the target is a port
-					Port targetPort = (Port)targetObject;
-					PortType targetPortType = targetPort.getType();
+					PortNode targetPort = (PortNode)targetObject;
+					PortType targetPortType = targetPort.getPortDefinition().getType();
 					Module targetModule = targetPort.getParent();
 					
 					if (targetModule == AC_GUI.activeModule)
@@ -1057,5 +1083,61 @@ public class ACGraph extends mxGraph
 		}
 		*/
 		return null;
+	}
+	
+	private boolean createsPortLoop(mxCell source, mxCell target, mxCell edge)
+	{
+		Module sourceModule = null;
+		if (((mxCell)source).getValue() instanceof VisibleVariableNode)
+		{
+			if (mxGraphModel.getDirectedEdgeCount(model, source, false, edge) == 0)
+			{
+				return false;
+			}
+			//mxCell existingEdgeSource = (mxCell)((mxCell)model.getEdgeAt(source, 0)).getSource();
+			mxCell existingEdgeSource = (mxCell)((mxCell)mxGraphModel.getIncomingEdges(model, source)[0]).getSource();
+			if (existingEdgeSource.getValue() instanceof PortNode)
+			{
+				sourceModule = ((PortNode)existingEdgeSource.getValue()).getParent();
+				if (target.getValue() instanceof PortNode)
+				{
+					if (((PortNode)target.getValue()).getParent() == sourceModule)
+					{
+						return true;
+					}
+					return false;
+				}
+			}
+			else
+			{
+				return false;
+			}
+		}
+		else if (((mxCell)source).getValue() instanceof PortNode)
+		{
+			if (mxGraphModel.getDirectedEdgeCount(model, target, true, edge) == 0)
+			{
+				return false;
+			}
+			sourceModule = ((PortNode)((mxCell)source).getValue()).getParent();
+		}
+		else
+		{
+			return true;
+		}
+		
+		Object targetOutgoingEdges [] = mxGraphModel.getOutgoingEdges(model, target);
+		for (int i = 0; i < targetOutgoingEdges.length; i++)
+		{
+			if (((mxCell)targetOutgoingEdges[i]).getTarget().getValue() instanceof PortNode)
+			{
+				PortNode port = (PortNode)((mxCell)targetOutgoingEdges[i]).getTarget().getValue();
+				if (port.getParent() == sourceModule)
+				{
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 }

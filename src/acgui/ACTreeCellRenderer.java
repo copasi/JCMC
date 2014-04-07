@@ -37,8 +37,8 @@ public class ACTreeCellRenderer extends DefaultTreeCellRenderer
         super.getTreeCellRendererComponent(tree, value, selected, expanded, leaf, row, hasFocus);
  
         DefaultMutableTreeNode currentNode =  (DefaultMutableTreeNode) value;
-        Module currentModule = AC_GUI.masterModuleList.findModule(currentNode);
-        if (currentModule == AC_GUI.drawingBoard.getActiveModule())
+        Module currentModule = (Module)currentNode.getUserObject();
+        if (currentModule == AC_GUI.activeModule)
         {
             setFont(boldFont);
         }

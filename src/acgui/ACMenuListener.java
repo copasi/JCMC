@@ -19,7 +19,10 @@ public class ACMenuListener implements ActionListener
 {
 
 	JFileChooser fileChooser;
-	private String eol;
+	File file;
+	String fileName;
+	String msg;
+	
 	/**
 	 * Detect which action occurred and perform the appropriate task.
 	 * @param ae the action event
@@ -37,27 +40,25 @@ public class ACMenuListener implements ActionListener
 		Module parentMod;
 		DefaultMutableTreeNode node;
 		DefaultMutableTreeNode parent;
-		eol = System.getProperty("line.separator");
+		ModuleAddEditor moduleAddEditor;
+		MathematicalAggregatorAddEditor mathAddEditor;
 		
 		
 		switch(selection)
 		{
 		case NEW:
 			//JOptionPane.showMessageDialog(null, "An empty model will be created (not yet implemented).");
-			name = null;
-			if (AC_GUI.isModuleOpen() == false)
+			if (AC_GUI.isModuleOpen())
 			{
-				name = JOptionPane.showInputDialog("Name of the new module:", "Module");
-				if ((name != null) && (!name.isEmpty()))
-				{
-					name = AC_GUI.nameValidation(name);
-					AC_GUI.currentGUI.newModule(name);
-				}
+				msg = "There is already a Module opened. Please close the current Module first.";
+				JOptionPane.showMessageDialog(null, msg);
 			}
 			else
 			{
-				JOptionPane.showMessageDialog(null,
-						"Please save and close the current module first.");
+				moduleAddEditor = new ModuleAddEditor(null, AC_GUI.drawingBoard.graphComponent, "Create");
+				moduleAddEditor.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+				moduleAddEditor.setModal(true);
+				moduleAddEditor.setVisible(true);
 			}
 			break;
 		case OPEN:
@@ -66,16 +67,24 @@ public class ACMenuListener implements ActionListener
 					null,
 					"An existing model will be opened from a SBML file and will load the three panels accordingly (not yet implemented).");
 			*/
-			fileChooser = new JFileChooser(".");
-    		
-            if (fileChooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) 
-            {
-            	File file = fileChooser.getSelectedFile();
-                //inputFile = file.getName().substring(0,file.getName().lastIndexOf("."));
-            	String ext = file.getAbsolutePath().substring(file.getAbsolutePath().lastIndexOf("."));
-				AC_GUI.currentGUI.load(file.getAbsolutePath());
-            	//AC_GUI.currentGUI.loadTest(file.getAbsolutePath());
-            }
+			if (AC_GUI.isModuleOpen())
+			{
+				msg = "There is already a Module opened. Please close the current Module first.";
+				JOptionPane.showMessageDialog(null, msg);
+			}
+			else
+			{
+				fileChooser = new JFileChooser(".");
+	    		
+	            if (fileChooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) 
+	            {
+	            	File file = fileChooser.getSelectedFile();
+	                //inputFile = file.getName().substring(0,file.getName().lastIndexOf("."));
+	            	String ext = file.getAbsolutePath().substring(file.getAbsolutePath().lastIndexOf("."));
+					AC_GUI.load(file.getAbsolutePath(), true);
+	            	//AC_GUI.currentGUI.loadTest(file.getAbsolutePath());
+	            }
+			}
 			break;
 		case RECENT:
 			JOptionPane.showMessageDialog(null,
@@ -92,45 +101,139 @@ public class ACMenuListener implements ActionListener
 			JOptionPane.showMessageDialog(null, "The module has been saved in " + fileName + ".");
 			*/
 			//return;
-			
-			String fileName = null;
-			fileChooser = new JFileChooser (new File ("."));
-			fileChooser.setFileFilter (new FileNameExtensionFilter("Model file (.ac)","ac"));
+			if (AC_GUI.isModuleOpen())
+			{
+				fileName = null;
+				fileChooser = new JFileChooser (new File ("."));
+				fileChooser.setFileFilter (new FileNameExtensionFilter("Model file (.ac)","ac"));
+				while (fileChooser.showSaveDialog(null) == JFileChooser.APPROVE_OPTION)
+				{
+					file = fileChooser.getSelectedFile();
+					fileName = file.getName();
+					try
+					{
+						if (file.exists())
+						{
+							String msg = "A file named \"" + fileName + "\" already exists.  Do you want to replace it?";
+							int n = JOptionPane.showConfirmDialog(null, msg, "", JOptionPane.OK_CANCEL_OPTION);
+							if (n == JOptionPane.OK_OPTION)
+							{
+								fileName = file.getAbsolutePath();
+								if (!fileName.endsWith(".ac"))
+								{
+									fileName += ".ac";
+								}
+								AC_GUI.save(AC_GUI.activeModule, fileName);
+								JOptionPane.showMessageDialog(null, "The module has been saved in " + fileName);
+								break;
+							}
+						}
+						else
+						{
+							fileName = file.getAbsolutePath();
+							if (!fileName.endsWith(".ac"))
+							{
+								fileName += ".ac";
+							}
+							AC_GUI.save(AC_GUI.activeModule, fileName);
+							JOptionPane.showMessageDialog(null, "The module has been saved in " + fileName);
+							break;
+						}
+					}
+					catch (Exception e)
+					{
+						System.err.println("ACMenuListener: save failed.");
+						e.printStackTrace();
+					}
+				}
+			}
+			else
+			{
+				JOptionPane.showMessageDialog(null, "Please create a new module first.");
+			}
+			/*
 			if (fileChooser.showSaveDialog(null) == JFileChooser.APPROVE_OPTION)
 			{
+				file = fileChooser.getSelectedFile();
+				
 				fileName = fileChooser.getSelectedFile().getAbsolutePath();
-				if (!fileName.endsWith (".ac"))
+				if (!fileName.endsWith(".ac"))
 				{
 					fileName += ".ac";
 				}
-				AC_GUI.currentGUI.save(fileName);
+				AC_GUI.save(AC_GUI.activeModule, fileName);
 				JOptionPane.showMessageDialog(null, "The module has been saved in " + fileName);
 			}
-			
-			
+			*/
 			break;
 		case SAVE_AS:
 			JOptionPane.showMessageDialog(null,
 					"Will save the entire model in one SBML file (not yet implemented).");
 			break;
 		case EXPORT_SBML:
-			String fileName2 = null;
-			fileChooser = new JFileChooser (new File ("."));
-			fileChooser.setFileFilter (new FileNameExtensionFilter("SBML file (.xml)","xml"));
-			if (fileChooser.showSaveDialog(null) == JFileChooser.APPROVE_OPTION)
+			if (AC_GUI.isModuleOpen())
 			{
-				fileName2 = fileChooser.getSelectedFile().getAbsolutePath();
-				if (!fileName2.endsWith (".xml"))
+				fileName = null;
+				fileChooser = new JFileChooser (new File ("."));
+				fileChooser.setFileFilter (new FileNameExtensionFilter("SBML file (.xml)","xml"));
+				if (fileChooser.showSaveDialog(null) == JFileChooser.APPROVE_OPTION)
 				{
-					fileName2 += ".xml";
+					fileName = fileChooser.getSelectedFile().getAbsolutePath();
+					if (!fileName.endsWith (".xml"))
+					{
+						fileName += ".xml";
+					}
+					//AC_GUI.currentGUI.save(fileName2);
+					AC_GUI.exportSBML(fileName);
 				}
-				//AC_GUI.currentGUI.save(fileName2);
-				AC_GUI.exportSBML(fileName2);
-				JOptionPane.showMessageDialog(null, "The module has been saved in " + fileName2);
+				while (fileChooser.showSaveDialog(null) == JFileChooser.APPROVE_OPTION)
+				{
+					file = fileChooser.getSelectedFile();
+					fileName = file.getName();
+					try
+					{
+						if (file.exists())
+						{
+							String msg = "A file named \"" + fileName + "\" already exists.  Do you want to replace it?";
+							int n = JOptionPane.showConfirmDialog(null, msg, "", JOptionPane.OK_CANCEL_OPTION);
+							if (n == JOptionPane.OK_OPTION)
+							{
+								fileName = file.getAbsolutePath();
+								if (!fileName.endsWith(".xml"))
+								{
+									fileName += ".xml";
+								}
+								AC_GUI.exportSBML(fileName);
+								JOptionPane.showMessageDialog(null, "The SBML file has been saved in " + fileName);
+								break;
+							}
+						}
+						else
+						{
+							fileName = file.getAbsolutePath();
+							if (!fileName.endsWith(".xml"))
+							{
+								fileName += ".xml";
+							}
+							AC_GUI.exportSBML(fileName);
+							JOptionPane.showMessageDialog(null, "The SBML file has been saved in " + fileName);
+							break;
+						}
+					}
+					catch (Exception e)
+					{
+						System.err.println("ACMenuListener: exportSBML failed.");
+						e.printStackTrace();
+					}
+				}
+			}
+			else
+			{
+				JOptionPane.showMessageDialog(null, "Please create a new module first.");
 			}
 			break;
 		case PREFERENCES:
-			AC_GUI.openPreferencesMSMB();
+			//AC_GUI.openPreferencesMSMB();
 			break;
 		case CLOSE:
 			/*
@@ -141,55 +244,41 @@ public class ACMenuListener implements ActionListener
 			AC_GUI.close();
 			break;
 		case EXIT:
+			/*
 			JOptionPane.showMessageDialog(
 					null,
 					"Will exit from the tool after the completing the steps described under the Close menu item (not yet implemented).");
+			*/
+			AC_GUI.exit();
 			break;
 		case ADD_SUBMODULE_NEW:
 			//JOptionPane.showMessageDialog(null, "Will add an empty submodule under the module selected in the TreeView (not yet implemented).");
-			name = null;
-			//node = AC_GUI.selectedModule.getTreeNode();
-			parentMod = null;
-
 			if (AC_GUI.isModuleOpen())
 			{
-				if (AC_GUI.selectedModule != null)
-				{
-					//parent = AC_GUI.moduleList.findModule(node);
-					parentMod = AC_GUI.selectedModule;
-					if (parentMod == AC_GUI.drawingBoard.getActiveModule())
-					{
-						name = JOptionPane.showInputDialog("Name of the new submodule:", "Submodule");
-						name = AC_GUI.nameValidation(name);
-						AC_GUI.currentGUI.newSubmodule(name, parentMod);
-					}
-					else
-					{
-						JOptionPane.showMessageDialog(null,
-								"You can only add submodules to the active module.");
-					}
-				}
-				else
-				{
-					// no node was selected.
-					JOptionPane.showMessageDialog(null,
-							"Please select a module from the tree to add a submodule.");
-				}
+				moduleAddEditor = new ModuleAddEditor(AC_GUI.activeModule, AC_GUI.drawingBoard.graphComponent, "Add");
+				moduleAddEditor.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+				moduleAddEditor.setModal(true);
+				moduleAddEditor.setVisible(true);
 			}
 			else
 			{
-				JOptionPane.showMessageDialog(null,
-						"Please create a new module first.");
+				JOptionPane.showMessageDialog(null, "Please create a new module first.");
 			}
 			break;
-		case ADD_SUBMODULE_TEMPLATE:
-			
-			TemplateAddEditor tae = new TemplateAddEditor(AC_GUI.drawingBoard.graphComponent);
-			tae.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-			tae.setModal(true);
-			tae.setVisible(true);
-			/*
+		case ADD_SUBMODULE_LOAD:
 			//JOptionPane.showMessageDialog(null,"Will open up a file selection dialog box to select an already saved template model and will add that as a submodule under the selected module (not yet implemented).");
+			if (AC_GUI.isModuleOpen())
+			{
+				SubmoduleAddEditor tae = new SubmoduleAddEditor(AC_GUI.drawingBoard.graphComponent);
+				tae.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+				tae.setModal(true);
+				tae.setVisible(true);
+			}
+			else
+			{
+				JOptionPane.showMessageDialog(null, "Please create a new module first.");
+			}
+			/*
 			name = null;
 			//node = AC_GUI.selectedModule.getTreeNode();
 			parentMod = null;
@@ -234,50 +323,81 @@ public class ACMenuListener implements ActionListener
 			*/
 			break;
 		case ADD_SUMMATION_MODULE:
+			/*
 			MathAggregatorAddEditor mathAdd1 = new MathAggregatorAddEditor(AC_GUI.drawingBoard.graphComponent, Operation.SUM);
 			mathAdd1.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 			mathAdd1.setModal(true);
 			mathAdd1.setVisible(true);
+			*/
+			if (AC_GUI.isModuleOpen())
+			{
+				mathAddEditor = new MathematicalAggregatorAddEditor(AC_GUI.drawingBoard.graphComponent, Operation.SUM);
+				mathAddEditor.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+				mathAddEditor.setModal(true);
+				mathAddEditor.setVisible(true);
+			}
+			else
+			{
+				JOptionPane.showMessageDialog(null, "Please create a new module first.");
+			}
 			break;
 		case ADD_PRODUCT_MODULE:
+			/*
 			MathAggregatorAddEditor mathAdd2 = new MathAggregatorAddEditor(AC_GUI.drawingBoard.graphComponent, Operation.PRODUCT);
 			mathAdd2.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 			mathAdd2.setModal(true);
 			mathAdd2.setVisible(true);
+			*/
+			if (AC_GUI.isModuleOpen())
+			{
+				mathAddEditor = new MathematicalAggregatorAddEditor(AC_GUI.drawingBoard.graphComponent, Operation.PRODUCT);
+				mathAddEditor.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+				mathAddEditor.setModal(true);
+				mathAddEditor.setVisible(true);
+			}
+			else
+			{
+				JOptionPane.showMessageDialog(null, "Please create a new module first.");
+			}
 			break;
 		case SAVE_SUBMODULE_AS_TEMPLATE:
 			break;
 		case REMOVE_SUBMODULE:
-			//JOptionPane.showMessageDialog(null, "Will add an empty submodule under the module selected in the TreeView (not yet implemented).");
 			
-
 			if (AC_GUI.isModuleOpen())
 			{
 				if (AC_GUI.selectedModule != null)
 				{
 					node = AC_GUI.selectedModule.getTreeNode();
 					parent = (DefaultMutableTreeNode)(node.getParent());
-					if (parent != null)
+					if (parent != AC_GUI.treeView.getRootNode())
 					{
-						if (AC_GUI.selectedModule != AC_GUI.drawingBoard.getActiveModule())
+						if (AC_GUI.selectedModule != AC_GUI.activeModule)
 						{
-							AC_GUI.currentGUI.removeSubmodule(AC_GUI.selectedModule);
+							AC_GUI.removeSubmodule(AC_GUI.selectedModule);
 						}
 						else
 						{
-							JOptionPane.showMessageDialog(null, "Cannot remove the active module.");
+							// the activeModule was selected
+							JOptionPane.showMessageDialog(null,
+								    "Cannot remove the active module.",
+								    "Invalid Operation",
+								    JOptionPane.WARNING_MESSAGE);
 						}
 					}
 					else
 					{
-						// the root was selected
-						JOptionPane.showMessageDialog(null, "Cannot remove the RootNode.");
+						// the root Module was selected
+						JOptionPane.showMessageDialog(null,
+							    "Cannot remove the RootNode.",
+							    "Invalid Operation",
+							    JOptionPane.WARNING_MESSAGE);
 					}
 
 				}
 				else
 				{
-					// no node was selected.
+					// no Module was selected.
 					JOptionPane.showMessageDialog(null,
 							"Please select a module from the tree to remove.");
 				}
@@ -285,13 +405,16 @@ public class ACMenuListener implements ActionListener
 			else
 			{
 				JOptionPane.showMessageDialog(null,
-						"No modules are open to be removed.");
+						"No modules are currently open.");
 			}
-			
 			break;
 		case VALIDATE_MODEL:
-			JOptionPane.showMessageDialog(null,
-					"Check if the model is a valid SBML model (not yet implemented).");
+			//JOptionPane.showMessageDialog(null, "Check if the model is a valid SBML model (not yet implemented).");
+			if (AC_GUI.rootModule != null)
+			{
+				AC_Utility.validateAllModules();
+				//AC_Utility.validateModule(AC_GUI.rootModule);
+			}
 			break;
 		case VIEW_MODEL:
 			JOptionPane.showMessageDialog(null,
@@ -306,18 +429,13 @@ public class ACMenuListener implements ActionListener
 					"Needs further discussion and exploration (not yet implemented).");
 			break;
 		case HELP_CONTENTS:
-			JOptionPane.showMessageDialog(null,
-					"Will display some sort of help tool (not yet implemented).");
-			/*
-			TemplateAddEditor tae = new TemplateAddEditor(AC_GUI.drawingBoard.graphComponent);
-			tae.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-			tae.setModal(true);
-			tae.setVisible(true);
-			*/
+			JOptionPane.showMessageDialog(null, "Will display some sort of help tool (not yet implemented).");
+			//AC_Utility.printModuleTree();
 			break;
 		case ABOUT_AGGREGATION_CONNECTOR:
-			JOptionPane.showMessageDialog(null,
-					"Will give information about the tool (not yet implemented).");
+			JOptionPane.showMessageDialog(null, "Will give information about the tool (not yet implemented).");
+			//System.out.println("Copasi data model number: " + CopasiUtility.getNumberOfModels());
+			//CopasiUtility.printDataModelList();
 			break;
 		default:
 			JOptionPane.showMessageDialog(null,

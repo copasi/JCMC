@@ -9,16 +9,16 @@ import java.util.HashMap;
 import java.util.ListIterator;
 import java.util.Map;
 
-import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.JOptionPane;
 
-import org.COPASI.CCopasiDataModel;
+import org.sbml.libsbml.SBMLDocument;
 
 import com.mxgraph.model.mxCell;
 import com.mxgraph.model.mxGeometry;
 
 /**
- * @author T.C. Jones
- * @version March 25, 2013
+ * @author Thomas
+ *
  */
 public class AC_IO
 {
@@ -30,10 +30,11 @@ public class AC_IO
 	{
 		
 	}
-	
+
 	public static void saveModule(Module mod, String fileName)
 	{
-		Map<String, Object> data = packModule(mod);
+		AC_Utility.createUniqueIDs(mod);
+		Map<String, Object> data = packModule(mod, true);
 		
 		try
 		{ 
@@ -70,604 +71,1300 @@ public class AC_IO
 		
 		if(data != null)
 		{
-			mod = unpackModule(data, parent);
-			System.out.println(mod.getName() + " successfully loaded.");
+			mod = unpackModule(data, parent, true);
+			if (mod != null)
+			{
+				// check to make sure all module names are valid
+				if (parent != null)
+				{
+					parent.addChild(mod);
+				}
+				System.out.println(mod.getModuleDefinition().getName() + " successfully loaded.");
+				
+				AC_Utility.addTreeNode(mod);
+			}
 		}
 		
 		return mod;
 	}
 	
-	private static Map<String, Object> packModule(Module mod)
+	private static Map<String, Object> packModuleDefinition(ModuleDefinition definition)
 	{
 		Map<String, Object> data = new HashMap<String, Object>();
 		ArrayList<Map<String, Object>> packedList;
-		data.put("name", mod.getName());
-		data.put("msmbData", mod.getMSMBData());
-		data.put("treeNode", mod.getTreeNode());
-		data.put("drawingCell", mod.getDrawingCell());
-		data.put("copasiDatamodelKey", mod.getKey());
-		data.put("drawingCellStyle", mod.getDrawingCellStyle());
-		data.put("drawingCellGeometry", mod.getDrawingCellGeometry());
+		int count;
+		data.put("name", definition.getName());
+		data.put("msmbData", definition.getMSMBData());
+		data.put("id", definition.getID());
+		data.put("external", definition.isExternal() ? 1 : 0);
+		data.put("externalSource", definition.getExternalSource());
+		data.put("externalModelRef", definition.getExternalModelRef());
+		data.put("md5", definition.getmd5());
 		
-		if(mod instanceof MathematicalAggregator)
+		if (definition.getParent() == null)
 		{
-			data.put("mathAgg", "yes");
-			return packMathAggregator(data, (MathematicalAggregator)mod);
+			data.put("parent", null);
 		}
-		data.put("mathAgg", "no");
+		else
+		{
+			data.put("parent", definition.getParent().getName());
+		}
+		
+		if (definition instanceof MathematicalAggregatorDefinition)
+		{
+			data.put("MathematicalAggregator", "yes");
+			return packMathematicalAggregatorDefinition(data, (MathematicalAggregatorDefinition)definition);
+		}
+		data.put("MathematicalAggregator", "no");
+		
+		// pack the PortDefinitions
+		packedList = null;
+		count = definition.getPorts().size();
+		if (count != 0)
+		{
+			packedList = new ArrayList<Map<String, Object>>(count);
+			ListIterator<ACComponentDefinition> ports = definition.getPorts().listIterator();
+			while(ports.hasNext())
+			{
+				packedList.add(packPortDefinition((PortDefinition)ports.next()));
+			}
+		}
+		data.put("portDefinitions", packedList);
 		
 		// pack the submodules
 		packedList = null;
-		int submoduleCount = mod.getChildren().size();
-		if(submoduleCount != 0)
+		count = definition.getChildren().size();
+		if(count != 0)
 		{
-			packedList = new ArrayList<Map<String, Object>>(submoduleCount);
-			ListIterator<Module> children = mod.getChildren().listIterator();
+			packedList = new ArrayList<Map<String, Object>>(count);
+			ListIterator<ModuleDefinition> children = definition.getChildren().listIterator();
 			while(children.hasNext())
 			{
-				packedList.add(packModule(children.next()));
+				packedList.add(packModuleDefinition(children.next()));
 			}
 		}
-		
-		data.put("children", packedList);
-		
-		// pack the ports
-		packedList = null;
-		int portCount = mod.getPorts().size();
-		if(portCount != 0)
-		{
-			packedList = new ArrayList<Map<String, Object>>(portCount);
-			ListIterator<Port> ports = mod.getPorts().listIterator();
-			while(ports.hasNext())
-			{
-				packedList.add(packPort(ports.next()));
-			}
-		}
-		
-		data.put("ports", packedList);
-		
+		data.put("childrenDefinitions", packedList);
+				
 		// pack the visible variables
 		packedList = null;
-		int visibleVariableCount = mod.getVisibleVariables().size();
-		if(visibleVariableCount != 0)
+		count = definition.getVisibleVariables().size();
+		if(count != 0)
 		{
-			packedList = new ArrayList<Map<String, Object>>(visibleVariableCount);
-			ListIterator<VisibleVariable> vars = mod.getVisibleVariables().listIterator();
+			packedList = new ArrayList<Map<String, Object>>(count);
+			ListIterator<ACComponentDefinition> vars = definition.getVisibleVariables().listIterator();
 			while(vars.hasNext())
 			{
-				packedList.add(packVisibleVariable(vars.next()));
+				packedList.add(packVisibleVariableDefinition((VisibleVariableDefinition)vars.next()));
 			}
 		}
-		
-		data.put("visibleVariables", packedList);
+		data.put("visibleVariableDefinitions", packedList);
 		
 		// pack the equivalence nodes
 		packedList = null;
-		int equivalenceNodeCount = mod.getEquivalenceNodes().size();
-		if(equivalenceNodeCount != 0)
+		count = definition.getEquivalences().size();
+		if(count != 0)
 		{
-			packedList = new ArrayList<Map<String, Object>>(equivalenceNodeCount);
-			ListIterator<EquivalenceNode> eNodes = mod.getEquivalenceNodes().listIterator();
+			packedList = new ArrayList<Map<String, Object>>(count);
+			ListIterator<ACComponentDefinition> eNodes = definition.getEquivalences().listIterator();
 			while(eNodes.hasNext())
 			{
-				packedList.add(packEquivalenceNode(eNodes.next()));
+				packedList.add(packEquivalenceDefinition((EquivalenceDefinition)eNodes.next()));
+			}
+		}
+		data.put("equivalenceDefinitions", packedList);
+		
+		// pack the connections
+		packedList = null;
+		count = definition.getConnections().size();
+		if(count != 0)
+		{
+			packedList = new ArrayList<Map<String, Object>>(count);
+			ListIterator<ConnectionDefinition> connections = definition.getConnections().listIterator();
+			while(connections.hasNext())
+			{
+				packedList.add(packConnectionDefinition(connections.next()));
+			}
+		}
+		data.put("connectionDefinitions", packedList);
+				
+		return data;
+	}
+	
+	private static ModuleDefinition unpackModuleDefinition(Map<String, Object> data, ModuleDefinition parent)
+	{
+		ArrayList<Map<String, Object>> packedList;
+		ListIterator<Map<String, Object>> packedListIterator;
+		String isAggregator = (String)data.get("MathematicalAggregator");
+		if (isAggregator.equals("yes"))
+		{
+			return unpackMathematicalAggregatorDefinition(data, parent);
+		}
+		String name = (String)data.get("name");
+		byte[] msmbData = (byte[])data.get("msmbData");
+		String id = (String)data.get("id");
+		int isExternal = (int)data.get("external");
+		boolean external = (1 == isExternal);
+		String externalSource = (String)data.get("externalSource");
+		String externalModelRef = (String)data.get("externalModelRef");
+		String md5 = (String)data.get("md5");
+		
+		
+		//ModuleDefinition definition = new ModuleDefinition(name, parent, msmbData);
+		name = validateModuleName(name);
+		if (name == null)
+		{
+			return null;
+		}
+		ModuleDefinition definition = AC_Utility.createModuleDefinition(name, parent, msmbData, true);
+		definition.setID(id);
+		definition.setExternal(external);
+		definition.setExternalSource(externalSource);
+		definition.setExternalModelRef(externalModelRef);
+		definition.setmd5(md5);
+		
+		// unpack PortDefinitions
+		if(data.get("portDefinitions") != null)
+		{
+			System.out.println("Found " + definition.getName() + "'s ports.");
+			packedList = (ArrayList<Map<String, Object>>)data.get("portDefinitions");
+			packedListIterator = packedList.listIterator();
+			while(packedListIterator.hasNext())
+			{
+				definition.addPort(unpackPortDefinition(packedListIterator.next(), definition));
 			}
 		}
 		
+		// unpack submodules
+		if(data.get("childrenDefinitions") != null)
+		{
+			System.out.println("Found " + definition.getName() + "'s children.");
+			packedList = (ArrayList<Map<String, Object>>)data.get("childrenDefinitions");
+			packedListIterator = packedList.listIterator();
+			while(packedListIterator.hasNext())
+			{
+				unpackModuleDefinition(packedListIterator.next(), definition);
+			}
+		}
+		
+		// unpack VisibleVariableDefinitions
+		if(data.get("visibleVariableDefinitions") != null)
+		{
+			System.out.println("Found " + definition.getName() + "'s visible variable definitions.");
+			packedList = (ArrayList<Map<String, Object>>)data.get("visibleVariableDefinitions");
+			packedListIterator = packedList.listIterator();
+			while(packedListIterator.hasNext())
+			{
+				definition.addVisibleVariable(unpackVisibleVariableDefinition(packedListIterator.next(), definition));
+			}
+		}
+		
+		// unpack EquivalenceDefinitions
+		if(data.get("equivalenceDefinitions") != null)
+		{
+			System.out.println("Found " + definition.getName() + "'s equivalence definitions.");
+			packedList = (ArrayList<Map<String, Object>>)data.get("equivalenceDefinitions");
+			packedListIterator = packedList.listIterator();
+			while(packedListIterator.hasNext())
+			{
+				definition.addEquivalence(unpackEquivalenceDefinition(packedListIterator.next(), definition));
+			}
+		}
+		
+		// unpack ConnectionDefinitions
+		if(data.get("connectionDefinitions") != null)
+		{
+			System.out.println("Found " + definition.getName() + "'s connection definitions.");
+			packedList = (ArrayList<Map<String, Object>>)data.get("connectionDefinitions");
+			packedListIterator = packedList.listIterator();
+			while(packedListIterator.hasNext())
+			{
+				definition.addConnection(unpackConnectionDefinition(packedListIterator.next(), definition));
+			}
+		}
+		
+		return definition;
+	}
+	
+	private static void unpackAllConnectionDefinitions(Map<String, Object> data, ModuleDefinition definition)
+	{
+		ArrayList<Map<String, Object>> packedList;
+		ListIterator<Map<String, Object>> packedListIterator;
+		
+		
+	}
+	
+	private static Map<String, Object> packMathematicalAggregatorDefinition(Map<String, Object> data, MathematicalAggregatorDefinition definition)
+	{
+		ArrayList<Map<String, Object>> packedList;
+		int count;
+		char operation;
+		
+		switch (definition.getOperation())
+		{
+			case PRODUCT:
+				operation = 'P';
+				break;
+			case SUM:
+				operation = 'S';
+				break;
+			default:
+				operation = '0';
+		}
+		
+		data.put("inputNumber", definition.getNumberofInputs());
+		data.put("operation", operation);
+		
+		// pack the PortDefinitions
+		packedList = null;
+		count = definition.getPorts().size();
+		if (count != 0)
+		{
+			packedList = new ArrayList<Map<String, Object>>(count);
+			ListIterator<ACComponentDefinition> ports = definition.getPorts().listIterator();
+			while(ports.hasNext())
+			{
+				packedList.add(packPortDefinition((PortDefinition)ports.next()));
+			}
+		}
+		data.put("portDefinitions", packedList);
+		
+		return data;
+	}
+	
+	private static MathematicalAggregatorDefinition unpackMathematicalAggregatorDefinition(Map<String, Object> data, ModuleDefinition parent)
+	{
+		ArrayList<Map<String, Object>> packedList;
+		ListIterator<Map<String, Object>> packedListIterator;
+		String name = (String)data.get("name");
+		byte[] msmbData = (byte[])data.get("msmbData");
+		String id = (String)data.get("id");
+		int inputNumber = (int)data.get("inputNumber");
+		char operation = (char)data.get("operation");
+		
+		Operation op = null;		
+		switch (operation)
+		{
+			case 'P':
+				op = Operation.PRODUCT;	
+				break;
+			case 'S':
+				op = Operation.SUM;
+				break;
+			default:
+				// there is an error
+				System.err.println("unpackMathematicalAggregatorDefinition: " + operation + " is not a valid Operation.");
+				displayErrorMessage();
+				return null;
+		}
+		
+		//MathematicalAggregatorDefinition definition = new MathematicalAggregatorDefinition(name, parent, msmbData, inputNumber, op);
+		MathematicalAggregatorDefinition definition = AC_Utility.createMathematicalAggregatorDefinition(name, parent, msmbData, inputNumber, op, true);
+		definition.setID(id);
+		
+		// unpack PortDefinitions
+		if(data.get("portDefinitions") != null)
+		{
+			System.out.println("Found " + definition.getName() + "'s ports.");
+			packedList = (ArrayList<Map<String, Object>>)data.get("portDefinitions");
+			packedListIterator = packedList.listIterator();
+			while(packedListIterator.hasNext())
+			{
+				definition.addPort(unpackPortDefinition(packedListIterator.next(), definition));
+			}
+		}
+		
+		return definition;
+	}
+	
+	private static Map<String, Object> packPortDefinition(PortDefinition definition)
+	{
+		Map<String, Object> data = new HashMap<String, Object>();
+		char portType;
+		char variableType;
+		
+		switch (definition.getType())
+		{
+			case INPUT:
+				portType = 'I';
+				break;
+			case OUTPUT:
+				portType = 'O';
+				break;
+			case EQUIVALENCE:
+				portType = 'E';
+				break;
+			default:
+				portType = '0';
+		}
+		
+		switch (definition.getVariableType())
+		{
+			case GLOBAL_QUANTITY:
+				variableType = 'G';
+				break;
+			case SPECIES:
+				variableType = 'S';
+				break;
+			default:
+				variableType = '0';
+		}
+		
+		data.put("portType", portType);
+		data.put("variableType", variableType);
+		packACComponentDefinition(data, definition);
+		return data;
+	}
+	
+	private static PortDefinition unpackPortDefinition(Map<String, Object> data, ModuleDefinition parent)
+	{
+		PortDefinition definition = new PortDefinition(parent);
+		unpackACComponentDefinition(data, definition);
+		PortType portType = null;
+		VariableType variableType = null;
+		char pType = (char)data.get("portType");
+		char vType = (char)data.get("variableType");
+		
+		switch (pType)
+		{
+			case 'I':
+				portType = PortType.INPUT;
+				break;
+			case 'O':
+				portType = PortType.OUTPUT;
+				break;
+			case 'E':
+				portType = PortType.EQUIVALENCE;
+				break;
+			default:
+				// there is an error
+				System.err.println("unpackPortDefinition: " + pType + " is not a valid PortType.");
+				displayErrorMessage();
+				return null;
+		}
+		
+		switch (vType)
+		{
+			case 'G':
+				variableType = VariableType.GLOBAL_QUANTITY;
+				break;
+			case 'S':
+				variableType = VariableType.SPECIES;
+				break;
+			default:
+				// there is an error
+				System.err.println("unpackPortDefinition: " + vType + " is not a valid VariableType.");
+				displayErrorMessage();
+				return null;
+		}
+		
+		definition.setType(portType);
+		definition.setVariableType(variableType);
+		
+		return definition;
+	}
+	
+	private static Map<String, Object> packVisibleVariableDefinition(VisibleVariableDefinition definition)
+	{
+		Map<String, Object> data = new HashMap<String, Object>();
+		char variableType;
+		switch (definition.getVariableType())
+		{
+			case GLOBAL_QUANTITY:
+				variableType = 'G';
+				break;
+			case SPECIES:
+				variableType = 'S';
+				break;
+			default:
+				variableType = '0';
+		}
+		
+		data.put("variableType", variableType);
+		packACComponentDefinition(data, definition);
+		return data;
+	}
+	
+	private static VisibleVariableDefinition unpackVisibleVariableDefinition(Map<String, Object> data, ModuleDefinition parent)
+	{
+		VisibleVariableDefinition definition = new VisibleVariableDefinition(parent);
+		unpackACComponentDefinition(data, definition);
+		VariableType variableType = null;
+		char vType = (char)data.get("variableType");
+		
+		switch (vType)
+		{
+			case 'G':
+				variableType = VariableType.GLOBAL_QUANTITY;
+				break;
+			case 'S':
+				variableType = VariableType.SPECIES;
+				break;
+			default:
+				// there is an error
+				System.err.println("unpackVisibleVariableDefinition: " + vType + " is not a valid VariableType.");
+				displayErrorMessage();
+				return null;
+		}
+		
+		definition.setVariableType(variableType);
+		
+		return definition;
+	}
+	
+	private static Map<String, Object> packEquivalenceDefinition(EquivalenceDefinition definition)
+	{
+		Map<String, Object> data = new HashMap<String, Object>();
+		char variableType;
+		switch (definition.getVariableType())
+		{
+			case GLOBAL_QUANTITY:
+				variableType = 'G';
+				break;
+			case SPECIES:
+				variableType = 'S';
+				break;
+			default:
+				variableType = '0';
+		}
+		
+		data.put("variableType", variableType);
+		packACComponentDefinition(data, definition);
+		return data;
+	}
+	
+	private static EquivalenceDefinition unpackEquivalenceDefinition(Map<String, Object> data, ModuleDefinition parent)
+	{
+		EquivalenceDefinition definition = new EquivalenceDefinition(parent);
+		unpackACComponentDefinition(data, definition);
+		VariableType variableType = null;
+		char vType = (char)data.get("variableType");
+		
+		switch (vType)
+		{
+			case 'G':
+				variableType = VariableType.GLOBAL_QUANTITY;
+				break;
+			case 'S':
+				variableType = VariableType.SPECIES;
+				break;
+			default:
+				// there is an error
+				System.err.println("unpackEquivalenceDefinition: " + vType + " is not a valid VariableType.");
+				displayErrorMessage();
+				return null;
+		}
+		
+		definition.setVariableType(variableType);
+		
+		return definition;
+	}
+	
+	private static Map<String, Object> packConnectionDefinition(ConnectionDefinition definition)
+	{
+		Map<String, Object> data = new HashMap<String, Object>();		
+		char sourceType;
+		char targetType;
+		
+		switch(definition.getSourceType())
+		{
+			case EQUIVALENCE:
+				sourceType = 'E';
+				break;
+			case PORT:
+				sourceType = 'P';
+				break;
+			case VISIBLEVARIABLE:
+				sourceType = 'V';
+				break;
+			default:
+				sourceType = '0';
+		}
+		
+		switch(definition.getTargetType())
+		{
+			case EQUIVALENCE:
+				targetType = 'E';
+				break;
+			case PORT:
+				targetType = 'P';
+				break;
+			case VISIBLEVARIABLE:
+				targetType = 'V';
+				break;
+			default:
+				targetType = '0';
+		}
+		
+		data.put("sourceParent", definition.getSourceDefinition().getParent().getName());
+		data.put("targetParent", definition.getTargetDefinition().getParent().getName());
+		data.put("sourceRefName", definition.getSourceDefinition().getRefName());
+		data.put("targetRefName", definition.getTargetDefinition().getRefName());
+		data.put("sourceType", sourceType);
+		data.put("targetType", targetType);
+		return data;
+	}
+	
+	private static ConnectionDefinition unpackConnectionDefinition(Map<String, Object> data, ModuleDefinition parent)
+	{
+		String sourceParent = (String)data.get("sourceParent");
+		String targetParent = (String)data.get("targetParent");
+		String sourceRefName = (String)data.get("sourceRefName");
+		String targetRefName = (String)data.get("targetRefName");
+		char sType = (char)data.get("sourceType");
+		char tType = (char)data.get("targetType");
+		TerminalType sourceType = null;
+		TerminalType targetType = null;
+		
+		switch (sType)
+		{
+			case 'E':
+				sourceType = TerminalType.EQUIVALENCE;
+				break;
+			case 'P':
+				sourceType = TerminalType.PORT;
+				break;
+			case 'V':
+				sourceType = TerminalType.VISIBLEVARIABLE;
+				break;
+			default:
+				// there is an error
+				System.err.println("unpackConnectionDefinition: " + sType + " is not a valid source TerminalType.");
+				displayErrorMessage();
+				return null;
+		}
+		
+		switch (tType)
+		{
+			case 'E':
+				targetType = TerminalType.EQUIVALENCE;
+				break;
+			case 'P':
+				targetType = TerminalType.PORT;
+				break;
+			case 'V':
+				targetType = TerminalType.VISIBLEVARIABLE;
+				break;
+			default:
+				// there is an error
+				System.err.println("unpackConnectionDefinition: " + tType + " is not a valid target TerminalType.");
+				displayErrorMessage();
+				return null;
+		}
+		
+		ACComponentDefinition source = getTerminalDefinition(parent, sourceParent, sourceType, sourceRefName);
+		ACComponentDefinition target = getTerminalDefinition(parent, targetParent, targetType, targetRefName);
+		
+		if (source == null)
+		{
+			// there is an error
+			System.err.println("unpackConnectionDefinition: " + sourceRefName + " source terminal not found.");
+			displayErrorMessage();
+			return null;
+		}
+		
+		if (target == null)
+		{
+			// there is an error
+			System.err.println("unpackConnectionDefinition: " + targetRefName + " target terminal not found.");
+			displayErrorMessage();
+			return null;
+		}
+		
+		return new ConnectionDefinition(parent, source, sourceType, target, targetType);
+	}
+		
+	private static void packACComponentDefinition(Map<String, Object> data, ACComponentDefinition definition)
+	{
+		data.put("refName", definition.getRefName());
+		data.put("name", definition.getName());
+	}
+	
+	private static void unpackACComponentDefinition(Map<String, Object> data, ACComponentDefinition definition)
+	{
+		String refName = (String)data.get("refName");
+		String name = (String)data.get("name");
+		definition.setRefName(refName);
+		definition.setName(name);
+	}
+	
+	private static Map<String, Object> packModule(Module mod, boolean packDefinition)
+	{
+		Map<String, Object> data = new HashMap<String, Object>();
+		ArrayList<Map<String, Object>> packedList;
+		int count;
+		if (packDefinition)
+		{
+			data.put("definition", packModuleDefinition(mod.getModuleDefinition()));
+		}
+		data.put("definitionName", mod.getModuleDefinition().getName());
+		data.put("drawingCellGeometry_Module", packCellGeometry(mod.getDrawingCellGeometryModule()));
+		data.put("drawingCellGeometry_Submodule", packCellGeometry(mod.getDrawingCellGeometrySubmodule()));
+		data.put("drawingCellStyle", mod.getDrawingCellStyle());
+		data.put("name", mod.getName());
+		data.put("id", mod.getID());
+		
+		// pack the PortNodes
+		packedList = null;
+		count = mod.getPorts().size();
+		if (count != 0)
+		{
+			packedList = new ArrayList<Map<String, Object>>(count);
+			ListIterator<ACComponentNode> ports = mod.getPorts().listIterator();
+			while(ports.hasNext())
+			{
+				packedList.add(packPortNode((PortNode)ports.next()));
+			}
+		}
+		data.put("portNodes", packedList);
+		
+		// pack the submodules
+		packedList = null;
+		count = mod.getChildren().size();
+		if(count != 0)
+		{
+			packedList = new ArrayList<Map<String, Object>>(count);
+			ListIterator<Module> children = mod.getChildren().listIterator();
+			while(children.hasNext())
+			{
+				packedList.add(packModule(children.next(), false));
+			}
+		}
+		data.put("children", packedList);
+				
+		// pack the visible variables
+		packedList = null;
+		count = mod.getVisibleVariables().size();
+		if(count != 0)
+		{
+			packedList = new ArrayList<Map<String, Object>>(count);
+			ListIterator<ACComponentNode> vars = mod.getVisibleVariables().listIterator();
+			while(vars.hasNext())
+			{
+				packedList.add(packVisibleVariableNode((VisibleVariableNode)vars.next()));
+			}
+		}
+		data.put("visibleVariableNodes", packedList);
+		
+		// pack the equivalence nodes
+		packedList = null;
+		count = mod.getEquivalences().size();
+		if(count != 0)
+		{
+			packedList = new ArrayList<Map<String, Object>>(count);
+			ListIterator<ACComponentNode> eNodes = mod.getEquivalences().listIterator();
+			while(eNodes.hasNext())
+			{
+				packedList.add(packEquivalenceNode((EquivalenceNode)eNodes.next()));
+			}
+		}
 		data.put("equivalenceNodes", packedList);
 		
 		// pack the connections
 		packedList = null;
-		int connectionCount = mod.getConnections().size();
-		if(connectionCount != 0)
+		count = mod.getConnections().size();
+		if(count != 0)
 		{
-			packedList = new ArrayList<Map<String, Object>>(connectionCount);
-			ListIterator<Connection> connections = mod.getConnections().listIterator();
+			packedList = new ArrayList<Map<String, Object>>(count);
+			ListIterator<ConnectionNode> connections = mod.getConnections().listIterator();
 			while(connections.hasNext())
 			{
-				packedList.add(packConnection(connections.next()));
+				packedList.add(packConnectionNode(connections.next()));
 			}
 		}
-		
-		data.put("connections", packedList);
+		data.put("connectionNodes", packedList);
 		
 		return data;
 	}
 	
-	private static Module unpackModule(Map<String, Object> data, Module parent)
+	private static Module unpackModule(Map<String, Object> data, Module parent, boolean unpackDefinition)
 	{
-		String aggregator = (String)data.get("mathAgg");
-		if (aggregator.equals("yes"))
-		{
-			return unpackMathAggregator(data, parent);
-		}
-		String name = (String)data.get("name");
-		String msmbData = (String)data.get("msmbData");
-		DefaultMutableTreeNode treeNode = (DefaultMutableTreeNode)data.get("treeNode");
-		Object drawingCell = data.get("drawingCell");
-		//String datamodelKey = (String)data.get("copasiDatamodelKey");
-		String cellStyle = (String)data.get("drawingCellStyle");
-		mxGeometry oldGeo = (mxGeometry)data.get("drawingCellGeometry");
-		
-		mxGeometry newGeo = null;
-		if(oldGeo != null)
-		{
-			newGeo = new mxGeometry(oldGeo.getX(), oldGeo.getY(), oldGeo.getWidth(), oldGeo.getHeight());
-		}
-		
-		if (cellStyle.equals("Submodule"))
-		{
-			cellStyle = "Submodule_No_Show_Information";
-		}
-		if (cellStyle.equals("Module") && (parent!=null))
-		{
-			cellStyle = "Submodule_No_Show_Information";
-		}
-		CCopasiDataModel dataModel = AC_GUI.copasiUtility.createDataModel();
-		dataModel.getModel().setObjectName(name);
-		Module mod = new Module(name, dataModel.getModel().getKey(), msmbData, treeNode, drawingCell, newGeo, cellStyle, parent);
-		//((mxCell)drawingCell).setValue(mod);
-		//treeNode.setUserObject(mod);
-		if (parent == null)
-		{
-			AC_GUI.masterModuleList.add(mod);
-		}
-		AC_GUI.treeView.addNode(mod);
-		AC_GUI.drawingBoard.createCell(mod);
-		
 		ArrayList<Map<String, Object>> packedList;
 		ListIterator<Map<String, Object>> packedListIterator;
-		if(data.get("children") != null)
+		/*
+		data.put("name", mod.getModuleDefinition().getName());
+		data.put("drawingCellGeometry_Module", packCellGeometry(mod.getDrawingCellGeometryModule()));
+		data.put("drawingCellGeometry_Submodule", packCellGeometry(mod.getDrawingCellGeometrySubmodule()));
+		data.put("drawingCellStyle", mod.getDrawingCellStyle());
+		*/
+		String name = (String)data.get("name");
+		String definitionName = (String)data.get("definitionName");
+		mxGeometry moduleGeometry = unpackCellGeometry((Map<String, Object>)data.get("drawingCellGeometry_Module"));
+		mxGeometry submoduleGeometry = unpackCellGeometry((Map<String, Object>)data.get("drawingCellGeometry_Submodule"));
+		String cellStyle = (String)data.get("drawingCellStyle");
+		String id = (String)data.get("id");
+		
+		ModuleDefinition definition;
+		if (unpackDefinition)
 		{
-			System.out.println("Found " + mod.getName() + "'s children.");
+			if (parent == null)
+			{
+				definition = unpackModuleDefinition((Map<String, Object>)data.get("definition"), null);
+			}
+			else
+			{
+				definition = unpackModuleDefinition((Map<String, Object>)data.get("definition"), parent.getModuleDefinition());
+				//parent.getModuleDefinition().addChild(definition);
+			}
+		}
+		else
+		{
+			definition = getModuleDefinition(parent.getModuleDefinition().getChildren().listIterator(), definitionName);
+		}
+		if (definition == null)
+		{
+			// there is an error
+			System.err.println("unpackModule: Module (" + name + ") ModuleDefinition (" + definitionName + ") not found.");
+			displayErrorMessage();
+			return null;
+		}
+		if (parent != null)
+		{
+			cellStyle = "Submodule_No_Show_Information";
+		}
+		
+		Module module = new Module(name, definition, parent, moduleGeometry, submoduleGeometry, cellStyle);
+		module.setID(id);
+		AC_GUI.treeView.createNode(module);
+		AC_GUI.drawingBoard.createCell(module);
+		definition.addInstance(module);
+		
+		// unpack PortNodes
+		if (data.get("portNodes") != null)
+		{
+			System.out.println("Found PortNodes.");
+			packedList = (ArrayList<Map<String, Object>>)data.get("portNodes");
+			packedListIterator = packedList.listIterator();
+			while(packedListIterator.hasNext())
+			{
+				module.addPort(unpackPortNode(packedListIterator.next(), module));
+			}
+		}
+		
+		// unpack submodules
+		if (data.get("children") != null)
+		{
+			System.out.println("Found submodules.");
 			packedList = (ArrayList<Map<String, Object>>)data.get("children");
 			packedListIterator = packedList.listIterator();
 			while(packedListIterator.hasNext())
 			{
-				mod.addChild(unpackModule(packedListIterator.next(), mod));
+				module.addChild(unpackModule(packedListIterator.next(), module, false));
 			}
 		}
-		if(data.get("ports") != null)
+		
+		// unpack VisibleVariableNodes
+		if (data.get("visibleVariableNodes") != null)
 		{
-			System.out.println("Found " + mod.getName() + "'s ports.");
-			packedList = (ArrayList<Map<String, Object>>)data.get("ports");
+			System.out.println("Found VisibleVariableNodes.");
+			packedList = (ArrayList<Map<String, Object>>)data.get("visibleVariableNodes");
 			packedListIterator = packedList.listIterator();
 			while(packedListIterator.hasNext())
 			{
-				mod.addPort(unpackPort(packedListIterator.next(), mod));
+				module.addVisibleVariable(unpackVisibleVariableNode(packedListIterator.next(), module));
 			}
 		}
-		if(data.get("visibleVariables") != null)
+		
+		// unpack EquivalenceNodes
+		if (data.get("equivalenceNodes") != null)
 		{
-			System.out.println("Found " + mod.getName() + "'s visible variables.");
-			packedList = (ArrayList<Map<String, Object>>)data.get("visibleVariables");
-			packedListIterator = packedList.listIterator();
-			while(packedListIterator.hasNext())
-			{
-				mod.addVisibleVariable(unpackVisibleVariable(packedListIterator.next(), mod));
-			}
-		}
-		if(data.get("equivalenceNodes") != null)
-		{
-			System.out.println("Found " + mod.getName() + "'s equivalence nodes.");
+			System.out.println("Found EquivalenceNodes.");
 			packedList = (ArrayList<Map<String, Object>>)data.get("equivalenceNodes");
 			packedListIterator = packedList.listIterator();
 			while(packedListIterator.hasNext())
 			{
-				mod.addEquivalenceNode(unpackEquivalenceNode(packedListIterator.next(), mod));
+				module.addEquivalence(unpackEquivalenceNode(packedListIterator.next(), module));
 			}
 		}
-		if(data.get("connections") != null)
+		
+		// unpack ConnectionNodes
+		if (data.get("connectionNodes") != null)
 		{
-			System.out.println("Found " + mod.getName() + "'s connections.");
-			packedList = (ArrayList<Map<String, Object>>)data.get("connections");
+			System.out.println("Found ConnectionNodes.");
+			packedList = (ArrayList<Map<String, Object>>)data.get("connectionNodes");
 			packedListIterator = packedList.listIterator();
 			while(packedListIterator.hasNext())
 			{
-				mod.addConnection(unpackConnection(packedListIterator.next(), mod));
+				module.addConnection(unpackConnectionNode(packedListIterator.next(), module));
 			}
 		}
 		
-		return mod;
+		return module;
 	}
+
 	
-	private static Map<String, Object> packPort(Port port)
+	private static Map<String, Object> packPortNode(PortNode port)
 	{
 		Map<String, Object> data = new HashMap<String, Object>();
-		data.put("name", port.getName());
-		data.put("refName", port.getRefName());
-		data.put("drawingCell", port.getDrawingCell());
-		data.put("type", port.getType().toString());
-		data.put("variableType", port.getVariableType().toString());
-		data.put("rowIndex", port.getRowIndex());
-		data.put("drawingCellGeometry", ((mxCell)port.getDrawingCell()).getGeometry());
-		
+		data.put("refName", port.getPortDefinition().getRefName());
+		packACComponentNode(data, port);
 		return data;
 	}
 	
-	private static Port unpackPort(Map<String, Object> data, Module parent)
+	private static PortNode unpackPortNode(Map<String, Object> data, Module parent)
 	{
-		String name = (String)data.get("name");
 		String refName = (String)data.get("refName");
-		Object drawingCell = data.get("drawingCell");
-		String type = (String)data.get("type");
-		String variableType = (String)data.get("variableType");
-		mxGeometry oldCellGeo = (mxGeometry)data.get("drawingCellGeometry");
-		int rowIndex = (Integer)data.get("rowIndex");
-		
-		PortType pType = null;
-		if(type.equalsIgnoreCase(PortType.INPUT.toString()))
+		ACComponentDefinition definition = getACComponentDefinition(parent.getModuleDefinition().getPorts().listIterator(), refName);
+		if (definition == null)
 		{
-			pType = PortType.INPUT;
-		} else if(type.equalsIgnoreCase(PortType.OUTPUT.toString()))
-		{
-			pType = PortType.OUTPUT;
-		} else if(type.equalsIgnoreCase(PortType.EQUIVALENCE.toString()))
-		{
-			pType = PortType.EQUIVALENCE;
+			// there is an error
+			System.err.println("unpackPortNode: " + refName + " PortDefinition not found.");
+			displayErrorMessage();
+			return null;
 		}
-		
-		VariableType vType = null;
-		if(variableType.equalsIgnoreCase(VariableType.SPECIES.toString()))
-		{
-			vType = VariableType.SPECIES;
-		} else if(variableType.equalsIgnoreCase(VariableType.GLOBAL_QUANTITY.toString()))
-		{
-			vType = VariableType.GLOBAL_QUANTITY;
-		}
-		
-		Port newPort = new Port(parent, refName, pType, vType, name, rowIndex);
-		//((mxCell)drawingCell).setValue(newPort);
-		//newPort.setDrawingCell(drawingCell);
-		AC_GUI.drawingBoard.createPort(newPort, oldCellGeo);
-		
-		return newPort;
+		PortNode node = new PortNode(parent, (PortDefinition)definition);
+		unpackACComponentNode(data, node);
+		return node;
 	}
 	
-	private static Map<String, Object> packVisibleVariable(VisibleVariable var)
+	private static Map<String, Object> packVisibleVariableNode(VisibleVariableNode visibleVariable)
 	{
 		Map<String, Object> data = new HashMap<String, Object>();
-		data.put("refName", var.getRefName());
-		data.put("variableType", var.getVariableType().toString());
-		data.put("drawingCell", var.getDrawingCell());
-		data.put("drawingCellGeometry", var.getDrawingCellGeometry());
-		
+		data.put("refName", visibleVariable.getVisibleVariableDefinition().getRefName());
+		packACComponentNode(data, visibleVariable);
 		return data;
 	}
 	
-	private static VisibleVariable unpackVisibleVariable(Map<String, Object> data, Module parent)
+	private static VisibleVariableNode unpackVisibleVariableNode(Map<String, Object> data, Module parent)
 	{
 		String refName = (String)data.get("refName");
-		String variableType = (String)data.get("variableType");
-		Object drawingCell = data.get("drawingCell");
-		mxGeometry oldGeo = (mxGeometry)data.get("drawingCellGeometry");
-		
-		mxGeometry newGeo = null;
-		if(oldGeo != null)
+		ACComponentDefinition definition = getACComponentDefinition(parent.getModuleDefinition().getVisibleVariables().listIterator(), refName);
+		if (definition == null)
 		{
-			newGeo = new mxGeometry(oldGeo.getX(), oldGeo.getY(), oldGeo.getWidth(), oldGeo.getHeight());
+			// there is an error
+			System.err.println("unpackVisibleVariableNode: " + refName + " VisibleVariableDefinition not found.");
+			displayErrorMessage();
+			return null;
 		}
-		
-		VariableType vType = null;
-		if(variableType.equalsIgnoreCase(VariableType.SPECIES.toString()))
-		{
-			vType = VariableType.SPECIES;
-		} else if(variableType.equalsIgnoreCase(VariableType.GLOBAL_QUANTITY.toString()))
-		{
-			vType = VariableType.GLOBAL_QUANTITY;
-		}
-		
-		VisibleVariable var = new VisibleVariable(parent, refName, drawingCell, newGeo, vType);
-		//((mxCell)drawingCell).setValue(var);
-		AC_GUI.drawingBoard.createVisibleVariable(var);
-		
-		return var;
+		VisibleVariableNode node = new VisibleVariableNode(parent, (VisibleVariableDefinition)definition);
+		unpackACComponentNode(data, node);
+		return node;
 	}
 	
 	private static Map<String, Object> packEquivalenceNode(EquivalenceNode eNode)
 	{
 		Map<String, Object> data = new HashMap<String, Object>();
-		data.put("refName", eNode.getRefName());
-		data.put("drawingCell", eNode.getDrawingCell());
-		//data.put("drawingCellBounds", eNode.getDrawingCellBounds());
-		data.put("drawingCellGeometry", eNode.getDrawingCellGeometry());
-		
+		data.put("refName", eNode.getEquivalenceDefinition().getRefName());
+		packACComponentNode(data, eNode);
 		return data;
 	}
 	
 	private static EquivalenceNode unpackEquivalenceNode(Map<String, Object> data, Module parent)
 	{
 		String refName = (String)data.get("refName");
-		Object drawingCell = data.get("drawingCell");
-		mxGeometry oldGeo = (mxGeometry)data.get("drawingCellGeometry");
-		
-		mxGeometry newGeo = null;
-		if(oldGeo != null)
+		ACComponentDefinition definition = getACComponentDefinition(parent.getModuleDefinition().getEquivalences().listIterator(), refName);
+		if (definition == null)
 		{
-			newGeo = new mxGeometry(oldGeo.getX(), oldGeo.getY(), oldGeo.getWidth(), oldGeo.getHeight());
+			// there is an error
+			System.err.println("unpackEquivalenceNode: " + refName + " EquivalenceDefinition not found.");
+			displayErrorMessage();
+			return null;
 		}
-		
-		EquivalenceNode eNode = new EquivalenceNode(parent, refName);
-		eNode.setDrawingCellGeometry(newGeo);
-		AC_GUI.drawingBoard.createEquivalenceNode(eNode);
-		
-		return eNode;
+		EquivalenceNode node = new EquivalenceNode(parent, (EquivalenceDefinition)definition);
+		unpackACComponentNode(data, node);
+		return node;
 	}
 	
-	private static Map<String, Object> packConnection(Connection edge)
+	private static Map<String, Object> packConnectionNode(ConnectionNode connection)
 	{
 		Map<String, Object> data = new HashMap<String, Object>();
-		//data.put("target", edge.getTarget());
-		//data.put("source", edge.getSource());
-		data.put("drawingCell", edge.getDrawingCell());
-		data.put("drawingCellStyle", edge.getDrawingCellStyle());
+		// how to connect a ConnectionNode to a ConnectionDefinition?
+		char sourceType;
+		char targetType;
 		
-		String sourceType = "";
-		String targetType = "";
-		String sourceID = "";
-		String targetID = "";
-		
-		if (((mxCell)edge.getSource()).getValue() instanceof Port)
+		switch(connection.getConnectionDefinition().getSourceType())
 		{
-			Port source = (Port)((mxCell)edge.getSource()).getValue();
-			sourceID = source.getParent().getName() + "." + source.getRefName();
-			sourceType = "port";
-		} else if (((mxCell)edge.getSource()).getValue() instanceof VisibleVariable)
-		{
-			VisibleVariable source = (VisibleVariable)((mxCell)edge.getSource()).getValue();
-			sourceID = source.getParent().getName() + "." + source.getRefName();
-			sourceType = "visiblevariable";
-		} else if (((mxCell)edge.getSource()).getValue() instanceof EquivalenceNode)
-		{
-			EquivalenceNode source = (EquivalenceNode)((mxCell)edge.getSource()).getValue();
-			sourceID = source.getParent().getName() + "." + source.getRefName();
-			sourceType = "equivalencenode";
+			case EQUIVALENCE:
+				sourceType = 'E';
+				break;
+			case PORT:
+				sourceType = 'P';
+				break;
+			case VISIBLEVARIABLE:
+				sourceType = 'V';
+				break;
+			default:
+				sourceType = '0';
 		}
 		
-		if (((mxCell)edge.getTarget()).getValue() instanceof Port)
+		switch(connection.getConnectionDefinition().getTargetType())
 		{
-			Port target = (Port)((mxCell)edge.getTarget()).getValue();
-			targetID = target.getParent().getName() + "." + target.getRefName();
-			targetType = "port";
-		} else if (((mxCell)edge.getTarget()).getValue() instanceof VisibleVariable)
-		{
-			VisibleVariable target = (VisibleVariable)((mxCell)edge.getTarget()).getValue();
-			targetID = target.getParent().getName() + "." + target.getRefName();
-			targetType = "visiblevariable";
-		} else if (((mxCell)edge.getTarget()).getValue() instanceof EquivalenceNode)
-		{
-			EquivalenceNode target = (EquivalenceNode)((mxCell)edge.getTarget()).getValue();
-			targetID = target.getParent().getName() + "." + target.getRefName();
-			targetType = "equivalencenode";
+			case EQUIVALENCE:
+				targetType = 'E';
+				break;
+			case PORT:
+				targetType = 'P';
+				break;
+			case VISIBLEVARIABLE:
+				targetType = 'V';
+				break;
+			default:
+				targetType = '0';
 		}
-
-		data.put("source", sourceID);
-		data.put("target", targetID);
+		String sourceParentID = ((ACComponentNode)connection.getDrawingCell().getSource().getValue()).getParent().getID();
+		String targetParentID = ((ACComponentNode)connection.getDrawingCell().getTarget().getValue()).getParent().getID();
+		data.put("sourceParent", connection.getConnectionDefinition().getSourceDefinition().getParent().getName());
+		data.put("targetParent", connection.getConnectionDefinition().getTargetDefinition().getParent().getName());
+		data.put("sourceParentID", sourceParentID);
+		data.put("targetParentID", targetParentID);
+		data.put("sourceRefName", connection.getConnectionDefinition().getSourceDefinition().getRefName());
+		data.put("targetRefName", connection.getConnectionDefinition().getTargetDefinition().getRefName());
 		data.put("sourceType", sourceType);
 		data.put("targetType", targetType);
-		
+		packACComponentNode(data, connection);
+		// pack source/target node id's
 		return data;
 	}
 	
-	private static Connection unpackConnection(Map<String, Object> data, Module parent)
+	private static ConnectionNode unpackConnectionNode(Map<String, Object> data, Module parent)
 	{
-		String sourceType = (String)data.get("sourceType");
-		String targetType = (String)data.get("targetType");
-		String sourceID = (String)data.get("source");
-		String targetID = (String)data.get("target");
-		Object drawingCell = data.get("drawingCell");
-		String drawingCellSyle = (String)data.get("drawingCellStyle");
+		String sourceParentID = (String)data.get("sourceParentID");
+		String targetParentID = (String)data.get("targetParentID");
+		String sourceRefName = (String)data.get("sourceRefName");
+		String targetRefName = (String)data.get("targetRefName");
+		String drawingCellStyle = (String)data.get("drawingCellStyle");
+		char sType = (char)data.get("sourceType");
+		char tType = (char)data.get("targetType");
+		TerminalType sourceType = null;
+		TerminalType targetType = null;
 		
-		Connection edge = null;
-		Object source = findTerminal(sourceType, sourceID, parent);
-		Object target = findTerminal(targetType, targetID, parent);
-		Object sourceCell = null;
-		Object targetCell = null;
-		
-		if((source == null) || (target == null))
+		switch (sType)
 		{
-			System.err.println("Unable to unpack connection.");
-			System.exit(0);
+			case 'E':
+				sourceType = TerminalType.EQUIVALENCE;
+				break;
+			case 'P':
+				sourceType = TerminalType.PORT;
+				break;
+			case 'V':
+				sourceType = TerminalType.VISIBLEVARIABLE;
+				break;
+			default:
+				// there is an error
+				System.err.println("unpackConnectionNode: " + sType + " is not a valid source TerminalType.");
+				displayErrorMessage();
+				return null;
 		}
 		
-		if(source instanceof Port)
+		switch (tType)
 		{
-			sourceCell = ((Port)source).getDrawingCell();
-		}else if (source instanceof VisibleVariable)
-		{
-			sourceCell = ((VisibleVariable)source).getDrawingCell();
-		}else if (source instanceof EquivalenceNode)
-		{
-			sourceCell = ((EquivalenceNode)source).getDrawingCell();
-		}
-		else
-		{
-			System.err.println("Unpack connection error. Source.");
-			System.exit(0);
-		}
-		
-		if(target instanceof Port)
-		{
-			targetCell = ((Port)target).getDrawingCell();
-		}else if (target instanceof VisibleVariable)
-		{
-			targetCell = ((VisibleVariable)target).getDrawingCell();
-		}else if (target instanceof EquivalenceNode)
-		{
-			targetCell = ((EquivalenceNode)target).getDrawingCell();
-		}
-		else
-		{
-			System.err.println("Unpack connection error. Target.");
-			System.exit(0);
+			case 'E':
+				targetType = TerminalType.EQUIVALENCE;
+				break;
+			case 'P':
+				targetType = TerminalType.PORT;
+				break;
+			case 'V':
+				targetType = TerminalType.VISIBLEVARIABLE;
+				break;
+			default:
+				// there is an error
+				System.err.println("unpackConnectionNode: " + tType + " is not a valid target TerminalType.");
+				displayErrorMessage();
+				return null;
 		}
 		
-		edge = new Connection(parent);
-		edge.setDrawingCellStyle(drawingCellSyle);
-		AC_GUI.drawingBoard.createConnection(edge, sourceCell, targetCell);
+		ConnectionDefinition definition = getConnectionDefinition(parent.getModuleDefinition().getConnections().listIterator(), sourceType, sourceRefName, targetType, targetRefName);
+		ACComponentNode source = getTerminalNode(parent, sourceParentID, sourceType, sourceRefName);
+		ACComponentNode target = getTerminalNode(parent, targetParentID, targetType, targetRefName);
 		
-		//((mxCell)drawingCell).setValue(edge);
+		if (definition == null)
+		{
+			// there is an error
+			System.err.println("unpackConnectionNode: " + parent.getModuleDefinition().getName() + " Connection Definition not found.");
+			displayErrorMessage();
+			return null;
+		}
 		
-		return edge;
+		if (source == null)
+		{
+			// there is an error
+			System.err.println("unpackConnectionNode: " + sourceRefName + " source terminal not found.");
+			displayErrorMessage();
+			return null;
+		}
+		
+		if (target == null)
+		{
+			// there is an error
+			System.err.println("unpackConnectionNode: " + targetRefName + " target terminal not found.");
+			displayErrorMessage();
+			return null;
+		}
+		
+		//unpackACComponentNode(data, node);
+		ConnectionNode node = new ConnectionNode(parent, definition, drawingCellStyle);
+		AC_GUI.drawingBoard.createConnection(node, source.getDrawingCell(), target.getDrawingCell());
+		return node;
 	}
 	
-	private static Map<String, Object> packMathAggregator(Map<String, Object> data, MathematicalAggregator mathAgg)
+	private static void packACComponentNode(Map<String, Object> data, ACComponentNode node)
 	{
-		data.put("inputNumber", mathAgg.getNumberofInputs());
-		data.put("operation", mathAgg.getOperation());
-		
-		// pack the ports
-		ArrayList<Map<String, Object>> packedList;
-		packedList = null;
-		int portCount = mathAgg.getPorts().size();
-		if(portCount != 0)
+		data.put("drawingCellStyle", node.getDrawingCellStyle());
+		data.put("drawingCellGeometry", packCellGeometry(node.getDrawingCellGeometry()));
+	}
+	
+	private static void unpackACComponentNode(Map<String, Object> data, ACComponentNode node)
+	{
+		String drawingCellStyle = (String)data.get("drawingCellStyle");
+		mxGeometry drawingCellGeometry = unpackCellGeometry((Map<String, Object>)data.get("drawingCellGeometry"));
+		node.setDrawingCellStyle(drawingCellStyle);
+		node.setDrawingCellGeometry(drawingCellGeometry);
+		AC_GUI.drawingBoard.createACComponentNodeCell(node);
+	}
+	
+	private static Map<String, Object> packCellGeometry(mxGeometry geo)
+	{
+		Map<String, Object> data= null;
+		if (geo != null)
 		{
-			packedList = new ArrayList<Map<String, Object>>(portCount);
-			ListIterator<Port> ports = mathAgg.getPorts().listIterator();
-			while(ports.hasNext())
-			{
-				packedList.add(packPort(ports.next()));
-			}
+			data = new HashMap<String, Object>();
+			data.put("x", geo.getX());
+			data.put("y", geo.getY());
+			data.put("width", geo.getWidth());
+			data.put("height", geo.getHeight());
 		}
-		
-		data.put("ports", packedList);
-		
 		return data;
 	}
 	
-	private static MathematicalAggregator unpackMathAggregator(Map<String, Object> data, Module parent)
+	private static mxGeometry unpackCellGeometry(Map<String, Object> data)
 	{
-		String name = (String)data.get("name");
-		String msmbData = (String)data.get("msmbData");
-		DefaultMutableTreeNode treeNode = (DefaultMutableTreeNode)data.get("treeNode");
-		Object drawingCell = data.get("drawingCell");
-		String datamodelKey = (String)data.get("copasiDatamodelKey");
-		String cellStyle = (String)data.get("drawingCellStyle");
-		mxGeometry oldGeo = (mxGeometry)data.get("drawingCellGeometry");
-		int inputNumber = (Integer)data.get("inputNumber");
-		Operation op = (Operation)data.get("operation");
-		
-		mxGeometry newGeo = null;
-		if(oldGeo != null)
+		mxGeometry geo = null;
+		if (data != null)
 		{
-			newGeo = new mxGeometry(oldGeo.getX(), oldGeo.getY(), oldGeo.getWidth(), oldGeo.getHeight());
+			double x = (double)data.get("x");
+			double y = (double)data.get("y");
+			double width = (double)data.get("width");
+			double height = (double)data.get("height");
+			geo = new mxGeometry(x, y, width, height);
 		}
-		
-		CCopasiDataModel dataModel = AC_GUI.copasiUtility.createDataModel();
-		dataModel.getModel().setObjectName(name);
-		MathematicalAggregator mathAgg = null;
-		try
-		{
-			mathAgg = new MathematicalAggregator(name, dataModel.getModel().getKey(), msmbData, inputNumber, op, parent);
-		}
-		catch (Exception e)
-		{
-			if (msmbData.isEmpty())
-			{
-				System.err.println("AC_IO.unpackMathAggregator(): The MathematicalAggregator \"" + name + "\" has msmbData which is currently empty.");
-			}
-			e.printStackTrace();
-			System.exit(0);
-		}
-		//MathematicalAggregator mathAgg = new MathematicalAggregator(name, dataModel.getModel().getKey(), inputNumber, op, parent);
-		mathAgg.setDrawingCellStyle(cellStyle);
-		mathAgg.setDrawingCellGeometry(newGeo);
-		AC_GUI.treeView.addNode(mathAgg);
-		AC_GUI.drawingBoard.createCell(mathAgg);
-		
-		ArrayList<Map<String, Object>> packedList;
-		ListIterator<Map<String, Object>> packedListIterator;
-		if(data.get("ports") != null)
-		{
-			System.out.println("Found " + mathAgg.getName() + "'s ports.");
-			packedList = (ArrayList<Map<String, Object>>)data.get("ports");
-			packedListIterator = packedList.listIterator();
-			while(packedListIterator.hasNext())
-			{
-				mathAgg.addPort(unpackPort(packedListIterator.next(), mathAgg));
-			}
-		}
-		
-		return mathAgg;
+		return geo;
 	}
 	
-	private static Object findTerminal(String type, String id, Module parent)
+	private static ACComponentDefinition getTerminalDefinition(ModuleDefinition parent, String parentName, TerminalType type, String refName)
 	{
-		String parentName = id.substring(0, id.indexOf('.'));
-		String terminalName = id.substring(id.indexOf('.')+1);
-		Object terminal = null;
+		ACComponentDefinition definition;
+		ModuleDefinition terminalParent;
+		ListIterator<ACComponentDefinition> list;
 		
-		if (parentName.equals(parent.getName()))
+		if (parent.getName().equals(parentName))
 		{
-			if (type.equals("visiblevariable"))
-			{
-				ListIterator<VisibleVariable> vars = parent.getVisibleVariables().listIterator();
-				VisibleVariable var = null;
-				while(vars.hasNext())
-				{
-					var = vars.next();
-					if (terminalName.equals(var.getRefName()))
-					{
-						return var;
-					}
-				}
-			}
-			else if (type.equals("equivalencenode"))
-			{
-				ListIterator<EquivalenceNode> eNodes = parent.getEquivalenceNodes().listIterator();
-				EquivalenceNode eNode = null;
-				while(eNodes.hasNext())
-				{
-					eNode = eNodes.next();
-					if (terminalName.equals(eNode.getRefName()))
-					{
-						return eNode;
-					}
-				}
-			}
-			else if (type.equals("port"))
-			{
-				terminal = scanPorts(terminalName, parent);
-			}
-			if (terminal != null)
-			{
-				return terminal;
-			}
-		} else
+			terminalParent = parent;
+		}
+		else
 		{
-			// check children ports
-			ListIterator<Module> children = parent.getChildren().listIterator();
-			Module mod = null;
-			while(children.hasNext())
+			// the terminal must belong to a child of parent
+			terminalParent = getModuleDefinition(parent.getChildren().listIterator(), parentName);
+			if (terminalParent == null)
 			{
-				mod = children.next();
-				if(parentName.equals(mod.getName()))
-				{
-					terminal = scanPorts(terminalName, mod);
-					if(terminal != null)
-					{
-						return terminal;
-					}
-				}
+				// there is an error
+				return null;
 			}
 		}
 		
+		switch (type)
+		{
+			case EQUIVALENCE:
+				list = terminalParent.getEquivalences().listIterator();
+				break;
+			case PORT:
+				list = terminalParent.getPorts().listIterator();
+				break;
+			case VISIBLEVARIABLE:
+				list = terminalParent.getVisibleVariables().listIterator();
+				break;
+			default:
+				// there is an error
+				System.err.println("getTerminalDefinition: " + type + " is not a valid TerminalType.");
+				displayErrorMessage();
+				return null;
+		}
+		
+		definition = getACComponentDefinition(list, refName);
+		return definition;
+	}
+	
+	private static ACComponentNode getTerminalNode(Module parent, String parentID, TerminalType type, String refName)
+	{
+		Module terminalParent;
+		
+		if (parent.getID().equals(parentID))
+		{
+			terminalParent = parent;
+		}
+		else
+		{
+			// the terminal must belong to a child of parent
+			terminalParent = getModule(parent.getChildren().listIterator(), parentID);
+			if (terminalParent == null)
+			{
+				// there is an error
+				return null;
+			}
+		}
+		
+		switch (type)
+		{
+			case EQUIVALENCE:
+				return getEquivalenceNode(terminalParent, refName);
+			case PORT:
+				return getPortNode(terminalParent, refName);
+			case VISIBLEVARIABLE:
+				return getVisibleVariableNode(terminalParent, refName);
+			default:
+				// there is an error
+				System.err.println("getTerminalNode: " + type + " is not a valid TerminalType.");
+				displayErrorMessage();
+				return null;
+		}
+	}
+	
+	private static ModuleDefinition getModuleDefinition(ListIterator<ModuleDefinition> list, String name)
+	{
+		ModuleDefinition currentDefinition;
+		while (list.hasNext())
+		{
+			currentDefinition = list.next();
+			if (currentDefinition.getName().equals(name))
+			{
+				return currentDefinition;
+			}
+		}
 		return null;
 	}
 	
-	private static Port scanPorts(String name, Module mod)
+	private static Module getModule(ListIterator<Module> list, String id)
 	{
-		ListIterator<Port> ports = mod.getPorts().listIterator();
-		Port currentPort = null;
-		
-		while (ports.hasNext())
+		Module currentModule;
+		while (list.hasNext())
 		{
-			currentPort = ports.next();
-			if (name.equals(currentPort.getRefName()))
+			currentModule = list.next();
+			if (currentModule.getID().equals(id))
 			{
-				return currentPort;
+				return currentModule;
 			}
 		}
-		return null;		
+		return null;
+	}
+	
+	/*
+	private static EquivalenceDefinition getEquivalenceDefinition(ListIterator<EquivalenceDefinition> list, String refName)
+	{
+		EquivalenceDefinition currentDefinition;
+		while (list.hasNext())
+		{
+			currentDefinition = list.next();
+			if (currentDefinition.getRefName().equals(refName))
+			{
+				return currentDefinition;
+			}
+		}
+		return null;
+	}
+	
+	private static PortDefinition getPortDefinition(ListIterator<PortDefinition> list, String refName)
+	{
+		PortDefinition currentDefinition;
+		while (list.hasNext())
+		{
+			currentDefinition = list.next();
+			if (currentDefinition.getRefName().equals(refName))
+			{
+				return currentDefinition;
+			}
+		}
+		return null;
+	}
+	*/
+	private static ACComponentDefinition getACComponentDefinition(ListIterator<ACComponentDefinition> list, String refName)
+	{
+		ACComponentDefinition currentDefinition;
+		while (list.hasNext())
+		{
+			currentDefinition = list.next();
+			if (currentDefinition.getRefName().equals(refName))
+			{
+				return currentDefinition;
+			}
+		}
+		return null;
+	}
+	
+	private static ACComponentNode getPortNode(Module parent, String refName)
+	{
+		ListIterator<ACComponentNode> list = parent.getPorts().listIterator();
+		PortNode currentNode;
+		while (list.hasNext())
+		{
+			currentNode = (PortNode)list.next();
+			if (currentNode.getPortDefinition().getRefName().equals(refName))
+			{
+				return currentNode;
+			}
+		}
+		return null;
+	}
+	
+	private static ACComponentNode getEquivalenceNode(Module parent, String refName)
+	{
+		ListIterator<ACComponentNode> list = parent.getEquivalences().listIterator();
+		EquivalenceNode currentNode;
+		while (list.hasNext())
+		{
+			currentNode = (EquivalenceNode)list.next();
+			if (currentNode.getEquivalenceDefinition().getRefName().equals(refName))
+			{
+				return currentNode;
+			}
+		}
+		return null;
+	}
+	
+	private static ACComponentNode getVisibleVariableNode(Module parent, String refName)
+	{
+		ListIterator<ACComponentNode> list = parent.getVisibleVariables().listIterator();
+		VisibleVariableNode currentNode;
+		while (list.hasNext())
+		{
+			currentNode = (VisibleVariableNode)list.next();
+			if (currentNode.getVisibleVariableDefinition().getRefName().equals(refName))
+			{
+				return currentNode;
+			}
+		}
+		return null;
+	}
+	
+	private static ConnectionDefinition getConnectionDefinition(ListIterator<ConnectionDefinition> list, TerminalType sourceType, String sourceRefName, TerminalType targetType, String targetRefName)
+	{
+		ConnectionDefinition currentDefinition;
+		while (list.hasNext())
+		{
+			currentDefinition = list.next();
+			if ((sourceType == currentDefinition.getSourceType()) 
+					&& (targetType == currentDefinition.getTargetType())
+					&& (sourceRefName.equals(currentDefinition.getSourceDefinition().getRefName()))
+					&& (targetRefName.equals(currentDefinition.getTargetDefinition().getRefName())))
+			{
+				return currentDefinition;
+			}
+		}
+		return null;
+	}
+	
+	private static String validateModuleName(String name)
+	{
+		if (!AC_Utility.moduleNameValidation(name, true))
+		{
+			return AC_Utility.promptUserForNewModuleName("Enter Module name:");	
+		}
+		return name;
+	}
+	
+	private static void displayErrorMessage()
+	{
+		JOptionPane.showMessageDialog(null,
+			    "The input file is corrupt.",
+			    "Error",
+			    JOptionPane.ERROR_MESSAGE);
 	}
 }

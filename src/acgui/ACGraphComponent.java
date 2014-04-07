@@ -45,7 +45,7 @@ public class ACGraphComponent extends mxGraphComponent
 	public Object labelChanged(Object cell, Object value, EventObject evt)
 	{
 		mxIGraphModel model = graph.getModel();
-
+		/*
 		if (((mxCell) cell).getValue() instanceof Module)
 		{
 			String newName = (String) value;
@@ -54,7 +54,7 @@ public class ACGraphComponent extends mxGraphComponent
 			model.beginUpdate();
 			try
 			{
-				AC_GUI.changeModuleName(mod, newName, false);
+				AC_Utility.changeModuleName(mod, newName, false);
 				graph.cellLabelChanged(cell, mod, graph.isAutoSizeCell(cell));
 				eventSource.fireEvent(new mxEventObject(mxEvent.LABEL_CHANGED,"cell", cell, "value", value, "event", evt));
 			}
@@ -63,7 +63,7 @@ public class ACGraphComponent extends mxGraphComponent
 				model.endUpdate();
 			}
 		}
-
+		*/
 		return cell;
 	}
 }

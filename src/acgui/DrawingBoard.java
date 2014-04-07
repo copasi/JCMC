@@ -2,30 +2,20 @@ package acgui;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Component;
-import java.awt.FlowLayout;
-import java.awt.GridLayout;
-import java.awt.Label;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.ListIterator;
 import java.util.Map;
-import java.util.Vector;
 
 import javax.swing.AbstractAction;
-import javax.swing.BorderFactory;
-import javax.swing.JButton;
-import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
-import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 
 import org.sbml.libsbml.GeneralGlyph;
@@ -34,23 +24,19 @@ import com.mxgraph.model.mxCell;
 import com.mxgraph.model.mxGeometry;
 import com.mxgraph.model.mxGraphModel;
 import com.mxgraph.swing.mxGraphComponent;
-import com.mxgraph.swing.handler.mxKeyboardHandler;
 import com.mxgraph.util.mxConstants;
 import com.mxgraph.util.mxEvent;
 import com.mxgraph.util.mxEventObject;
-import com.mxgraph.util.mxEventSource.mxIEventListener;
 import com.mxgraph.util.mxPoint;
+import com.mxgraph.util.mxEventSource.mxIEventListener;
 import com.mxgraph.view.mxStylesheet;
 
 /**
- * The drawing board panel in the aggregation connector.
- * 
- * @author T.C. Jones
- * @version June 29, 2012
+ * @author Thomas
+ *
  */
 public class DrawingBoard extends JPanel
 {
-	private static final long serialVersionUID = 1L;
 
 	private final int DEFAULT_MODULE_HEIGHT = 450;
 	private final int DEFAULT_MODULE_WIDTH = 643;
@@ -73,8 +59,7 @@ public class DrawingBoard extends JPanel
 	private Module submoduleView;
 	private mxCell activeSubmoduleButtonCell;
 	mxGraphComponent graphComponent;
-	ArrayList<Object> cells = new ArrayList<Object>();
-
+	
 	/**
 	 * Construct the drawing board.
 	 */
@@ -100,15 +85,10 @@ public class DrawingBoard extends JPanel
 		graphComponent.setToolTips(true);
 		installListeners();
 	}
-
-	/**
-	 * Create the first containment cell.
-	 * 
-	 * @param mod the module to be represented
-	 */
+	
 	public void setup(Module mod)
 	{
-		Object v1;
+		mxCell v1;
 		graph.getModel().beginUpdate();
 		try
 		{
@@ -118,7 +98,7 @@ public class DrawingBoard extends JPanel
 			double height = graphComponent.getVisibleRect().getHeight() - 50;
 			// v1 = graph.insertVertex(parent, null, mod, 10, 10, 600, 600,
 			// "defaultVertex;fillColor=white;strokeColor=blue;strokeWidth=5.0");
-			v1 = graph.insertVertex(parent, null, mod, 25, 25, width, height, "Module");
+			v1 = (mxCell)graph.insertVertex(parent, null, mod, 25, 25, width, height, "Module");
 			// graphModel.add(null, v1, 0);
 			/*
 			 * mxGeometry geometry = new mxGeometry(25, 25, width, height); mxCell root = new mxCell(mod, geometry,
@@ -143,6 +123,7 @@ public class DrawingBoard extends JPanel
 		((mxGraphModel)graph.getModel()).clear();
 		parent = graph.getDefaultParent();
 	}
+	
 	/**
 	 * Create a drawing cell representation of the module.
 	 * 
@@ -150,12 +131,24 @@ public class DrawingBoard extends JPanel
 	 */
 	public void createCell(Module mod)
 	{
+		double defaultModuleX = 25;
+		double defaultModuleY = 25;
+		double defaultModuleWidth = graphComponent.getVisibleRect().getWidth() - 50;
+		double defaultModuleHeight = graphComponent.getVisibleRect().getHeight() - 50;
+		double defaultSubmoduleX = 0;
+		double defaultSubmoduleY = 0;
+		double defaultSubmoduleWidth = DEFAULT_SUBMODULE_WIDTH;
+		double defaultSubmoduleHeight = DEFAULT_SUBMODULE_HEIGHT;
+
 		Object parentCell;
 		// Determine what the parentCell will be
 		if (mod.getParent() != null)
 		{
 			// The module's parent's drawing cell will be the parentCell
 			parentCell = mod.getParent().getDrawingCell();
+			int childCount = mod.getParent().getChildren().size();
+			defaultSubmoduleX = 40 + (childCount * 20);
+			defaultSubmoduleY = 40 + (childCount * 20);
 		}
 		else
 		{
@@ -165,68 +158,25 @@ public class DrawingBoard extends JPanel
 		}
 
 		// Create the cell
+		mxCell cell = (mxCell)graph.createVertex(parentCell, null, mod, 0, 0, 1, 1, "");
+		cell.setConnectable(false);
 
-		Object cell = graph.createVertex(parentCell, null, mod, 0, 0, 1, 1, "");
-		((mxCell) cell).setConnectable(false);
-
-		/*
-		 * mxGeometry geo = new mxGeometry(5, 5, 10, 10); mxCell cell = null; graph.getModel().beginUpdate(); try { geo
-		 * = new mxGeometry(5, 5, 10, 10); cell = new mxCell(mod, geo, ""); //cell.setParent(((mxCell)parentCell));
-		 * cell.setConnectable(false); cell.setVisible(true); graph.getModel().add(parent, cell, 0);
-		 * //graph.addCell(cell, parentCell); } finally { graph.getModel().endUpdate(); }
-		 */
 		// Assign the created cell to the module
-		Object obj = graph.getModel().getValue(cell);
 		mod.setDrawingCell(cell);
-		// Object cobj = mod.getDrawingCell();
-		// obj = graph.getModel().getValue(cobj);
-		// System.out.println("HI");
+		
+		if (mod.getDrawingCellGeometryModule() == null)
+		{
+			mod.setDrawingCellGeometryModule(new mxGeometry(defaultModuleX, defaultModuleY, defaultModuleWidth, defaultModuleHeight));
+		}
+		
+		if (mod.getDrawingCellGeometrySubmodule() == null)
+		{
+			mod.setDrawingCellGeometrySubmodule(new mxGeometry(defaultSubmoduleX, defaultSubmoduleY, defaultSubmoduleWidth, defaultSubmoduleHeight));
+		}
 	}
 	
 	public void createCell(Module mod, GeneralGlyph glyph)
 	{
-		Object parentCell;
-		mxGeometry geo = new mxGeometry();
-		double x = glyph.getBoundingBox().x();
-		double y = glyph.getBoundingBox().y();
-		double width = glyph.getBoundingBox().width();
-		double height = glyph.getBoundingBox().height();
-		// Determine what the parentCell will be
-		if (mod.getParent() != null)
-		{
-			// The module's parent's drawing cell will be the parentCell
-			parentCell = mod.getParent().getDrawingCell();
-			if (!(mod instanceof MathematicalAggregator))
-			{
-				width = DEFAULT_SUBMODULE_WIDTH;
-				height = DEFAULT_SUBMODULE_HEIGHT;
-			}
-		}
-		else
-		{
-			// The module has no parent, the default parent will be the
-			// parentCell
-			parentCell = parent;
-		}
-
-		// Create the cell
-
-		Object cell = graph.createVertex(parentCell, null, mod, 0, 0, 1, 1, "");
-		((mxCell) cell).setConnectable(false);
-
-		/*
-		 * mxGeometry geo = new mxGeometry(5, 5, 10, 10); mxCell cell = null; graph.getModel().beginUpdate(); try { geo
-		 * = new mxGeometry(5, 5, 10, 10); cell = new mxCell(mod, geo, ""); //cell.setParent(((mxCell)parentCell));
-		 * cell.setConnectable(false); cell.setVisible(true); graph.getModel().add(parent, cell, 0);
-		 * //graph.addCell(cell, parentCell); } finally { graph.getModel().endUpdate(); }
-		 */
-		// Assign the created cell to the module
-		Object obj = graph.getModel().getValue(cell);
-		mod.setDrawingCell(cell);
-		// Object cobj = mod.getDrawingCell();
-		// obj = graph.getModel().getValue(cobj);
-		// System.out.println("HI");
-		
 		if (glyph == null)
 		{
 			System.err.println("Glyph is null.");
@@ -237,139 +187,357 @@ public class DrawingBoard extends JPanel
 			System.err.println("Glyph boundingbox is null.");
 		}
 		
-		
-		graph.getModel().beginUpdate();
-		try
-		{
-			geo.setX(x);
-			geo.setY(y);
-			geo.setWidth(width);
-			geo.setHeight(height);
-			((mxCell)cell).setGeometry(geo);
-		}
-		finally
-		{
-			graph.getModel().endUpdate();
-		}
-		//mod.setDrawingCellBounds(bounds);
-		mod.setDrawingCellGeometry(geo);
-	}
-
-	/**
-	 * Add the drawing cell representation of the given module to the module's parent.
-	 * 
-	 * @param mod the module to add
-	 */
-	public void addCell(Module mod)
-	{
-		Object parentCell = mod.getParent().getDrawingCell();
-		Object childCell = mod.getDrawingCell();
-		int childCount = mod.getParent().getChildren().size();
-		mxGeometry geo = new mxGeometry();
-		double xPosition;
-		double yPosition;
-
-		graph.getModel().beginUpdate();
-		try
-		{
-			if (!graph.getModel().isVisible(childCell))
-			{
-				// System.out.println("Submodule not visible.");
-				graph.getModel().setVisible(childCell, true);
-			}
-			
-			xPosition = 40 + (childCount * 20);
-			yPosition = 40 + (childCount * 20);
-			//xPosition = 0.2 + (childCount * 0.01);
-			//yPosition = 0.2 + (childCount * 0.01);
-			geo.setX(xPosition);
-			geo.setY(yPosition);
-			geo.setWidth(DEFAULT_SUBMODULE_WIDTH);
-			geo.setHeight(DEFAULT_SUBMODULE_HEIGHT);
-			((mxCell)childCell).setGeometry(geo);
-			//graph.resizeCell(childCell, bounds);
-			graph.getModel().add(parentCell, childCell, 0);
-			graph.getModel().setStyle(childCell, mod.getDrawingCellStyle());
-		}
-		finally
-		{
-			graph.getModel().endUpdate();
-		}
-		//mod.setDrawingCellBounds(bounds);
-		mod.setDrawingCellGeometry(geo);
-		// printBoardStats();
-	}
-	
-	/**
-	 * Add the drawing cell representation of the given module to the module's parent.
-	 * 
-	 * @param mod the module to add
-	 */
-	public void addCell(Module mod, GeneralGlyph glyph)
-	{
-		Object parentCell = mod.getParent().getDrawingCell();
-		Object childCell = mod.getDrawingCell();
-		int childCount = mod.getParent().getChildren().size();
-		mxGeometry geo = new mxGeometry();
+		Object parentCell;
+		mxGeometry geo;
+		double defaultModuleX = 25;
+		double defaultModuleY = 25;
+		double defaultModuleWidth = graphComponent.getVisibleRect().getWidth() - 50;
+		double defaultModuleHeight = graphComponent.getVisibleRect().getHeight() - 50;
+		double defaultSubmoduleX = 0;
+		double defaultSubmoduleY = 0;
+		double defaultSubmoduleWidth = DEFAULT_SUBMODULE_WIDTH;
+		double defaultSubmoduleHeight = DEFAULT_SUBMODULE_HEIGHT;
 		double x = glyph.getBoundingBox().x();
 		double y = glyph.getBoundingBox().y();
 		double width = glyph.getBoundingBox().width();
 		double height = glyph.getBoundingBox().height();
 		
+		geo = new mxGeometry(x, y, width, height);
+		
+		// Determine what the parentCell will be
+		if (mod.getParent() != null)
+		{
+			// The module's parent's drawing cell will be the parentCell
+			parentCell = mod.getParent().getDrawingCell();
+			if (!(mod.getModuleDefinition() instanceof MathematicalAggregatorDefinition))
+			{
+				width = DEFAULT_SUBMODULE_WIDTH;
+				height = DEFAULT_SUBMODULE_HEIGHT;
+			}
+			// set default module dimensions
+			mod.setDrawingCellGeometryModule(new mxGeometry(defaultModuleX, defaultModuleY, defaultModuleWidth, defaultModuleHeight));
+			// the glyph corresponds to submodule dimensions
+			mod.setDrawingCellGeometrySubmodule(geo);
+			
+		}
+		else
+		{
+			// The module has no parent, the default parent will be the
+			// parentCell
+			parentCell = parent;
+			// the glyph corresponds to module dimensions
+			mod.setDrawingCellGeometryModule(geo);
+			// set default submodule dimensions
+			mod.setDrawingCellGeometrySubmodule(new mxGeometry(defaultSubmoduleX, defaultSubmoduleY, defaultSubmoduleWidth, defaultSubmoduleHeight));
+		}
+
+		// Create the cell
+		mxCell cell = (mxCell)graph.createVertex(parentCell, null, mod, 0, 0, 1, 1, "");
+		cell.setConnectable(false);
+		cell.setGeometry(geo);
+		
+		// Assign the created cell to the module
+		mod.setDrawingCell(cell);
+	}
+
+	public void createMathematicalAggregatorNode(Module maModule)
+	{
+		createCell(maModule);
+		
+		mxCell childCell = maModule.getDrawingCell();
+		int childCount = maModule.getParent().getChildren().size();
+		mxGeometry geo;
+		double x;
+		double y;
+		double width = DEFAULT_AGGREGATOR_WIDTH;
+		double height = (20 * (maModule.getPorts().size()-1));
+
+		x = 40 + (childCount * 20);
+		y = 40 + (childCount * 20);
+		geo = new mxGeometry(x, y, width, height);
+		childCell.setGeometry(geo);
+		
+		maModule.setDrawingCell(childCell);
+		maModule.setDrawingCellGeometrySubmodule(geo);
+		
+		alignMathematicalAggregatorPorts(maModule);
+	}
+
+	public void createMathematicalAggregatorNode(Module maModule, GeneralGlyph glyph)
+	{
+		createCell(maModule);
+		
+		mxCell childCell = maModule.getDrawingCell();
+		mxGeometry geo;
+		double x;
+		double y;
+		double width = DEFAULT_AGGREGATOR_WIDTH;
+		double height = (20 * (maModule.getPorts().size()-1));
+
+		x = glyph.getBoundingBox().x();
+		y = glyph.getBoundingBox().y();
+		geo = new mxGeometry(x, y, width, height);
+		childCell.setGeometry(geo);
+		
+		maModule.setDrawingCell(childCell);
+		maModule.setDrawingCellGeometrySubmodule(geo);
+		
+		alignMathematicalAggregatorPorts(maModule);
+	}
+	
+	/**
+	 * Add the drawing cell representation of the given Module to the graph. 
+	 * @param mod the Module to add
+	 */
+	public void addModuleCell(Module mNode)
+	{
+		Object parentCell;
+		mxGeometry geo;
+		if (mNode.getParent() == null)
+		{
+			parentCell = parent;
+			geo = mNode.getDrawingCellGeometryModule();
+		}
+		else
+		{
+			parentCell = mNode.getParent().getDrawingCell();
+			geo = mNode.getDrawingCellGeometrySubmodule();
+		}
+		Object moduleCell = mNode.getDrawingCell();
+		
 		graph.getModel().beginUpdate();
 		try
 		{
-			if (!graph.getModel().isVisible(childCell))
-			{
-				// System.out.println("Submodule not visible.");
-				graph.getModel().setVisible(childCell, true);
-			}
-
-			geo.setX(x);
-			geo.setY(y);
-			geo.setWidth(width);
-			geo.setHeight(height);
-			((mxCell)childCell).setGeometry(geo);
-			graph.getModel().add(parentCell, childCell, 0);
-			graph.getModel().setStyle(childCell, mod.getDrawingCellStyle());
+			graph.getModel().add(parentCell, moduleCell, 0);
+			graph.getModel().setGeometry(moduleCell, geo);
+			graph.getModel().setStyle(moduleCell, mNode.getDrawingCellStyle());
 		}
 		finally
 		{
 			graph.getModel().endUpdate();
 		}
-		//mod.setDrawingCellBounds(bounds);
-		mod.setDrawingCellGeometry(geo);
-		// printBoardStats();
-	}
-
-	public void createPort(Port port, mxGeometry geo)
-	{
-		mxCell port1 = null;
-		mxGeometry geo1 = new mxGeometry(geo.getX(), geo.getY(), geo.getWidth(), geo.getHeight());
-		geo1.setRelative(true);
-
-		port1 = new mxCell(port, geo1, "Port");
-		port1.setVertex(true);
-		port1.setConnectable(true);
-		
-		port.setDrawingCell(port1);
+		mNode.setDrawingCellGeometrySubmodule(geo);
+		if (!(mNode.getModuleDefinition() instanceof MathematicalAggregatorDefinition) && (parentCell != parent))
+		{
+			drawSubmoduleButton(moduleCell);
+		}
 	}
 	
-	public void createPort(Port port, GeneralGlyph glyph)
+	/**
+	 * Add the drawing cell representation of the given Module to the graph.
+	 * @param mod the Module to add
+	 * @param glyph the graphical information for the Module
+	 */
+	public void addModuleCell(Module mNode, GeneralGlyph glyph)
 	{
-		mxCell port1 = null;
+		Object parentCell;
+		if (mNode.getParent() == null)
+		{
+			parentCell = parent;
+		}
+		else
+		{
+			parentCell = mNode.getParent().getDrawingCell();
+		}
+		Object moduleCell = mNode.getDrawingCell();
+		mxGeometry geo = new mxGeometry(glyph.getBoundingBox().x(), glyph.getBoundingBox().y(), glyph.getBoundingBox().width(), glyph.getBoundingBox().height());
+		
+		graph.getModel().beginUpdate();
+		try
+		{
+			graph.getModel().add(parentCell, moduleCell, 0);
+			graph.getModel().setGeometry(moduleCell, geo);
+			graph.getModel().setStyle(moduleCell, mNode.getDrawingCellStyle());
+		}
+		finally
+		{
+			graph.getModel().endUpdate();
+		}
+		mNode.setDrawingCellGeometrySubmodule(geo);
+		if (!(mNode.getModuleDefinition() instanceof MathematicalAggregatorDefinition) && (parentCell != parent))
+		{
+			drawSubmoduleButton(moduleCell);
+		}
+	}
+	
+	public void createACComponentNodeCell(ACComponentNode node)
+	{
+		mxGeometry geo = node.getDrawingCellGeometry();
+		
+		if (node instanceof PortNode)
+		{
+			double offsetX = -geo.getWidth() / 2;
+			double offsetY = -geo.getHeight() / 2;
+			
+			geo.setOffset(new mxPoint(offsetX, offsetY));
+			geo.setRelative(true);
+		}
+		
+		mxCell nodeCell = new mxCell(node, geo, node.getDrawingCellStyle());
+		nodeCell.setVertex(true);
+		nodeCell.setConnectable(true);
+		
+		node.setDrawingCell(nodeCell);
+	}
+	
+	/**
+	 * Add the drawing cell representation of the given Component Node to the graph.
+	 * @param node the Component Node to add
+	 */
+	public void addComponentNodeCell(ACComponentNode node)
+	{
+		mxCell parentCell = node.getParent().getDrawingCell();
+		mxCell nodeCell = node.getDrawingCell();
+		mxGeometry geo = node.getDrawingCellGeometry();
+
+		graph.getModel().beginUpdate();
+		try
+		{
+			graph.getModel().add(parentCell, nodeCell, 0);
+			if (geo != null)
+			{
+				graph.getModel().setGeometry(nodeCell, geo);
+			}
+			graph.getModel().setStyle(nodeCell, node.getDrawingCellStyle());
+		}
+		finally
+		{
+			graph.getModel().endUpdate();
+		}
+	}
+	
+	/**
+	 * Add the drawing cell representation of the given Component Node to the graph.
+	 * @param node the Component Node to add
+	 * @param glyph the graphical information for the Component Node
+	 */
+	public void addComponentNodeCell(ACComponentNode node, GeneralGlyph glyph)
+	{
+		mxCell parentCell = node.getParent().getDrawingCell();
+		mxCell nodeCell = node.getDrawingCell();
+		mxGeometry geo = new mxGeometry(glyph.getBoundingBox().x(), glyph.getBoundingBox().y(), glyph.getBoundingBox().width(), glyph.getBoundingBox().height());
+
+		graph.getModel().beginUpdate();
+		try
+		{
+			graph.getModel().add(parentCell, nodeCell, 0);
+			graph.getModel().setGeometry(nodeCell, geo);
+			graph.getModel().setStyle(nodeCell, node.getDrawingCellStyle());
+		}
+		finally
+		{
+			graph.getModel().endUpdate();
+		}
+		node.setDrawingCellGeometry(geo);
+	}
+	
+	public void createPort(PortNode pNode)
+	{
+		mxCell portCell;
+		mxGeometry geo;
+		double width = DEFAULT_PORT_WIDTH;
+		double height = DEFAULT_PORT_HEIGHT;
+		double offsetX = -width / 2;
+		double offsetY = -height / 2;
+
+		geo = new mxGeometry(0, 0.5, width, height);
+		geo.setOffset(new mxPoint(offsetX, offsetY));
+		geo.setRelative(true);
+		
+		portCell = new mxCell(pNode, geo, "Port");
+		portCell.setVertex(true);
+		portCell.setConnectable(true);
+		
+		pNode.setDrawingCell(portCell);
+		pNode.setDrawingCellGeometry(geo);
+		pNode.setDrawingCellStyle("Port");
+	}
+	
+	public void createPort(PortNode pNode, GeneralGlyph glyph)
+	{
+		mxCell portCell;
+		mxGeometry geo;
 		double x = glyph.getBoundingBox().x();
 		double y = glyph.getBoundingBox().y();
 		double width = DEFAULT_PORT_WIDTH;
 		double height = DEFAULT_PORT_HEIGHT;
-		mxGeometry geo = new mxGeometry(x, y, width, height);
+		double offsetX = -width / 2;
+		double offsetY = -height / 2;
+
+		geo = new mxGeometry(x, y, width, height);
+		geo.setOffset(new mxPoint(offsetX, offsetY));
 		geo.setRelative(true);
 		
-		port1 = new mxCell(port, geo, "Port");
-		port1.setVertex(true);
-		port1.setConnectable(true);
+		portCell = new mxCell(pNode, geo, "Port");
+		portCell.setVertex(true);
+		portCell.setConnectable(true);
 		
-		port.setDrawingCell(port1);
+		pNode.setDrawingCell(portCell);
+		pNode.setDrawingCellGeometry(geo);
+		pNode.setDrawingCellStyle("Port");
+	}
+	
+	public void createPort(PortNode pNode, mxGeometry iGeo)
+	{
+		mxCell portCell;
+		mxGeometry geo;
+		double x = iGeo.getX();
+		double y = iGeo.getY();
+		double width = DEFAULT_PORT_WIDTH;
+		double height = DEFAULT_PORT_HEIGHT;
+		double offsetX = -width / 2;
+		double offsetY = -height / 2;
+
+		geo = new mxGeometry(x, y, width, height);
+		geo.setOffset(new mxPoint(offsetX, offsetY));
+		geo.setRelative(true);
+		
+		portCell = new mxCell(pNode, geo, "Port");
+		portCell.setVertex(true);
+		portCell.setConnectable(true);
+		
+		pNode.setDrawingCell(portCell);
+		pNode.setDrawingCellGeometry(geo);
+		pNode.setDrawingCellStyle("Port");
+	}
+	
+	public void addPort(PortNode pNode)
+	{
+		mxCell parentCell = pNode.getParent().getDrawingCell();
+		mxCell nodeCell = pNode.getDrawingCell();
+		mxGeometry geo = pNode.getDrawingCellGeometry();
+		double width = DEFAULT_PORT_WIDTH;
+		double height = DEFAULT_PORT_HEIGHT;
+		double offsetX;
+		double offsetY;
+		
+		graph.getModel().beginUpdate();
+		try
+		{
+			if (AC_GUI.activeModule != pNode.getParent())
+			{
+				// the Port is for a submodule
+				width = width / 2;
+				height = height / 2;
+			}
+			
+			offsetX = -width / 2;
+			offsetY = -height / 2;
+			
+			geo.setWidth(width);
+			geo.setHeight(height);
+			geo.setOffset(new mxPoint(offsetX, offsetY));
+			
+			graph.getModel().add(parentCell, nodeCell, 0);
+			graph.getModel().setGeometry(nodeCell, geo);
+			graph.getModel().setStyle(nodeCell, pNode.getDrawingCellStyle());
+			graph.updatePortOrientation(nodeCell, geo, false);
+		}
+		finally
+		{
+			graph.getModel().endUpdate();
+		}
+		pNode.setDrawingCellGeometry(geo);
 	}
 	
 	/**
@@ -379,7 +547,8 @@ public class DrawingBoard extends JPanel
 	 * @param parentMod the parent module of the port
 	 * @param port the port to be added
 	 */
-	public void addPort(Module parentMod, Port port)
+	/*
+	public void addPort(Module parentMod, PortNode port)
 	{
 		Object cell = parentMod.getDrawingCell();
 		double width = DEFAULT_PORT_WIDTH;
@@ -420,7 +589,7 @@ public class DrawingBoard extends JPanel
 
 		port.setDrawingCell(port1);
 	}
-
+	*/
 	/**
 	 * Add a drawing cell representation of the given port to the 
 	 * drawing cell representation of the given module.
@@ -428,7 +597,8 @@ public class DrawingBoard extends JPanel
 	 * @param parentMod the parent module of the port
 	 * @param port the port to be added
 	 */
-	public void addPort(Module parentMod, Port port, GeneralGlyph glyph)
+	/*
+	public void addPort(Module parentMod, PortNode port, GeneralGlyph glyph)
 	{
 		Object cell = parentMod.getDrawingCell();
 		double width = DEFAULT_PORT_WIDTH;
@@ -471,49 +641,73 @@ public class DrawingBoard extends JPanel
 
 		port.setDrawingCell(port1);
 	}
-	
-	public void createVisibleVariable(VisibleVariable var)
+	*/
+	public void createVisibleVariable(VisibleVariableNode var)
 	{
 		Object parentCell = var.getParent().getDrawingCell();
-		mxCell var1 = null;
-		var1 = (mxCell)graph.createVertex(parentCell, null, var, 0, 0, 10, 10, "");
+		mxCell varCell = null;
+		varCell = (mxCell)graph.createVertex(parentCell, null, var, 5, 5, DEFAULT_VISIBLEVARIABLE_WIDTH, DEFAULT_VISIBLEVARIABLE_HEIGHT, "");
 		//var1 = new mxCell(var);
-		var1.setGeometry(var.getDrawingCellGeometry());
-		var1.setVertex(true);
-		var1.setConnectable(true);
+		if (var.getDrawingCellGeometry() != null)
+		{
+			varCell.setGeometry(var.getDrawingCellGeometry());
+		}
+		varCell.setVertex(true);
+		varCell.setConnectable(true);
 		
-		var.setDrawingCell(var1);
+		var.setDrawingCell(varCell);
+		var.setDrawingCellStyle("VisibleVariable");
+		var.setDrawingCellGeometry(varCell.getGeometry());
 	}
 	
-	public void createVisibleVariable(VisibleVariable var, GeneralGlyph glyph)
+	public void createVisibleVariable(VisibleVariableNode var, GeneralGlyph glyph)
 	{
 		Object parentCell = var.getParent().getDrawingCell();
-		mxCell var1 = null;
-		var1 = (mxCell)graph.createVertex(parentCell, null, var, 5, 5, 10, 10, "");
-		//var1 = new mxCell(var);
-		double x = glyph.getBoundingBox().x();
-		double y = glyph.getBoundingBox().y();
-		double width = DEFAULT_VISIBLEVARIABLE_WIDTH;
-		double height = DEFAULT_VISIBLEVARIABLE_HEIGHT;
-		mxGeometry geo = new mxGeometry(x, y, width, height);
-		var1.setGeometry(geo);
-		var1.setVertex(true);
-		var1.setConnectable(true);
+		mxCell varCell = null;
+		varCell = (mxCell)graph.createVertex(parentCell, null, var, 5, 5, 10, 10, "");
+		mxGeometry geo = new mxGeometry(glyph.getBoundingBox().x(), glyph.getBoundingBox().y(), DEFAULT_VISIBLEVARIABLE_WIDTH, DEFAULT_VISIBLEVARIABLE_HEIGHT);
+		varCell.setGeometry(geo);
+		varCell.setVertex(true);
+		varCell.setConnectable(true);
 		
-		var.setDrawingCell(var1);
-		var.setDrawingCellGeometry(geo);
+		var.setDrawingCell(varCell);
+		var.setDrawingCellStyle("VisibleVariable");
+		var.setDrawingCellGeometry(varCell.getGeometry());
+	}
+	
+	public void createVisibleVariable(VisibleVariableNode var, mxGeometry geo)
+	{
+		Object parentCell = var.getParent().getDrawingCell();
+		mxCell varCell = null;
+		varCell = (mxCell)graph.createVertex(parentCell, null, var, geo.getX(), geo.getY(), DEFAULT_VISIBLEVARIABLE_WIDTH, DEFAULT_VISIBLEVARIABLE_HEIGHT, "");
+		//var1 = new mxCell(var);
+		if (var.getDrawingCellGeometry() != null)
+		{
+			varCell.setGeometry(var.getDrawingCellGeometry());
+		}
+		varCell.setVertex(true);
+		varCell.setConnectable(true);
+		
+		var.setDrawingCell(varCell);
+		var.setDrawingCellStyle("VisibleVariable");
+		var.setDrawingCellGeometry(varCell.getGeometry());
 	}
 	
 	public void createEquivalenceNode(EquivalenceNode eNode)
 	{
 		Object parentCell = eNode.getParent().getDrawingCell();
 		mxCell eNodeCell = null;
-		eNodeCell = (mxCell)graph.createVertex(parentCell, null, eNode, 0, 0, 10, 10, "");
-		eNodeCell.setGeometry(eNode.getDrawingCellGeometry());
+		eNodeCell = (mxCell)graph.createVertex(parentCell, null, eNode, 5, 5, DEFAULT_EQUIVALENCENODE_WIDTH, DEFAULT_EQUIVALENCENODE_HEIGHT, "");
+		if (eNode.getDrawingCellGeometry() != null)
+		{
+			eNodeCell.setGeometry(eNode.getDrawingCellGeometry());
+		}
 		eNodeCell.setVertex(true);
 		eNodeCell.setConnectable(true);
 		
 		eNode.setDrawingCell(eNodeCell);
+		eNode.setDrawingCellStyle("EquivalenceNode");
+		eNode.setDrawingCellGeometry(eNodeCell.getGeometry());
 	}
 	
 	public void createEquivalenceNode(EquivalenceNode eNode, GeneralGlyph glyph)
@@ -521,20 +715,54 @@ public class DrawingBoard extends JPanel
 		Object parentCell = eNode.getParent().getDrawingCell();
 		mxCell eNodeCell = null;
 		eNodeCell = (mxCell)graph.createVertex(parentCell, null, eNode, 5, 5, 10, 10, "");
-		double x = glyph.getBoundingBox().x();
-		double y = glyph.getBoundingBox().y();
-		double width = DEFAULT_EQUIVALENCENODE_WIDTH;
-		double height = DEFAULT_EQUIVALENCENODE_HEIGHT;
-		mxGeometry geo = new mxGeometry(x, y, width, height);
+		mxGeometry geo = new mxGeometry(glyph.getBoundingBox().x(), glyph.getBoundingBox().y(), DEFAULT_EQUIVALENCENODE_WIDTH, DEFAULT_EQUIVALENCENODE_HEIGHT);
 		eNodeCell.setGeometry(geo);
 		eNodeCell.setVertex(true);
 		eNodeCell.setConnectable(true);
 		
 		eNode.setDrawingCell(eNodeCell);
-		eNode.setDrawingCellGeometry(geo);
+		eNode.setDrawingCellStyle("EquivalenceNode");
+		eNode.setDrawingCellGeometry(eNodeCell.getGeometry());
 	}
 	
-	public void addVisibleVariable(Module parentMod, VisibleVariable var)
+	public void createEquivalenceNode(EquivalenceNode eNode, mxGeometry geo)
+	{
+		Object parentCell = eNode.getParent().getDrawingCell();
+		mxCell eNodeCell = null;
+		eNodeCell = (mxCell)graph.createVertex(parentCell, null, eNode, geo.getX(), geo.getY(), DEFAULT_EQUIVALENCENODE_WIDTH, DEFAULT_EQUIVALENCENODE_HEIGHT, "");
+		if (eNode.getDrawingCellGeometry() != null)
+		{
+			eNodeCell.setGeometry(eNode.getDrawingCellGeometry());
+		}
+		eNodeCell.setVertex(true);
+		eNodeCell.setConnectable(true);
+		
+		eNode.setDrawingCell(eNodeCell);
+		eNode.setDrawingCellStyle("EquivalenceNode");
+		eNode.setDrawingCellGeometry(eNodeCell.getGeometry());
+	}
+	
+	public void createConnection(ConnectionNode edge, Object source, Object target)
+	{
+		Object parentCell = edge.getParent().getDrawingCell();
+		String drawingCellStyle;
+		
+		if ((edge.getDrawingCellStyle() != null) && (edge.getDrawingCellStyle() != ""))
+		{
+			drawingCellStyle = edge.getDrawingCellStyle();
+		}
+		else
+		{
+			drawingCellStyle = "ConnectionEdge";
+		}
+		// createEdge
+		//mxCell edgeCell = (mxCell)graph.createEdge(parentCell, null, edge, source, target, drawingCellStyle);
+		mxCell edgeCell = (mxCell)graph.insertEdge(parentCell, null, edge, source, target, drawingCellStyle);
+		edge.setDrawingCell(edgeCell);
+		edge.setDrawingCellStyle(drawingCellStyle);
+	}
+	
+	public void addVisibleVariable(Module parentMod, VisibleVariableNode var)
 	{
 		//System.out.println("Time to add a visible variable:");
 		//System.out.println("Variable Ref Name: " + var.getRefName());
@@ -581,51 +809,30 @@ public class DrawingBoard extends JPanel
 			graph.getModel().endUpdate();
 		}
 
-		var.setDrawingCell((Object)var1);
+		var.setDrawingCell(var1);
 		//var.setDrawingCellBounds(bounds);
 		var.setDrawingCellGeometry(var1.getGeometry());
 	}
 	
-	public void addMathAggregator(MathematicalAggregator mathAgg)
+	public void addMathematicalAggregator(Module maModule)
 	{
-		createCell(mathAgg);
+		mxCell parentCell = maModule.getParent().getDrawingCell();
+		mxCell childCell = maModule.getDrawingCell();
+		mxGeometry geo = maModule.getDrawingCellGeometrySubmodule();
 		
-		Object parentCell = mathAgg.getParent().getDrawingCell();
-		Object childCell = mathAgg.getDrawingCell();
-		int childCount = mathAgg.getParent().getChildren().size();
-		mxGeometry geo = new mxGeometry();
-		double xPosition;
-		double yPosition;
-		double width = DEFAULT_AGGREGATOR_WIDTH;
-		double height = (20 * (mathAgg.getPorts().size()-1));
-
 		graph.getModel().beginUpdate();
 		try
 		{
-			if (!graph.getModel().isVisible(childCell))
-			{
-				// System.out.println("Submodule not visible.");
-				graph.getModel().setVisible(childCell, true);
-			}
-			
-			xPosition = 40 + (childCount * 20);
-			yPosition = 40 + (childCount * 20);
-			geo.setX(xPosition);
-			geo.setY(yPosition);
-			geo.setWidth(width);
-			geo.setHeight(height);
-			//graph.resizeCell(childCell, bounds);
-			((mxCell)childCell).setGeometry(geo);
 			graph.getModel().add(parentCell, childCell, 0);
-			graph.getModel().setStyle(childCell, mathAgg.getDrawingCellStyle());
+			graph.getModel().setGeometry(childCell, geo);
+			graph.getModel().setStyle(childCell, maModule.getDrawingCellStyle());
 		}
 		finally
 		{
 			graph.getModel().endUpdate();
 		}
-		//mathAgg.setDrawingCellBounds(bounds);
-		mathAgg.setDrawingCellGeometry(geo);
-		addMathAggregatorPorts(mathAgg);
+		maModule.setDrawingCellGeometrySubmodule(geo);
+		drawPorts(maModule);
 	}
 	
 	public void addEquivalenceNode(EquivalenceNode eNode, Object formerEdge)
@@ -637,49 +844,35 @@ public class DrawingBoard extends JPanel
 		double yPosition;
 		double width = DEFAULT_EQUIVALENCENODE_WIDTH;
 		double height = DEFAULT_EQUIVALENCENODE_HEIGHT;
-		double offsetX;
-		double offsetY;
-		// System.out.println("Cell obj: " + ((mxCell) cell).getValue().toString());
-		// System.out.println("Parentmod obj: " + parentMod.getName());
 		
-		offsetX = -width;
-		offsetY = -height;
-
-		int equivIndex = parentMod.getEquivalenceNodes().size();
-		mxCell eNodeCell = null;
+		mxCell eNodeCell = eNode.getDrawingCell();
 		graph.getModel().beginUpdate();
 		try
 		{
-			//mxGeometry geo1 = new mxGeometry(0, 0, width, height);
-			//geo1.setOffset(new mxPoint(offsetX, offsetY));
-			//geo1.setRelative(true);
+			/*
 			eNodeCell = (mxCell)graph.createVertex(cell, null, eNode, 5, 5, 10, 10, "");
 			eNodeCell.setVertex(true);
 			eNodeCell.setConnectable(true);
-			//graph.getModel().add(cell, var1, 0);
+			*/
 			
 			xPosition = (formerGeo.getSourcePoint().getX() + formerGeo.getTargetPoint().getX()) / 2 - (width/2);
 			yPosition = (formerGeo.getSourcePoint().getY() + formerGeo.getTargetPoint().getY()) / 2 - (height/2);
 
 			mxGeometry geo = new mxGeometry(xPosition, yPosition, width, height);
-			//geo.setOffset(new mxPoint(offsetX, offsetY));
-			eNodeCell.setGeometry(geo);
 			graph.getModel().add(cell, eNodeCell, 0);
-			graph.getModel().setStyle(eNodeCell, "EquivalenceNode");
-			// graph.updatePortOrientation(port1, geo1);
-			//graph.updatePortOrientation(port1, geo1);
+			graph.getModel().setGeometry(eNodeCell, geo);
+			graph.getModel().setStyle(eNodeCell, eNode.getDrawingCellStyle());
 		}
 		finally
 		{
 			graph.getModel().endUpdate();
 		}
 
-		eNode.setDrawingCell((Object)eNodeCell);
-		//var.setDrawingCellBounds(bounds);
+		eNode.setDrawingCell(eNodeCell);
 		eNode.setDrawingCellGeometry(eNodeCell.getGeometry());
 	}
-	
-	public void createConnection(Connection edge, Object source, Object target)
+	/*
+	public void createConnection(ConnectionNode edge, Object source, Object target)
 	{
 		Object parentCell = edge.getParent().getDrawingCell();
 		//Object edgeCell = graph.createEdge(parentCell, null, edge, source, target, "ConnectionEdge");
@@ -692,19 +885,20 @@ public class DrawingBoard extends JPanel
 		{
 			drawingCellStyle = "ConnectionEdge";
 		}
-		Object edgeCell = graph.insertEdge(parentCell, null, edge, source, target, drawingCellStyle);
+		mxCell edgeCell = (mxCell)graph.insertEdge(parentCell, null, edge, source, target, drawingCellStyle);
 		edge.setDrawingCell(edgeCell);
 		edge.setDrawingCellStyle(drawingCellStyle);
 	}
 	
-	public void createConnection(Connection edge, Object source, Object target, String drawingCellStyle)
+	public void createConnection(ConnectionNode edge, Object source, Object target, String drawingCellStyle)
 	{
 		Object parentCell = edge.getParent().getDrawingCell();
 		//Object edgeCell = graph.createEdge(parentCell, null, edge, source, target, drawingCellStyle);
-		Object edgeCell = graph.insertEdge(parentCell, null, edge, source, target, drawingCellStyle);
+		mxCell edgeCell = (mxCell)graph.insertEdge(parentCell, null, edge, source, target, drawingCellStyle);
 		edge.setDrawingCell(edgeCell);
 		edge.setDrawingCellStyle(drawingCellStyle);
 	}
+	*/
 	
 	/**
 	 * Remove the given drawing cell, and its children, from the drawing board.
@@ -732,26 +926,62 @@ public class DrawingBoard extends JPanel
 		// cells.remove(cell);
 	}
 	
+	public void removeExtensions(ACComponentNode node)
+	{
+		if (node instanceof PortNode)
+		{
+			return;
+		}
+		mxCell nodeCell;
+		nodeCell = node.getDrawingCell();
+		int connectionCount = graph.getModel().getEdgeCount(nodeCell);
+		if (connectionCount <= 1)
+		{
+			if (node instanceof EquivalenceNode)
+			{
+				AC_GUI.removeEquivalenceNode((EquivalenceNode)node);
+			}
+			else if (node instanceof VisibleVariableNode)
+			{
+				AC_GUI.removeVisibleVariable((VisibleVariableNode)node);
+			}
+		}
+	}
+	
 	/**
 	 * Remove any edges connected to the given drawing cell.
 	 * @param cell the drawing cell whose edges will be removed
 	 */
-	public void removeEdges(Object cell)
+	public void removeEdges(mxCell cell)
 	{
 		// check if there are any connections to the drawing cell
 		int connectionCount = graph.getModel().getEdgeCount(cell);
-		if (connectionCount != 0)
+		if (connectionCount > 0)
 		{
 			// remove the existing connections from the drawing cell
-			Connection edge;
+			mxCell edgeCell;
+			ConnectionNode edge;
+			mxCell oppositeTerminalCell = null;
+			ACComponentNode oppositeTerminal;
 			for(int i = 0; i < connectionCount; i++)
 			{
+				// get the connection drawing cell
+				edgeCell = (mxCell)graph.getModel().getEdgeAt(cell, 0);
+				if (edgeCell.getSource() == cell)
+				{
+					oppositeTerminalCell = (mxCell)edgeCell.getTarget();
+				}
+				else if (edgeCell.getTarget() == cell)
+				{
+					oppositeTerminalCell = (mxCell)edgeCell.getSource();
+				}
+				oppositeTerminal = (ACComponentNode)oppositeTerminalCell.getValue();
 				// get the connection object from the drawing cell
-				edge = (Connection)((mxCell)graph.getModel().getEdgeAt(cell, 0)).getValue();
-				// remove the drawing cell from the graph
-				removeCell(edge.getDrawingCell());
+				edge = (ConnectionNode)edgeCell.getValue();
 				// remove the connection from the module
-				AC_GUI.currentGUI.removeConnection(edge);
+				AC_GUI.removeConnection(edge);
+				// remove any extensions
+				removeExtensions(oppositeTerminal);
 			}
 		}
 	}
@@ -829,6 +1059,11 @@ public class DrawingBoard extends JPanel
 		return submoduleView;
 	}
 	
+	public mxCell getActiveSubmoduleButtonCell()
+	{
+		return activeSubmoduleButtonCell;
+	}
+	
 	public void drawSubmoduleMiniComponents(Module mod, mxCell buttonCell)
 	{
 		Object submoduleCell = mod.getDrawingCell();
@@ -851,6 +1086,9 @@ public class DrawingBoard extends JPanel
 		submoduleView = mod;
 		activeSubmoduleButtonCell = buttonCell;
 		drawSubmoduleMiniChildren(mod);
+		drawSubmoduleMiniVisibleVariables(mod);
+		drawSubmoduleMiniEquivalenceNodes(mod);
+		drawSubmoduleMiniConnections(mod);
 	}
 
 	public void removeSubmoduleMiniComponents(mxCell buttonCell)
@@ -904,8 +1142,8 @@ public class DrawingBoard extends JPanel
 		double yPosition = 25;
 		double width = graphComponent.getVisibleRect().getWidth() - 50;
 		double height = graphComponent.getVisibleRect().getHeight() - 50;
-		System.out.println("width = " + width + " height = " + height);
-		mxGeometry geo = new mxGeometry(25, 25, width, height);
+		//System.out.println("width = " + width + " height = " + height);
+		mxGeometry geo;
 		//mod.setDrawingCellGeometry(geo);
 		Object cell = mod.getDrawingCell();
 		if (activeModule != null)
@@ -915,22 +1153,20 @@ public class DrawingBoard extends JPanel
 		graph.getModel().beginUpdate();
 		try
 		{
-			/*
-			 * if (!graph.getModel().isVisible(cell)) { //System.out.println("Module not visible.");
-			 * graph.getModel().setVisible(cell, true); }
-			 */
-			//geo = mod.getDrawingCellGeometry();
-			geo = new mxGeometry();
-			xPosition = 25;
-			yPosition = 25;
-			geo.setX(xPosition);
-			geo.setY(yPosition);
-			geo.setWidth(width);
-			geo.setHeight(height);
-			((mxCell)cell).setGeometry(geo);
+			geo = mod.getDrawingCellGeometryModule();
+			if (geo == null)
+			{
+				geo = new mxGeometry();
+				xPosition = 25;
+				yPosition = 25;
+				geo.setX(xPosition);
+				geo.setY(yPosition);
+				geo.setWidth(width);
+				geo.setHeight(height);
+			}
 			//graph.resizeCell(childCell, bounds);
 			graph.getModel().add(parent, cell, 0);
-			//graph.resizeCell(cell, bounds);
+			graph.getModel().setGeometry(cell, geo);
 			graph.getModel().setStyle(cell, "Module");
 		}
 		finally
@@ -974,44 +1210,50 @@ public class DrawingBoard extends JPanel
 	{
 		if (activeModule != null)
 		{
+			activeModule.setDrawingCellGeometryModule(activeModule.getDrawingCell().getGeometry());
+			
 			ListIterator<Module> children = activeModule.getChildren().listIterator();
 			Module child;
-			Object childCell;
+			mxCell childCell;
 			mxGeometry geo;
 
+			// save the submodule positions
 			while (children.hasNext())
 			{
 				child = children.next();
 				childCell = child.getDrawingCell();
 
-				geo = ((mxCell)childCell).getGeometry();
-				child.setDrawingCellGeometry(geo);
+				geo = childCell.getGeometry();
+				child.setDrawingCellGeometrySubmodule(geo);
+				
+				if (child.getPorts().size() > 0)
+				{
+					// save the submodule's PortNode positions
+					saveACComponentNodePositions(child.getPorts().listIterator());
+				}
 			}
 			
-			ListIterator<VisibleVariable> vars = activeModule.getVisibleVariables().listIterator();
-			VisibleVariable var;
-			Object varCell;
-			while (vars.hasNext())
-			{
-				var = vars.next();
-				varCell = var.getDrawingCell();
-				
-				geo = ((mxCell)varCell).getGeometry();
-				var.setDrawingCellGeometry(geo);
-				//var.setDrawingCellGeometry(((mxCell)varCell).getGeometry());
-			}
+			// save the activeModule's PortNode positions
+			saveACComponentNodePositions(activeModule.getPorts().listIterator());
+			// save the activeModule's VisibleVariableNode positions
+			saveACComponentNodePositions(activeModule.getVisibleVariables().listIterator());
+			// save the activeModule's EquivalenceNode positions
+			saveACComponentNodePositions(activeModule.getEquivalences().listIterator());
+		}
+	}
+	
+	private void saveACComponentNodePositions(ListIterator<ACComponentNode> list)
+	{
+		ACComponentNode node;
+		mxCell nodeCell;
+		mxGeometry geo;
+		while(list.hasNext())
+		{
+			node = list.next();
+			nodeCell = node.getDrawingCell();
 			
-			ListIterator<EquivalenceNode> eNodes = activeModule.getEquivalenceNodes().listIterator();
-			EquivalenceNode eNode;
-			Object eNodeCell;
-			while(eNodes.hasNext())
-			{
-				eNode = eNodes.next();
-				eNodeCell = eNode.getDrawingCell();
-				
-				geo = ((mxCell)eNodeCell).getGeometry();
-				eNode.setDrawingCellGeometry(geo);
-			}
+			geo = nodeCell.getGeometry();
+			node.setDrawingCellGeometry(geo);
 		}
 	}
 	
@@ -1115,52 +1357,6 @@ public class DrawingBoard extends JPanel
 		}
 	}
 	
-	private void setCellGeometryToCenterPointOfCells(Object cell, Object sourceCell, Object targetCell)
-	{
-		mxGeometry sourceGeo = ((mxCell)sourceCell).getGeometry();
-		if (((mxCell)sourceCell).getValue() instanceof Port)
-		{
-			// sourceCell represents a Port.
-			// The drawing cell of a Port has relative geometry to its parent.
-			// Set sourceGeo to the geometry of the Port's parent.
-			sourceGeo = ((mxCell)((Port)((mxCell)sourceCell).getValue()).getParent().getDrawingCell()).getGeometry();
-		}
-		mxGeometry targetGeo = ((mxCell)targetCell).getGeometry();
-		if (((mxCell)targetCell).getValue() instanceof Port)
-		{
-			// targetCell represents a Port.
-			// The drawing cell of a Port has relative geometry to its parent.
-			// Set targetGeo to the geometry of the Port's parent.
-			targetGeo = ((mxCell)((Port)((mxCell)targetCell).getValue()).getParent().getDrawingCell()).getGeometry();
-		}
-		double width = ((mxCell)cell).getGeometry().getWidth();
-		double height = ((mxCell)cell).getGeometry().getHeight();
-		double xPosition = (sourceGeo.getX() + targetGeo.getX()) / 2 - (width/2);;
-		double yPosition = (sourceGeo.getY() + targetGeo.getY()) / 2 - (height/2);;
-		
-		mxGeometry geo = new mxGeometry(xPosition, yPosition, width, height);
-		
-		graph.getModel().beginUpdate();
-		try
-		{
-			graph.getModel().setGeometry(cell, geo);
-		}
-		finally
-		{
-			graph.getModel().endUpdate();
-		}
-	}
-	
-	/**
-	 * Used for debugging purposes.
-	 * @param cell the parent cell
-	 */
-	private void printCellCount(Object cell)
-	{
-		int childCount = graph.getModel().getChildCount(cell);
-		// System.out.println("Child count: " + childCount);
-	}
-
 	/**
 	 * Draw the children of the given module.
 	 * @param mod The module whose children will be drawn
@@ -1193,7 +1389,7 @@ public class DrawingBoard extends JPanel
 			graph.getModel().beginUpdate();
 			try
 			{				
-				geo = child.getDrawingCellGeometry();
+				geo = child.getDrawingCellGeometrySubmodule();
 				if (geo == null || (geo.getHeight() <= 10))
 				{
 					geo = new mxGeometry();
@@ -1218,7 +1414,7 @@ public class DrawingBoard extends JPanel
 				graph.getModel().endUpdate();
 			}
 			//child.setDrawingCellBounds(bounds);
-			if (!(child instanceof MathematicalAggregator))
+			if (!(child.getModuleDefinition() instanceof MathematicalAggregatorDefinition))
 			{
 				drawSubmoduleButton(childCell);
 			}
@@ -1243,7 +1439,7 @@ public class DrawingBoard extends JPanel
 	 */
 	private void drawPorts(Module mod)
 	{
-		ListIterator<Port> ports;
+		ListIterator<ACComponentNode> ports;
 		Object cell;
 		Object portCell;
 		mxGeometry geo;
@@ -1265,6 +1461,7 @@ public class DrawingBoard extends JPanel
 		{
 			// get the drawing cell of the current port
 			portCell = (mxCell) ports.next().getDrawingCell();
+			((mxCell)portCell).setConnectable(true);
 
 			// draw the current port
 			graph.getModel().beginUpdate();
@@ -1300,7 +1497,7 @@ public class DrawingBoard extends JPanel
 
 	private void drawVisibleVariables(Module mod)
 	{
-		ListIterator<VisibleVariable> vars;
+		ListIterator<ACComponentNode> vars;
 		Object cell;
 		Object varCell;
 		//mxGeometry geo;
@@ -1310,7 +1507,7 @@ public class DrawingBoard extends JPanel
 		double height;
 		double offsetX;
 		double offsetY;
-		VisibleVariable var;
+		ACComponentNode var;
 		int varIndex;
 		mxGeometry geo;
 		double xPosition;
@@ -1359,6 +1556,7 @@ public class DrawingBoard extends JPanel
 					geo.setHeight(DEFAULT_VISIBLEVARIABLE_HEIGHT);
 				}
 				//((mxCell)varCell).setGeometry(geo);
+				((mxCell) varCell).setConnectable(true);
 				graph.getModel().add(cell, varCell, 0);
 				graph.getModel().setStyle(varCell, "VisibleVariable");
 				graph.getModel().setGeometry(varCell, geo);
@@ -1376,7 +1574,7 @@ public class DrawingBoard extends JPanel
 	 */
 	private void drawEquivalenceNodes(Module mod)
 	{
-		ListIterator<EquivalenceNode> eNodes;
+		ListIterator<ACComponentNode> eNodes;
 		Object cell;
 		Object eNodeCell;
 		//mxGeometry geo;
@@ -1386,14 +1584,14 @@ public class DrawingBoard extends JPanel
 		double height;
 		double offsetX;
 		double offsetY;
-		EquivalenceNode eNode;
+		ACComponentNode eNode;
 		int eNodeIndex;
 		mxGeometry geo;
 		double xPosition;
 		double yPosition;
 		
 		// get the list of equivalence nodes
-		eNodes = mod.getEquivalenceNodes().listIterator();
+		eNodes = mod.getEquivalences().listIterator();
 		
 		// get the drawing cell where the equivalence nodes will be added
 		cell = mod.getDrawingCell();
@@ -1422,6 +1620,7 @@ public class DrawingBoard extends JPanel
 					geo.setHeight(DEFAULT_EQUIVALENCENODE_HEIGHT);
 				}
 				//((mxCell)eNodeCell).setGeometry(geo);
+				((mxCell) eNodeCell).setConnectable(true);
 				graph.getModel().add(cell, eNodeCell, 0);
 				graph.getModel().setStyle(eNodeCell, "EquivalenceNode");
 				graph.getModel().setGeometry(eNodeCell, geo);
@@ -1440,10 +1639,10 @@ public class DrawingBoard extends JPanel
 	 */
 	private void drawConnections(Module mod)
 	{
-		ListIterator<Connection> connections;
+		ListIterator<ConnectionNode> connections;
 		Object parentCell = mod.getDrawingCell();
 		Object connectionCell;
-		Connection currentConnection;
+		ConnectionNode currentConnection;
 		
 		// get the list of connections
 		connections = mod.getConnections().listIterator();
@@ -1530,7 +1729,7 @@ public class DrawingBoard extends JPanel
 			graph.getModel().beginUpdate();
 			try
 			{				
-				geo = child.getDrawingCellGeometry();
+				geo = child.getDrawingCellGeometrySubmodule();
 				if (geo == null || (geo.getHeight() <= 10))
 				{
 					geo = new mxGeometry();
@@ -1568,9 +1767,9 @@ public class DrawingBoard extends JPanel
 	
 	private void drawSubmoduleMiniPorts(Module mod)
 	{
-		ListIterator<Port> ports;
+		ListIterator<ACComponentNode> ports;
 		Object parentCell;
-		Object portCell;
+		mxCell portCell;
 		mxGeometry parentGeo;
 		mxGeometry geo;
 		mxGeometry geo_mini;
@@ -1600,12 +1799,14 @@ public class DrawingBoard extends JPanel
 			try
 			{
 				parentGeo = graph.getModel().getGeometry(parentCell);
-				x = ((mxCell) portCell).getGeometry().getX();
-				y = ((mxCell) portCell).getGeometry().getY();
+				x = portCell.getGeometry().getX();
+				y = portCell.getGeometry().getY();
 				width = DEFAULT_PORT_WIDTH / 2;
 				height = DEFAULT_PORT_HEIGHT / 2;
-				width_mini = width * (width / parentGeo.getWidth());
-				height_mini = height * (height / parentGeo.getHeight());
+				//width_mini = width * (width / parentGeo.getWidth());
+				//height_mini = height * (height / parentGeo.getHeight());
+				width_mini = width * (width / DEFAULT_SUBMODULE_WIDTH);
+				height_mini = height * (height / DEFAULT_SUBMODULE_WIDTH);			
 				offsetX = -width_mini / 2;
 				offsetY = -height_mini / 2;
 				//geo = new mxGeometry(x, y, width, height);
@@ -1614,6 +1815,7 @@ public class DrawingBoard extends JPanel
 				geo_mini = new mxGeometry(x, y, width_mini, height_mini);
 				geo_mini.setOffset(new mxPoint(offsetX, offsetY));
 				geo_mini.setRelative(true);
+				portCell.setConnectable(false);
 				graph.getModel().add(parentCell, portCell, 0);
 				graph.getModel().setGeometry(portCell, geo_mini);
 				graph.updatePortOrientation(portCell, geo_mini, true);
@@ -1627,9 +1829,9 @@ public class DrawingBoard extends JPanel
 	
 	private void drawSubmoduleMiniVisibleVariables(Module mod)
 	{
-		ListIterator<VisibleVariable> vars;
+		ListIterator<ACComponentNode> vars;
 		Object cell;
-		Object varCell;
+		mxCell varCell;
 		//mxGeometry geo;
 		double x;
 		double y;
@@ -1637,7 +1839,7 @@ public class DrawingBoard extends JPanel
 		double height;
 		double offsetX;
 		double offsetY;
-		VisibleVariable var;
+		ACComponentNode var;
 		int varIndex;
 		mxGeometry geo;
 		double xPosition;
@@ -1662,7 +1864,7 @@ public class DrawingBoard extends JPanel
 			// get the next visible variable
 			var = vars.next();
 			// get the drawing cell of the current visible variable
-			varCell = var.getDrawingCell();
+			varCell = (mxCell)var.getDrawingCell();
 
 			// draw the current visible variable
 			graph.getModel().beginUpdate();
@@ -1697,6 +1899,7 @@ public class DrawingBoard extends JPanel
 				height_mini = geo.getHeight() * (geo.getHeight() / DEFAULT_MODULE_HEIGHT);
 				geo_mini = new mxGeometry(xPosition_mini, yPosition_mini, width_mini, height_mini);
 				geo_mini.setRelative(true);
+				varCell.setConnectable(false);
 				graph.getModel().add(cell, varCell, 0);
 				graph.getModel().setStyle(varCell, "VisibleVariable_Mini");
 				graph.getModel().setGeometry(varCell, geo_mini);
@@ -1710,9 +1913,9 @@ public class DrawingBoard extends JPanel
 	
 	private void drawSubmoduleMiniEquivalenceNodes(Module mod)
 	{
-		ListIterator<EquivalenceNode> eNodes;
+		ListIterator<ACComponentNode> eNodes;
 		Object cell;
-		Object eNodeCell;
+		mxCell eNodeCell;
 		//mxGeometry geo;
 		double x;
 		double y;
@@ -1720,7 +1923,7 @@ public class DrawingBoard extends JPanel
 		double height;
 		double offsetX;
 		double offsetY;
-		EquivalenceNode eNode;
+		ACComponentNode eNode;
 		int eNodeIndex;
 		mxGeometry geo;
 		double xPosition;
@@ -1732,7 +1935,7 @@ public class DrawingBoard extends JPanel
 		mxGeometry geo_mini;
 		
 		// get the list of equivalence nodes
-		eNodes = mod.getEquivalenceNodes().listIterator();
+		eNodes = mod.getEquivalences().listIterator();
 		
 		// get the drawing cell where the equivalence nodes will be added
 		cell = mod.getDrawingCell();
@@ -1745,7 +1948,7 @@ public class DrawingBoard extends JPanel
 			// get the next visible variable
 			eNode = eNodes.next();
 			// get the drawing cell of the current visible variable
-			eNodeCell = eNode.getDrawingCell();
+			eNodeCell = (mxCell)eNode.getDrawingCell();
 			graph.getModel().beginUpdate();
 			try
 			{				
@@ -1767,9 +1970,10 @@ public class DrawingBoard extends JPanel
 				height_mini = geo.getHeight() * (geo.getHeight() / DEFAULT_MODULE_HEIGHT);
 				geo_mini = new mxGeometry(xPosition_mini, yPosition_mini, width_mini, height_mini);
 				geo_mini.setRelative(true);
+				eNodeCell.setConnectable(false);
 				graph.getModel().add(cell, eNodeCell, 0);
 				graph.getModel().setStyle(eNodeCell, "EquivalenceNode_Mini");
-				graph.getModel().setGeometry(eNodeCell, geo);
+				graph.getModel().setGeometry(eNodeCell, geo_mini);
 			}
 			finally
 			{
@@ -1781,10 +1985,10 @@ public class DrawingBoard extends JPanel
 	
 	private void drawSubmoduleMiniConnections(Module mod)
 	{
-		ListIterator<Connection> connections;
+		ListIterator<ConnectionNode> connections;
 		Object parentCell = mod.getDrawingCell();
 		Object connectionCell;
-		Connection currentConnection;
+		ConnectionNode currentConnection;
 		
 		// get the list of connections
 		connections = mod.getConnections().listIterator();
@@ -1824,18 +2028,18 @@ public class DrawingBoard extends JPanel
 	private boolean hasMiniComponents(Module mod)
 	{
 		int submoduleComponentCount = mod.getChildren().size();
-		submoduleComponentCount += mod.getEquivalenceNodes().size();
+		submoduleComponentCount += mod.getEquivalences().size();
 		submoduleComponentCount += mod.getVisibleVariables().size();
 		submoduleComponentCount += mod.getConnections().size();
 		
 		return submoduleComponentCount > 0;
 	}
 	
-	private void drawMathAggregatorPorts(MathematicalAggregator mathAgg)
+	private void alignMathematicalAggregatorPorts(Module maModule)
 	{
-		ListIterator<Port> ports;
-		Port currentPort;
-		Object cell;
+		ListIterator<ACComponentNode> ports;
+		PortNode currentPNode;
+		mxCell cell;
 		mxCell portCell;
 		mxGeometry geo;
 		double x;
@@ -1847,145 +2051,44 @@ public class DrawingBoard extends JPanel
 		double portSpacing;
 		int inputPortIndex; 
 		
-		/*
 		width = DEFAULT_PORT_WIDTH/2;
 		height = DEFAULT_PORT_HEIGHT/2;
 
 		offsetX = -width / 2;
 		offsetY = -height / 2;
-		*/
-		if (mathAgg == activeModule)
-		{
-			width = DEFAULT_PORT_WIDTH;
-			height = DEFAULT_PORT_HEIGHT;
-		}
-		else
-		{
-			width = DEFAULT_PORT_WIDTH / 2;
-			height = DEFAULT_PORT_HEIGHT / 2;
-		}
-		offsetX = -width / 2;
-		offsetY = -height / 2;
 		//portSpacing = 0.35;
-		portSpacing = 0.8 / (mathAgg.getPorts().size() - 2);
+		portSpacing = 0.8 / (maModule.getPorts().size() - 2);
 		
 		inputPortIndex = 0;
-		cell = mathAgg.getDrawingCell();
-		ports = mathAgg.getPorts().listIterator();
+		cell = maModule.getDrawingCell();
+		ports = maModule.getPorts().listIterator();
 		while(ports.hasNext())
 		{
-			currentPort = ports.next();
-			portCell = (mxCell)currentPort.getDrawingCell();
+			currentPNode = (PortNode)ports.next();
+
+			switch(currentPNode.getPortDefinition().getType())
+			{
+			case INPUT:
+				x = 0;
+				y = (inputPortIndex * portSpacing) + 0.1;
+				inputPortIndex++;
+				break;
+			case OUTPUT:
+				x = 1.0;
+				y = 0.5;
+				break;
+			default:
+				x = 0.0;
+				y = 0.0;
+			}
 			
-			graph.getModel().beginUpdate();
-			try
-			{
-				switch(currentPort.getType())
-				{
-				case INPUT:
-					x = 0;
-					y = (inputPortIndex * portSpacing) + 0.1;
-					inputPortIndex++;
-					break;
-				case OUTPUT:
-					x = 1.0;
-					y = 0.5;
-					break;
-				default:
-					x = 0.0;
-					y = 0.0;
-					x = ((mxCell) portCell).getGeometry().getX();
-					y = ((mxCell) portCell).getGeometry().getY();
-				}
-				
-				geo = new mxGeometry(x, y, width, height);
-				geo.setOffset(new mxPoint(offsetX, offsetY));
-				geo.setRelative(true);
-	
-				
-				portCell.setVertex(true);
-				portCell.setConnectable(true);
-	
-				graph.getModel().add(cell, portCell, 0);
-				graph.getModel().setGeometry(portCell, geo);
-				graph.updatePortOrientation(portCell, geo, false);
-			}
-			finally
-			{
-				graph.getModel().endUpdate();
-			}
-	
-			currentPort.setDrawingCell(portCell);
-		}
-	}
-	
-	private void addMathAggregatorPorts(MathematicalAggregator mathAgg)
-	{
-		ListIterator<Port> ports;
-		Port currentPort;
-		Object cell;
-		mxCell portCell;
-		mxGeometry geo;
-		double x;
-		double y;
-		double width;
-		double height;
-		double offsetX;
-		double offsetY;
-		double portSpacing;
-		int inputPortIndex; 
-		
-		width = DEFAULT_PORT_WIDTH/2;
-		height = DEFAULT_PORT_HEIGHT/2;
+			geo = new mxGeometry(x, y, width, height);
+			geo.setOffset(new mxPoint(offsetX, offsetY));
+			geo.setRelative(true);
 
-		offsetX = -width / 2;
-		offsetY = -height / 2;
-		//portSpacing = 0.35;
-		portSpacing = 0.8 / (mathAgg.getPorts().size() - 2);
-		
-		inputPortIndex = 0;
-		cell = mathAgg.getDrawingCell();
-		ports = mathAgg.getPorts().listIterator();
-		while(ports.hasNext())
-		{
-			currentPort = ports.next();
-			graph.getModel().beginUpdate();
-			try
-			{
-				switch(currentPort.getType())
-				{
-				case INPUT:
-					x = 0;
-					y = (inputPortIndex * portSpacing) + 0.1;
-					inputPortIndex++;
-					break;
-				case OUTPUT:
-					x = 1.0;
-					y = 0.5;
-					break;
-				default:
-					x = 0.0;
-					y = 0.0;
-				}
-				
-				geo = new mxGeometry(x, y, width, height);
-				geo.setOffset(new mxPoint(offsetX, offsetY));
-				geo.setRelative(true);
-	
-				portCell = new mxCell(currentPort, geo, "Port");
-				portCell.setVertex(true);
-				portCell.setConnectable(true);
-	
-				graph.getModel().add(cell, portCell, 0);
-				// graph.updatePortOrientation(port1, geo1);
-				graph.updatePortOrientation(portCell, geo, false);
-			}
-			finally
-			{
-				graph.getModel().endUpdate();
-			}
-	
-			currentPort.setDrawingCell(portCell);
+			portCell = currentPNode.getDrawingCell();
+			portCell.setGeometry(geo);
+			currentPNode.setDrawingCellGeometry(geo);
 		}
 	}
 	
@@ -2025,38 +2128,13 @@ public class DrawingBoard extends JPanel
 		
 		graph.removeCells(graph.getChildVertices(cell));
 	}
-
-	/**
-	 * Make the children of the given cell invisible.
-	 * 
-	 * @param cell the cell whose children will be made invisible
-	 */
-	private void makeChildrenInvisible(Object cell)
-	{
-		int childCount = graph.getModel().getChildCount(cell);
-		Object currentChild = null;
-
-		for (int i = 0; i < childCount; i++)
-		{
-			graph.getModel().beginUpdate();
-			try
-			{
-				currentChild = graph.getModel().getChildAt(cell, i);
-				graph.getModel().setVisible(currentChild, false);
-			}
-			finally
-			{
-				graph.getModel().endUpdate();
-			}
-		}
-	}
 	
 	private String generateName(String oldName)
 	{
 		String name = oldName;
 		int index;
 		
-		while(!AC_GUI.newNameValidation(name))
+		while(AC_Utility.speciesInModelBuilder(name))
 		{
 			try
 			{
@@ -2088,7 +2166,7 @@ public class DrawingBoard extends JPanel
 		
 		return name;
 	}
-
+	
 	/**
 	 * Add various display properties to the graph stylesheet.
 	 */
@@ -2193,7 +2271,7 @@ public class DrawingBoard extends JPanel
 		cell.put(mxConstants.STYLE_FOLDABLE, "0");
 		cell.put(mxConstants.STYLE_WHITE_SPACE, "wrap");
 
-		styleSheet.putCellStyle("Summation", cell);
+		styleSheet.putCellStyle("Sum", cell);
 		
 		cell = new HashMap<String, Object>();
 		cell.put(mxConstants.STYLE_STROKECOLOR, "blue");
@@ -2579,11 +2657,262 @@ public class DrawingBoard extends JPanel
 	}
 
 	/**
+	 * Create a popup menu for modules and ports.
+	 * @param pt the location of the menu
+	 * @param cell the drawing cell the menu will be created for
+	 * @return the popup menu
+	 */
+	private JPopupMenu createPopupMenu(final Point pt, final Object cell)
+	{
+		Object cellValue;
+		JPopupMenu menu = new JPopupMenu();
+
+		cellValue = ((mxCell)cell).getValue();
+		menu.add(new AbstractAction("Edit Name") {
+			/**
+			 * 
+			 */
+			private static final long serialVersionUID = 1L;
+
+			public void actionPerformed(ActionEvent e)
+			{
+				//graphComponent.startEditingAtCell(cell);
+				AC_Utility.promptUserEditModuleName(AC_GUI.selectedModule.getName());
+			}
+		});
+
+		if (((mxCell)cell).isEdge())
+		{
+			menu.add(new AbstractAction("Remove Connection") {
+				/**
+				 * 
+				 */
+				private static final long serialVersionUID = 1L;
+				
+				public void actionPerformed(ActionEvent e)
+				{
+					//System.out.println("Connected edge count: " + graph.getModel().getEdgeCount(((mxCell)cell).getSource()));
+					// get the connection object from the drawing cell
+					ConnectionNode edge = (ConnectionNode)((mxCell)cell).getValue();
+					// remove the connection from the module
+					AC_GUI.removeConnection(edge);
+					//System.out.println("Connected edge count: " + graph.getModel().getEdgeCount(((mxCell)cell).getSource()));
+				}
+			});
+			
+			menu.add(new AbstractAction("Properties") {
+				/**
+				 * 
+				 */
+				private static final long serialVersionUID = 1L;
+
+				public void actionPerformed(ActionEvent e)
+				{
+					Object sourceValue;
+					Object targetValue;
+					String source = "";
+					String target = "";
+					
+					sourceValue = ((mxCell)cell).getSource().getValue();
+					targetValue = ((mxCell)cell).getTarget().getValue();
+					
+					if (sourceValue instanceof PortNode)
+					{
+						source = "Port ";
+						source += ((PortNode)sourceValue).getParent().getModuleDefinition().getName();
+						source += "." + ((PortNode)sourceValue).getPortDefinition().getName();
+					} else if (sourceValue instanceof VisibleVariableNode)
+					{
+						source = "Variable ";
+						source += ((VisibleVariableNode)sourceValue).getVisibleVariableDefinition().getRefName();
+					} else if (sourceValue instanceof EquivalenceNode)
+					{
+						source = "Equivalence Node ";
+						source += ((EquivalenceNode)sourceValue).getEquivalenceDefinition().getRefName();
+					}
+					
+					if (targetValue instanceof PortNode)
+					{
+						target = "Port ";
+						target += ((PortNode)targetValue).getParent().getModuleDefinition().getName();
+						target += "." + ((PortNode)targetValue).getPortDefinition().getName();
+					} else if (targetValue instanceof VisibleVariableNode)
+					{
+						target = "Variable ";
+						target += ((VisibleVariableNode)targetValue).getVisibleVariableDefinition().getRefName();
+					} else if (targetValue instanceof EquivalenceNode)
+					{
+						target = "Equivalence Node ";
+						target += ((EquivalenceNode)targetValue).getEquivalenceDefinition().getRefName();
+					}
+					
+					String msg = "Source = " + source + "\nDestination = " + target;
+					JOptionPane.showMessageDialog(null, msg);
+				}
+			});
+		}
+		else
+		{
+			if (cellValue instanceof Module)
+			{
+				if (activeModule == (Module)cellValue)
+				{
+					menu.add(new AbstractAction("Add Port") {
+						/**
+						 * 
+						 */
+						private static final long serialVersionUID = 1L;
+	
+						public void actionPerformed(ActionEvent e)
+						{
+							PortAddEditor portAddEditor = new PortAddEditor((mxCell)cell, graphComponent);
+							portAddEditor.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+							portAddEditor.setModal(true);
+							portAddEditor.setVisible(true);
+						}
+					});
+					
+					menu.add(new AbstractAction("Show Variable") {
+						/**
+						 * 
+						 */
+						private static final long serialVersionUID = 1L;
+	
+						public void actionPerformed(ActionEvent e)
+						{
+							VariableAddEditor varAddEditor = new VariableAddEditor(graphComponent);
+							varAddEditor.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+							varAddEditor.setModal(true);
+							varAddEditor.setVisible(true);
+						}
+					});
+				}
+				else
+				{
+					// the module selected is a submodule
+				}
+			} 
+			else if (cellValue instanceof PortNode)
+			{
+				if (activeModule == ((PortNode)cellValue).getParent())
+				{
+					menu.add(new AbstractAction("Change Type") {
+						/**
+						 * 
+						 */
+						private static final long serialVersionUID = 1L;
+	
+						public void actionPerformed(ActionEvent e)
+						{
+							PortNode currentPort = (PortNode) ((mxCell) cell).getValue();
+	
+							Object[] possibleValues = { "Input", "Output", "Equivalence" };
+							Object selectedValue = JOptionPane.showInputDialog(null, "Select Type", "Change Port Type", JOptionPane.INFORMATION_MESSAGE, null, possibleValues, currentPort.getPortDefinition().getType().toString());
+	
+							if (selectedValue.toString().compareTo("Input") == 0)
+							{
+								currentPort.getPortDefinition().setType(PortType.INPUT);
+							}
+							else if (selectedValue.toString().compareTo("Output") == 0)
+							{
+								currentPort.getPortDefinition().setType(PortType.OUTPUT);
+							}
+							else if (selectedValue.toString().compareTo("Equivalence") == 0)
+							{
+								currentPort.getPortDefinition().setType(PortType.EQUIVALENCE);
+							}
+	
+							mxGeometry geo = ((mxCell) cell).getGeometry();
+							graph.updatePortOrientation(cell, geo, false);
+						}
+					});
+	
+					menu.add(new AbstractAction("Remove") {
+						/**
+						 * 
+						 */
+						private static final long serialVersionUID = 1L;
+	
+						public void actionPerformed(ActionEvent e)
+						{
+							// get the Port object from the drawing cell
+							PortNode currentPort = (PortNode) ((mxCell) cell).getValue();
+							String msg = "Number of edges connected to the port: ";
+							msg += graph.getModel().getEdgeCount(cell) + ".";
+							//System.out.println(msg);
+							// call AC_GUI to fully remove the port
+							AC_GUI.removePort(currentPort);
+						}
+					});
+	
+					menu.add(new AbstractAction("Properties") {
+						/**
+						 * 
+						 */
+						private static final long serialVersionUID = 1L;
+	
+						public void actionPerformed(ActionEvent e)
+						{
+	
+						}
+					});
+				}
+				else
+				{
+					// the port belongs to a submodule
+				}
+			}
+			else if (cellValue instanceof VisibleVariableNode)
+			{
+				menu.add(new AbstractAction("Remove") {
+					/**
+					 * 
+					 */
+					private static final long serialVersionUID = 1L;
+
+					public void actionPerformed(ActionEvent e)
+					{
+						// get the Visible Variable object from the drawing cell
+						VisibleVariableNode currentVar = (VisibleVariableNode) ((mxCell) cell).getValue();
+						String msg = "Number of edges connected to the variable: ";
+						msg += graph.getModel().getEdgeCount(cell) + ".";
+						//System.out.println(msg);
+						// call AC_GUI to fully remove the port
+						AC_GUI.removeVisibleVariable(currentVar);
+					}
+				});
+			}
+			else if (cellValue instanceof EquivalenceNode)
+			{
+				menu.add(new AbstractAction("Remove") {
+					/**
+					 * 
+					 */
+					private static final long serialVersionUID = 1L;
+
+					public void actionPerformed(ActionEvent e)
+					{
+						// get the Equivalence Node object from the drawing cell
+						EquivalenceNode currentENode = (EquivalenceNode) ((mxCell) cell).getValue();
+						String msg = "Number of edges connected to the eNode: ";
+						msg += graph.getModel().getEdgeCount(cell) + ".";
+						//System.out.println(msg);
+						// call AC_GUI to fully remove the port
+						AC_GUI.removeEquivalenceNode(currentENode);
+					}
+				});
+			}
+		}
+
+		return menu;
+	}
+	
+	/**
 	 * Install various listeners for the graph.
 	 */
 	private void installListeners()
 	{
-
+	
 		// when right-click is pressed, create a popup menu.
 		graphComponent.getGraphControl().addMouseListener(new MouseAdapter() {
 			@Override
@@ -2600,39 +2929,41 @@ public class DrawingBoard extends JPanel
 						// System.out.println("cell=" + graph.getLabel(cell));
 						// Module mod = AC_GUI.moduleList.findModule(cell);
 						// AC_GUI.treeView.setSelected(mod.getTreeNode());
-						AC_GUI.currentGUI.setSelectedModule(cell);
+						AC_GUI.setSelectedModule(cell);
 						//printCellCount(cell);
 					}
 					
+					//System.out.println("activeModule: " + AC_GUI.activeModule.getModuleDefinition().getName());
+					//System.out.println("loadedModule: " + AC_GUI.modelBuilder.getLoadedModule().getModuleDefinition().getName());
 					if (AC_GUI.activeModule == AC_GUI.modelBuilder.getLoadedModule())
 					{
-						if (cell.getValue() instanceof VisibleVariable)
+						if (cell.getValue() instanceof VisibleVariableNode)
 						{
-							VisibleVariable var = (VisibleVariable)cell.getValue();
-							AC_GUI.setSelectedModelBuilderVariable(var.getRefName(), var.getVariableType());
+							VisibleVariableNode var = (VisibleVariableNode)cell.getValue();
+							AC_GUI.setSelectedModelBuilderVariable(var.getVisibleVariableDefinition().getRefName(), var.getVisibleVariableDefinition().getVariableType());
 						}
 						
 						if (cell.getValue() instanceof EquivalenceNode)
 						{
-							AC_GUI.setSelectedModelBuilderVariable(((EquivalenceNode)cell.getValue()).getRefName(), VariableType.SPECIES);
+							AC_GUI.setSelectedModelBuilderVariable(((EquivalenceNode)cell.getValue()).getEquivalenceDefinition().getRefName(), VariableType.SPECIES);
 						}
 						
-						if (cell.getValue() instanceof Port)
+						if (cell.getValue() instanceof PortNode)
 						{
 							// System.out.println("port=" + ((mxCell) cell).getValue().toString());
 							// p = (Port) ((mxCell)cell).getValue();
-							AC_GUI.modelBuilder.setSelectedPort((Port)cell.getValue());
+							AC_GUI.modelBuilder.setSelectedPort((PortNode)cell.getValue());
 						}
 					}
 					else
 					{
-						if (cell.getValue() instanceof Port)
+						if (cell.getValue() instanceof PortNode)
 						{
 							// System.out.println("port=" + ((mxCell) cell).getValue().toString());
-							Port port = (Port) ((mxCell)cell).getValue();
+							PortNode port = (PortNode) ((mxCell)cell).getValue();
 							if (port.getParent() == AC_GUI.modelBuilder.getLoadedModule())
 							{
-								AC_GUI.modelBuilder.setSelectedPort((Port)cell.getValue());
+								AC_GUI.modelBuilder.setSelectedPort((PortNode)cell.getValue());
 							}
 						}
 					}
@@ -2645,7 +2976,7 @@ public class DrawingBoard extends JPanel
 						menu.show(graphComponent, e.getX(), e.getY());
 					}
 				}
-
+	
 			}
 			
 			public void mouseClicked(MouseEvent e)
@@ -2709,18 +3040,27 @@ public class DrawingBoard extends JPanel
 					return;
 				}
 				
+				if (activeSubmoduleButtonCell != null)
+				{
+					// the submodule info view is currently active
+					AC_GUI.removeSubmoduleInfoView(activeSubmoduleButtonCell, true);
+				}
+				
 				Object sourceObject = source.getValue();
 				Object targetObject = target.getValue();
 				String newName;
 				
+				TerminalType sourceType;
+				TerminalType targetType;
+				
 				removeCell(cell);
 				
-				if (sourceObject instanceof VisibleVariable)
+				if (sourceObject instanceof VisibleVariableNode)
 				{
 					// the source is a visible variable
-					VisibleVariable sourceVisibleVariable = (VisibleVariable)sourceObject;
+					VisibleVariableNode sourceVisibleVariable = (VisibleVariableNode)sourceObject;
 					
-					if (targetObject instanceof VisibleVariable)
+					if (targetObject instanceof VisibleVariableNode)
 					{
 						// the source is a visible variable
 						// the target is a visible variable
@@ -2734,12 +3074,12 @@ public class DrawingBoard extends JPanel
 						// cannot occur
 						return;
 					}
-					else if (targetObject instanceof Port)
+					else if (targetObject instanceof PortNode)
 					{
 						// the source is a visible variable
 						// the target is a port
-						Port targetPort = (Port)targetObject;
-						PortType targetPortType = ((Port)targetObject).getType();
+						PortNode targetPort = (PortNode)targetObject;
+						PortType targetPortType = ((PortNode)targetObject).getPortDefinition().getType();
 						Module targetModule = targetPort.getParent();
 						
 						if(targetModule == AC_GUI.activeModule)
@@ -2747,6 +3087,8 @@ public class DrawingBoard extends JPanel
 							// the source is a visible variable
 							// the target is a port
 							// the targetModule is the active module
+							sourceType = TerminalType.VISIBLEVARIABLE;
+							targetType = TerminalType.PORT;
 							switch(targetPortType)
 							{
 							case INPUT:
@@ -2760,7 +3102,7 @@ public class DrawingBoard extends JPanel
 								}
 								*/
 								mxCell varToPortCell = (mxCell)createConnectionCell(null, source, target, "ConnectionEdge");
-								AC_GUI.addConnection(activeModule, varToPortCell);
+								AC_GUI.addConnection(activeModule, varToPortCell, sourceType, targetType);
 								return;
 							case EQUIVALENCE:
 								// cannot occur
@@ -2774,6 +3116,8 @@ public class DrawingBoard extends JPanel
 							// the source is a visible variable
 							// the target is a port
 							// the targetModule is a submodule
+							sourceType = TerminalType.VISIBLEVARIABLE;
+							targetType = TerminalType.PORT;
 							switch(targetPortType)
 							{
 							case INPUT:
@@ -2784,7 +3128,7 @@ public class DrawingBoard extends JPanel
 								}
 								*/
 								mxCell varToPortCell = (mxCell)createConnectionCell(null, source, target, "ConnectionEdge");
-								AC_GUI.addConnection(activeModule, varToPortCell);
+								AC_GUI.addConnection(activeModule, varToPortCell, sourceType, targetType);
 								return;
 							case OUTPUT:
 								// cannot occur
@@ -2810,20 +3154,24 @@ public class DrawingBoard extends JPanel
 						// cannot occur
 						return;
 					}
-					if (targetObject instanceof VisibleVariable)
+					if (targetObject instanceof VisibleVariableNode)
 					{
 						// the source is an equivalence node
 						// the target is a visible variable
+						sourceType = TerminalType.EQUIVALENCE;
+						targetType = TerminalType.VISIBLEVARIABLE;
 						mxCell eNodeToVarCell = (mxCell)createConnectionCell(null, source, target, "DashedConnectionEdge");
-						AC_GUI.addConnection(activeModule, eNodeToVarCell);
+						AC_GUI.addConnection(activeModule, eNodeToVarCell, sourceType, targetType);
 						return;
 					}
-					else if (targetObject instanceof Port)
+					else if (targetObject instanceof PortNode)
 					{
 						// the source is an equivalence node
 						// the target is a port
-						Port targetPort = (Port)targetObject;
-						PortType targetPortType = ((Port)targetObject).getType();
+						sourceType = TerminalType.EQUIVALENCE;
+						targetType = TerminalType.PORT;
+						PortNode targetPort = (PortNode)targetObject;
+						PortType targetPortType = ((PortNode)targetObject).getPortDefinition().getType();
 						Module targetModule = targetPort.getParent();
 						
 						if (targetModule == AC_GUI.activeModule)
@@ -2845,7 +3193,7 @@ public class DrawingBoard extends JPanel
 								*/
 								
 								mxCell eNodeToOutputCell = (mxCell)createConnectionCell(null, source, target, "ConnectionEdge");
-								AC_GUI.addConnection(activeModule, eNodeToOutputCell);
+								AC_GUI.addConnection(activeModule, eNodeToOutputCell, sourceType, targetType);
 								return;
 							case EQUIVALENCE:
 								/*
@@ -2855,7 +3203,7 @@ public class DrawingBoard extends JPanel
 								}
 								*/
 								mxCell eNodeToPortCell = (mxCell)createConnectionCell(null, source, target, "ConnectionEdge");
-								AC_GUI.addConnection(activeModule, eNodeToPortCell);
+								AC_GUI.addConnection(activeModule, eNodeToPortCell, sourceType, targetType);
 								return;
 							default:
 									
@@ -2877,7 +3225,7 @@ public class DrawingBoard extends JPanel
 								*/
 								
 								mxCell eNodeToPortCell = (mxCell)createConnectionCell(null, source, target, "ConnectionEdge");
-								AC_GUI.addConnection(activeModule, eNodeToPortCell);
+								AC_GUI.addConnection(activeModule, eNodeToPortCell, sourceType, targetType);
 								return;
 							case OUTPUT:
 								// cannot occur
@@ -2890,7 +3238,7 @@ public class DrawingBoard extends JPanel
 								}
 								*/
 								mxCell eNodeToPortCell1 = (mxCell)createConnectionCell(null, source, target, "ConnectionEdge");
-								AC_GUI.addConnection(activeModule, eNodeToPortCell1);
+								AC_GUI.addConnection(activeModule, eNodeToPortCell1, sourceType, targetType);
 								return;
 							default:
 									
@@ -2898,11 +3246,11 @@ public class DrawingBoard extends JPanel
 						}
 					}
 				}
-				else if (sourceObject instanceof Port)
+				else if (sourceObject instanceof PortNode)
 				{
 					// the source is a port
-					Port sourcePort = (Port)sourceObject;
-					PortType sourcePortType = sourcePort.getType();
+					PortNode sourcePort = (PortNode)sourceObject;
+					PortType sourcePortType = sourcePort.getPortDefinition().getType();
 					Module sourceModule = sourcePort.getParent();
 					
 					if (sourceModule == AC_GUI.activeModule)
@@ -2917,11 +3265,13 @@ public class DrawingBoard extends JPanel
 							// cannot occur
 							return;
 						}
-						else if (targetObject instanceof VisibleVariable)
+						else if (targetObject instanceof VisibleVariableNode)
 						{
 							// the source is a port
 							// the sourceModule is the active module
 							// the target is a visible variable
+							sourceType = TerminalType.PORT;
+							targetType = TerminalType.VISIBLEVARIABLE;
 							switch(sourcePortType)
 							{
 							case INPUT:
@@ -2932,7 +3282,7 @@ public class DrawingBoard extends JPanel
 								}
 								*/
 								mxCell portToVarCell = (mxCell)createConnectionCell(null, source, target, "DashedConnectionEdge");
-								AC_GUI.addConnection(activeModule, portToVarCell);
+								AC_GUI.addConnection(activeModule, portToVarCell, sourceType, targetType);
 								return;
 							case OUTPUT:
 								// cannot occur
@@ -2945,19 +3295,21 @@ public class DrawingBoard extends JPanel
 								}
 								*/
 								mxCell eportToVarCell = (mxCell)createConnectionCell(null, source, target, "DashedConnectionEdge");
-								AC_GUI.addConnection(activeModule, eportToVarCell);
+								AC_GUI.addConnection(activeModule, eportToVarCell, sourceType, targetType);
 								return;
 							default:
 									
 							}
 						}
-						else if (targetObject instanceof Port)
+						else if (targetObject instanceof PortNode)
 						{
 							// the source is a port
 							// the sourceModule is the active module
 							// the target is a port
-							Port targetPort = (Port)targetObject;
-							PortType targetPortType = targetPort.getType();
+							sourceType = TerminalType.PORT;
+							targetType = TerminalType.PORT;
+							PortNode targetPort = (PortNode)targetObject;
+							PortType targetPortType = targetPort.getPortDefinition().getType();
 							Module targetModule = targetPort.getParent();
 							
 							if (sourceModule == targetModule)
@@ -2987,27 +3339,27 @@ public class DrawingBoard extends JPanel
 										// the source has an existing outgoing edge
 										System.out.println("Source has existing edges.");
 										mxCell existingEdgeTarget = (mxCell)((mxCell)graph.getModel().getEdgeAt(source, 0)).getTarget();
-										if (existingEdgeTarget.getValue() instanceof VisibleVariable)
+										if (existingEdgeTarget.getValue() instanceof VisibleVariableNode)
 										{
 											// add connection from existing visible variable to the selected target
 											mxCell varToTargetCell = (mxCell)createConnectionCell(null, existingEdgeTarget, target, "ConnectionEdge");
 											//addCell(null, varToTargetCell);
-											AC_GUI.addConnection(activeModule, varToTargetCell);
+											AC_GUI.addConnection(activeModule, varToTargetCell, TerminalType.VISIBLEVARIABLE, targetType);
 										}
 										return;
 									}
 									// the source has no existing outgoing edges
 									System.out.println("Source has no existing edges.");
 									// create a visible variable
-									newName = generateName(sourcePort.getRefName());
+									//newName = generateName(sourcePort.getPortDefinition().getRefName());
 									mxCell varCell = (mxCell)createVisibleVariableCell(null);
 									addCell(null, varCell);
 									setCellGeometryToCenterOfEdge(varCell, cell);
-									AC_GUI.addVisibleVariable(activeModule, newName, varCell);
+									AC_GUI.addVisibleVariable(activeModule, sourcePort.getPortDefinition().getRefName(), varCell);
 									mxCell sourceToVarCell = (mxCell)createConnectionCell(null, source, varCell, "DashedConnectionEdge");
-									AC_GUI.addConnection(activeModule, sourceToVarCell);
+									AC_GUI.addConnection(activeModule, sourceToVarCell, sourceType, TerminalType.VISIBLEVARIABLE);
 									mxCell varToTargetCell = (mxCell)createConnectionCell(null, varCell, target, "ConnectionEdge");
-									AC_GUI.addConnection(activeModule, varToTargetCell);
+									AC_GUI.addConnection(activeModule, varToTargetCell, TerminalType.VISIBLEVARIABLE, targetType);
 									/*
 									if (AC_GUI.newNameValidation(sourcePort.getRefName()))
 									{
@@ -3074,7 +3426,7 @@ public class DrawingBoard extends JPanel
 										
 											// add connection from existing eNode to the selected target
 											eNodeToTargetCell = (mxCell)createConnectionCell(null, existingEdgeSource, target, "ConnectionEdge");
-											AC_GUI.addConnection(activeModule, eNodeToTargetCell);
+											AC_GUI.addConnection(activeModule, eNodeToTargetCell, TerminalType.EQUIVALENCE, targetType);
 										
 										}
 										return;
@@ -3082,15 +3434,15 @@ public class DrawingBoard extends JPanel
 									// the source has no existing outgoing edges
 									System.out.println("Source has no existing outgoing edges.");
 									// create an equivalence node
-									newName = generateName(sourcePort.getRefName());
+									//newName = generateName(sourcePort.getPortDefinition().getRefName());
 									eNodeCell = (mxCell)createEquivalenceNodeCell(null);
 									addCell(null, eNodeCell);
 									setCellGeometryToCenterOfEdge(eNodeCell, cell);
-									AC_GUI.addEquivalenceNode(activeModule, newName, eNodeCell);
+									AC_GUI.addEquivalenceNode(activeModule, sourcePort.getPortDefinition().getRefName(), eNodeCell);
 									sourceToeNodeCell = (mxCell)createConnectionCell(null, eNodeCell, source, "ConnectionEdge");
-									AC_GUI.addConnection(activeModule, sourceToeNodeCell);
+									AC_GUI.addConnection(activeModule, sourceToeNodeCell, TerminalType.EQUIVALENCE, sourceType);
 									eNodeToTargetCell = (mxCell)createConnectionCell(null, eNodeCell, target, "ConnectionEdge");
-									AC_GUI.addConnection(activeModule, eNodeToTargetCell);
+									AC_GUI.addConnection(activeModule, eNodeToTargetCell, TerminalType.EQUIVALENCE, targetType);
 									/*
 									if (AC_GUI.newNameValidation(sourcePort.getRefName()))
 									{
@@ -3142,15 +3494,15 @@ public class DrawingBoard extends JPanel
 										// create connection from eNode->target port
 										
 										// create an equivalence node
-										newName = generateName(sourcePort.getRefName());
+										//newName = generateName(sourcePort.getPortDefinition().getRefName());
 										eNodeCell = (mxCell)createEquivalenceNodeCell(null);
 										addCell(null, eNodeCell);
 										setCellGeometryToCenterOfEdge(eNodeCell, cell);
-										AC_GUI.addEquivalenceNode(activeModule, newName, eNodeCell);
+										AC_GUI.addEquivalenceNode(activeModule, sourcePort.getPortDefinition().getRefName(), eNodeCell);
 										sourceToeNodeCell = (mxCell)createConnectionCell(null, eNodeCell, source, "ConnectionEdge");
-										AC_GUI.addConnection(activeModule, sourceToeNodeCell);
+										AC_GUI.addConnection(activeModule, sourceToeNodeCell, TerminalType.EQUIVALENCE, sourceType);
 										eNodeToTargetCell = (mxCell)createConnectionCell(null, eNodeCell, target, "ConnectionEdge");
-										AC_GUI.addConnection(activeModule, eNodeToTargetCell);
+										AC_GUI.addConnection(activeModule, eNodeToTargetCell, TerminalType.EQUIVALENCE, targetType);
 										/*
 										if (AC_GUI.newNameValidation(sourcePort.getRefName()))
 										{
@@ -3198,7 +3550,7 @@ public class DrawingBoard extends JPanel
 												// the target equivalence port is not connected to the eNode
 												// create an edge between the target equivalence port and the eNode
 												eNodeToTargetCell = (mxCell)createConnectionCell(null, existingeNodeCell, target, "ConnectionEdge");
-												AC_GUI.addConnection(activeModule, eNodeToTargetCell);
+												AC_GUI.addConnection(activeModule, eNodeToTargetCell, TerminalType.EQUIVALENCE, targetType);
 											}
 											else
 											{
@@ -3232,7 +3584,7 @@ public class DrawingBoard extends JPanel
 										{
 											// create connection from eNode->source port
 											mxCell eNodeToSourceCell = (mxCell)createConnectionCell(null, eNodeCell, source, "ConnectionEdge");
-											AC_GUI.addConnection(activeModule, eNodeToSourceCell);
+											AC_GUI.addConnection(activeModule, eNodeToSourceCell, TerminalType.EQUIVALENCE, sourceType);
 										}
 										else
 										{
@@ -3253,6 +3605,7 @@ public class DrawingBoard extends JPanel
 					{
 						// the source is a port
 						// the sourceModule is a submodule
+						sourceType = TerminalType.PORT;
 						if (targetObject instanceof EquivalenceNode)
 						{
 							// the source is a port
@@ -3261,11 +3614,12 @@ public class DrawingBoard extends JPanel
 							// cannot occur
 							return;
 						}
-						else if (targetObject instanceof VisibleVariable)
+						else if (targetObject instanceof VisibleVariableNode)
 						{
 							// the source is a port
 							// the sourceModule is a submodule
 							// the target is a visible variable
+							targetType = TerminalType.VISIBLEVARIABLE;
 							switch(sourcePortType)
 							{
 							case INPUT:
@@ -3279,7 +3633,7 @@ public class DrawingBoard extends JPanel
 								}
 								*/
 								mxCell portToVarCell = (mxCell)createConnectionCell(null, source, target, "DashedConnectionEdge");
-								AC_GUI.addConnection(activeModule, portToVarCell);
+								AC_GUI.addConnection(activeModule, portToVarCell, sourceType, targetType);
 								return;
 							case EQUIVALENCE:
 								/*
@@ -3289,18 +3643,19 @@ public class DrawingBoard extends JPanel
 								}
 								*/
 								mxCell portToVarCell1 = (mxCell)createConnectionCell(null, source, target, "DashedConnectionEdge");
-								AC_GUI.addConnection(activeModule, portToVarCell1);
+								AC_GUI.addConnection(activeModule, portToVarCell1, sourceType, targetType);
 								return;
 							default:
 							}
 						}
-						else if (targetObject instanceof Port)
+						else if (targetObject instanceof PortNode)
 						{
 							// the source is a port
 							// the sourceModule is a submodule
 							// the target is a port
-							Port targetPort = (Port)targetObject;
-							PortType targetPortType = targetPort.getType();
+							targetType = TerminalType.PORT;
+							PortNode targetPort = (PortNode)targetObject;
+							PortType targetPortType = targetPort.getPortDefinition().getType();
 							Module targetModule = targetPort.getParent();
 							
 							if (targetModule == AC_GUI.activeModule)
@@ -3347,7 +3702,7 @@ public class DrawingBoard extends JPanel
 											Object outgoingEdges [] = mxGraphModel.getOutgoingEdges(graph.getModel(), source);
 											for(int i = 0; i < outgoingEdges.length; i++)
 											{
-												if (((mxCell)outgoingEdges[i]).getTarget().getValue() instanceof VisibleVariable)
+												if (((mxCell)outgoingEdges[i]).getTarget().getValue() instanceof VisibleVariableNode)
 												{
 													varCell = (mxCell)((mxCell)outgoingEdges[i]).getTarget();
 												}
@@ -3355,7 +3710,7 @@ public class DrawingBoard extends JPanel
 											if (varCell != null)
 											{
 												mxCell varToPortCell = (mxCell)createConnectionCell(null, varCell, target, "ConnectionEdge");
-												AC_GUI.addConnection(activeModule, varToPortCell);
+												AC_GUI.addConnection(activeModule, varToPortCell, TerminalType.VISIBLEVARIABLE, targetType);
 											}
 											else
 											{
@@ -3367,15 +3722,15 @@ public class DrawingBoard extends JPanel
 										// the source has no existing outgoing edges
 										System.out.println("Source has no existing edges.");
 										// create a visible variable
-										newName = generateName(sourcePort.getRefName());
+										//newName = generateName(sourcePort.getPortDefinition().getRefName());
 										mxCell varCell = (mxCell)createVisibleVariableCell(null);
 										addCell(null, varCell);
 										setCellGeometryToCenterOfEdge(varCell, cell);
-										AC_GUI.addVisibleVariable(activeModule, sourcePort.getRefName(), varCell);
+										AC_GUI.addVisibleVariable(activeModule, targetPort.getPortDefinition().getRefName(), varCell);
 										mxCell sourceToVarCell = (mxCell)createConnectionCell(null, source, varCell, "DashedConnectionEdge");
-										AC_GUI.addConnection(activeModule, sourceToVarCell);
+										AC_GUI.addConnection(activeModule, sourceToVarCell, sourceType, TerminalType.VISIBLEVARIABLE);
 										mxCell varToTargetCell = (mxCell)createConnectionCell(null, varCell, target, "ConnectionEdge");
-										AC_GUI.addConnection(activeModule, varToTargetCell);
+										AC_GUI.addConnection(activeModule, varToTargetCell, TerminalType.VISIBLEVARIABLE, targetType);
 										/*
 										if (AC_GUI.newNameValidation(sourcePort.getRefName()))
 										{
@@ -3455,15 +3810,15 @@ public class DrawingBoard extends JPanel
 											// create connection from eNode->target port
 											
 											// create an equivalence node
-											newName = generateName(sourcePort.getRefName());
+											//newName = generateName(sourcePort.getPortDefinition().getRefName());
 											eNodeCell = (mxCell)createEquivalenceNodeCell(null);
 											addCell(null, eNodeCell);
 											setCellGeometryToCenterOfEdge(eNodeCell, cell);
-											AC_GUI.addEquivalenceNode(activeModule, newName, eNodeCell);
+											AC_GUI.addEquivalenceNode(activeModule, targetPort.getPortDefinition().getRefName(), eNodeCell);
 											mxCell sourceToeNodeCell = (mxCell)createConnectionCell(null, eNodeCell, source, "ConnectionEdge");
-											AC_GUI.addConnection(activeModule, sourceToeNodeCell);
+											AC_GUI.addConnection(activeModule, sourceToeNodeCell, TerminalType.EQUIVALENCE, sourceType);
 											mxCell eNodeToTargetCell = (mxCell)createConnectionCell(null, eNodeCell, target, "ConnectionEdge");
-											AC_GUI.addConnection(activeModule, eNodeToTargetCell);
+											AC_GUI.addConnection(activeModule, eNodeToTargetCell, TerminalType.EQUIVALENCE, targetType);
 											/*
 											if (AC_GUI.newNameValidation(sourcePort.getRefName()))
 											{
@@ -3511,7 +3866,7 @@ public class DrawingBoard extends JPanel
 													// the target equivalence port is not connected to the eNode
 													// create an edge between the target equivalence port and the eNode
 													mxCell eNodeToTargetCell = (mxCell)createConnectionCell(null, existingeNodeCell, target, "ConnectionEdge");
-													AC_GUI.addConnection(activeModule, eNodeToTargetCell);
+													AC_GUI.addConnection(activeModule, eNodeToTargetCell, TerminalType.EQUIVALENCE, targetType);
 												}
 												else
 												{
@@ -3545,7 +3900,7 @@ public class DrawingBoard extends JPanel
 											{
 												// create connection from eNode->source port
 												mxCell eNodeToSourceCell = (mxCell)createConnectionCell(null, eNodeCell, source, "ConnectionEdge");
-												AC_GUI.addConnection(activeModule, eNodeToSourceCell);
+												AC_GUI.addConnection(activeModule, eNodeToSourceCell, TerminalType.EQUIVALENCE, sourceType);
 											}
 											else
 											{
@@ -3609,7 +3964,7 @@ public class DrawingBoard extends JPanel
 											Object outgoingEdges [] = mxGraphModel.getOutgoingEdges(graph.getModel(), source);
 											for(int i = 0; i < outgoingEdges.length; i++)
 											{
-												if (((mxCell)outgoingEdges[i]).getTarget().getValue() instanceof VisibleVariable)
+												if (((mxCell)outgoingEdges[i]).getTarget().getValue() instanceof VisibleVariableNode)
 												{
 													varCell = (mxCell)((mxCell)outgoingEdges[i]).getTarget();
 												}
@@ -3617,7 +3972,7 @@ public class DrawingBoard extends JPanel
 											if (varCell != null)
 											{
 												mxCell varToPortCell = (mxCell)createConnectionCell(null, varCell, target, "ConnectionEdge");
-												AC_GUI.addConnection(activeModule, varToPortCell);
+												AC_GUI.addConnection(activeModule, varToPortCell, TerminalType.VISIBLEVARIABLE, targetType);
 											}
 											else
 											{
@@ -3629,15 +3984,15 @@ public class DrawingBoard extends JPanel
 										// the source has no existing outgoing edges
 										System.out.println("Source has no existing edges.");
 										// create a visible variable
-										newName = generateName(sourcePort.getRefName());
+										newName = generateName(sourcePort.getPortDefinition().getRefName());
 										mxCell varCell = (mxCell)createVisibleVariableCell(null);
 										addCell(null, varCell);
 										setCellGeometryToCenterOfEdge(varCell, cell);
 										AC_GUI.addVisibleVariable(activeModule, newName, varCell);
 										mxCell sourceToVarCell = (mxCell)createConnectionCell(null, source, varCell, "DashedConnectionEdge");
-										AC_GUI.addConnection(activeModule, sourceToVarCell);
+										AC_GUI.addConnection(activeModule, sourceToVarCell, sourceType, TerminalType.VISIBLEVARIABLE);
 										mxCell varToTargetCell = (mxCell)createConnectionCell(null, varCell, target, "ConnectionEdge");
-										AC_GUI.addConnection(activeModule, varToTargetCell);
+										AC_GUI.addConnection(activeModule, varToTargetCell, TerminalType.VISIBLEVARIABLE, targetType);
 										/*
 										if (AC_GUI.newNameValidation(sourcePort.getRefName()))
 										{
@@ -3695,7 +4050,7 @@ public class DrawingBoard extends JPanel
 												
 												// add connection from existing visible variable to the selected target
 												eNodeToTargetCell = (mxCell)createConnectionCell(null, existingEdgeSource, target, "ConnectionEdge");
-												AC_GUI.addConnection(activeModule, eNodeToTargetCell);
+												AC_GUI.addConnection(activeModule, eNodeToTargetCell, TerminalType.EQUIVALENCE, targetType);
 											
 											}
 											return;
@@ -3703,15 +4058,15 @@ public class DrawingBoard extends JPanel
 										// the source has no existing outgoing edges
 										System.out.println("Source has no existing edges.");
 										// create an equivalence node
-										newName = generateName(sourcePort.getRefName());
+										newName = generateName(sourcePort.getPortDefinition().getRefName());
 										eNodeCell = (mxCell)createEquivalenceNodeCell(null);
 										addCell(null, eNodeCell);
 										setCellGeometryToCenterOfEdge(eNodeCell, cell);
 										AC_GUI.addEquivalenceNode(activeModule, newName, eNodeCell);
 										sourceToeNodeCell = (mxCell)createConnectionCell(null, eNodeCell, source, "ConnectionEdge");
-										AC_GUI.addConnection(activeModule, sourceToeNodeCell);
+										AC_GUI.addConnection(activeModule, sourceToeNodeCell, TerminalType.EQUIVALENCE, sourceType);
 										eNodeToTargetCell = (mxCell)createConnectionCell(null, eNodeCell, target, "ConnectionEdge");
-										AC_GUI.addConnection(activeModule, eNodeToTargetCell);
+										AC_GUI.addConnection(activeModule, eNodeToTargetCell, TerminalType.EQUIVALENCE, targetType);
 										/*
 										if (AC_GUI.newNameValidation(sourcePort.getRefName()))
 										{
@@ -3775,17 +4130,18 @@ public class DrawingBoard extends JPanel
 											// create an equivalence node
 											// create connection from eNode->source port
 											// create connection from eNode->target port
-											
+											sourceType = TerminalType.PORT;
+											targetType = TerminalType.PORT;
 											// create an equivalence node
-											newName = generateName(sourcePort.getRefName());
+											newName = generateName(sourcePort.getPortDefinition().getRefName());
 											eNodeCell = (mxCell)createEquivalenceNodeCell(null);
 											addCell(null, eNodeCell);
 											setCellGeometryToCenterOfEdge(eNodeCell, cell);
 											AC_GUI.addEquivalenceNode(activeModule, newName, eNodeCell);
 											sourceToeNodeCell = (mxCell)createConnectionCell(null, eNodeCell, source, "ConnectionEdge");
-											AC_GUI.addConnection(activeModule, sourceToeNodeCell);
+											AC_GUI.addConnection(activeModule, sourceToeNodeCell, TerminalType.EQUIVALENCE, sourceType);
 											eNodeToTargetCell = (mxCell)createConnectionCell(null, eNodeCell, target, "ConnectionEdge");
-											AC_GUI.addConnection(activeModule, eNodeToTargetCell);
+											AC_GUI.addConnection(activeModule, eNodeToTargetCell, TerminalType.EQUIVALENCE, targetType);
 											/*
 											if (AC_GUI.newNameValidation(sourcePort.getRefName()))
 											{
@@ -3813,7 +4169,8 @@ public class DrawingBoard extends JPanel
 										if (sourceHasIncomingEdge)
 										{
 											// the source has an incoming edge
-											
+											sourceType = TerminalType.PORT;
+											targetType = TerminalType.PORT;
 											Object sourceIncomingEdges [] = mxGraphModel.getIncomingEdges(graph.getModel(), source);
 											eNodeCell = null;
 											for(int i = 0; i < sourceIncomingEdges.length; i++)
@@ -3833,7 +4190,7 @@ public class DrawingBoard extends JPanel
 													// the target equivalence port is not connected to the eNode
 													// create an edge between the target equivalence port and the eNode
 													eNodeToTargetCell = (mxCell)createConnectionCell(null, eNodeCell, target, "ConnectionEdge");
-													AC_GUI.addConnection(activeModule, eNodeToTargetCell);
+													AC_GUI.addConnection(activeModule, eNodeToTargetCell, TerminalType.EQUIVALENCE, targetType);
 												}
 												else
 												{
@@ -3855,6 +4212,8 @@ public class DrawingBoard extends JPanel
 										if (targetHasIncomingEdge)
 										{
 											// the target has existing incoming edges
+											sourceType = TerminalType.PORT;
+											targetType = TerminalType.PORT;
 											Object targetIncomingEdges [] = mxGraphModel.getIncomingEdges(graph.getModel(), target);
 											eNodeCell = null;
 											for(int i = 0; i < targetIncomingEdges.length; i++)
@@ -3868,7 +4227,7 @@ public class DrawingBoard extends JPanel
 											{
 												// create connection from eNode->source port
 												mxCell eNodeToSourceCell = (mxCell)createConnectionCell(null, eNodeCell, source, "ConnectionEdge");
-												AC_GUI.addConnection(activeModule, eNodeToSourceCell);
+												AC_GUI.addConnection(activeModule, eNodeToSourceCell, TerminalType.EQUIVALENCE, sourceType);
 											}
 											else
 											{
@@ -4015,257 +4374,5 @@ public class DrawingBoard extends JPanel
 				*/
 			}
 		});
-	}
-
-	/**
-	 * Create a popup menu for modules and ports.
-	 * @param pt the location of the menu
-	 * @param cell the drawing cell the menu will be created for
-	 * @return the popup menu
-	 */
-	private JPopupMenu createPopupMenu(final Point pt, final Object cell)
-	{
-		Object cellValue;
-		JPopupMenu menu = new JPopupMenu();
-
-		cellValue = ((mxCell)cell).getValue();
-		menu.add(new AbstractAction("Edit Name") {
-			/**
-			 * 
-			 */
-			private static final long serialVersionUID = 1L;
-
-			public void actionPerformed(ActionEvent e)
-			{
-				//graphComponent.startEditingAtCell(cell);
-			}
-		});
-
-		if (((mxCell)cell).isEdge())
-		{
-			menu.add(new AbstractAction("Remove Connection") {
-				/**
-				 * 
-				 */
-				private static final long serialVersionUID = 1L;
-				
-				public void actionPerformed(ActionEvent e)
-				{
-					//System.out.println("Connected edge count: " + graph.getModel().getEdgeCount(((mxCell)cell).getSource()));
-					// get the connection object from the drawing cell
-					Connection edge = (Connection)((mxCell)cell).getValue();
-					// remove the drawing cell
-					removeCell(edge.getDrawingCell());
-					// remove the connection from the module
-					AC_GUI.currentGUI.removeConnection(edge);
-					//System.out.println("Connected edge count: " + graph.getModel().getEdgeCount(((mxCell)cell).getSource()));
-				}
-			});
-			
-			menu.add(new AbstractAction("Properties") {
-				/**
-				 * 
-				 */
-				private static final long serialVersionUID = 1L;
-
-				public void actionPerformed(ActionEvent e)
-				{
-					Object sourceValue;
-					Object targetValue;
-					String source = "";
-					String target = "";
-					
-					sourceValue = ((mxCell)cell).getSource().getValue();
-					targetValue = ((mxCell)cell).getTarget().getValue();
-					
-					if (sourceValue instanceof Port)
-					{
-						source = "Port ";
-						source += ((Port)sourceValue).getParent().getName();
-						source += "." + ((Port)sourceValue).getName();
-					} else if (sourceValue instanceof VisibleVariable)
-					{
-						source = "Variable ";
-						source += ((VisibleVariable)sourceValue).getRefName();
-					} else if (sourceValue instanceof EquivalenceNode)
-					{
-						source = "Equivalence Node ";
-						source += ((EquivalenceNode)sourceValue).getRefName();
-					}
-					
-					if (targetValue instanceof Port)
-					{
-						target = "Port ";
-						target += ((Port)targetValue).getParent().getName();
-						target += "." + ((Port)targetValue).getName();
-					} else if (targetValue instanceof VisibleVariable)
-					{
-						target = "Variable ";
-						target += ((VisibleVariable)targetValue).getRefName();
-					} else if (targetValue instanceof EquivalenceNode)
-					{
-						target = "Equivalence Node ";
-						target += ((EquivalenceNode)targetValue).getRefName();
-					}
-					
-					String msg = "Source = " + source + "\nDestination = " + target;
-					JOptionPane.showMessageDialog(null, msg);
-				}
-			});
-		}
-		else
-		{
-			if (cellValue instanceof Module)
-			{
-				if (activeModule == (Module)cellValue)
-				{
-					menu.add(new AbstractAction("Add Port") {
-						/**
-						 * 
-						 */
-						private static final long serialVersionUID = 1L;
-	
-						public void actionPerformed(ActionEvent e)
-						{
-							PortAddEditor portAddEditor = new PortAddEditor(cell, graphComponent);
-							portAddEditor.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-							portAddEditor.setModal(true);
-							portAddEditor.setVisible(true);
-						}
-					});
-					
-					menu.add(new AbstractAction("Show Variable") {
-						/**
-						 * 
-						 */
-						private static final long serialVersionUID = 1L;
-	
-						public void actionPerformed(ActionEvent e)
-						{
-							VariableAddEditor varAddEditor = new VariableAddEditor(graphComponent);
-							varAddEditor.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-							varAddEditor.setModal(true);
-							varAddEditor.setVisible(true);
-						}
-					});
-				}
-				else
-				{
-					// the module selected is a submodule
-				}
-			} 
-			else if (cellValue instanceof Port)
-			{
-				if (activeModule == ((Port)cellValue).getParent())
-				{
-					menu.add(new AbstractAction("Change Type") {
-						/**
-						 * 
-						 */
-						private static final long serialVersionUID = 1L;
-	
-						public void actionPerformed(ActionEvent e)
-						{
-							Port currentPort = (Port) ((mxCell) cell).getValue();
-	
-							Object[] possibleValues = { "Input", "Output", "Equivalence" };
-							Object selectedValue = JOptionPane.showInputDialog(null, "Select Type", "Change Port Type", JOptionPane.INFORMATION_MESSAGE, null, possibleValues, currentPort.getType().toString());
-	
-							if (selectedValue.toString().compareTo("Input") == 0)
-							{
-								currentPort.setType(PortType.INPUT);
-							}
-							else if (selectedValue.toString().compareTo("Output") == 0)
-							{
-								currentPort.setType(PortType.OUTPUT);
-							}
-							else if (selectedValue.toString().compareTo("Equivalence") == 0)
-							{
-								currentPort.setType(PortType.EQUIVALENCE);
-							}
-	
-							mxGeometry geo = ((mxCell) cell).getGeometry();
-							graph.updatePortOrientation(cell, geo, false);
-						}
-					});
-	
-					menu.add(new AbstractAction("Remove") {
-						/**
-						 * 
-						 */
-						private static final long serialVersionUID = 1L;
-	
-						public void actionPerformed(ActionEvent e)
-						{
-							// get the Port object from the drawing cell
-							Port currentPort = (Port) ((mxCell) cell).getValue();
-							String msg = "Number of edges connected to the port: ";
-							msg += graph.getModel().getEdgeCount(cell) + ".";
-							//System.out.println(msg);
-							// call AC_GUI to fully remove the port
-							AC_GUI.currentGUI.removePort(currentPort);
-						}
-					});
-	
-					menu.add(new AbstractAction("Properties") {
-						/**
-						 * 
-						 */
-						private static final long serialVersionUID = 1L;
-	
-						public void actionPerformed(ActionEvent e)
-						{
-	
-						}
-					});
-				}
-				else
-				{
-					// the port belongs to a submodule
-				}
-			}
-			else if (cellValue instanceof VisibleVariable)
-			{
-				menu.add(new AbstractAction("Remove") {
-					/**
-					 * 
-					 */
-					private static final long serialVersionUID = 1L;
-
-					public void actionPerformed(ActionEvent e)
-					{
-						// get the Visible Variable object from the drawing cell
-						VisibleVariable currentVar = (VisibleVariable) ((mxCell) cell).getValue();
-						String msg = "Number of edges connected to the variable: ";
-						msg += graph.getModel().getEdgeCount(cell) + ".";
-						//System.out.println(msg);
-						// call AC_GUI to fully remove the port
-						AC_GUI.removeVisibleVariable(currentVar);
-					}
-				});
-			}
-			else if (cellValue instanceof EquivalenceNode)
-			{
-				menu.add(new AbstractAction("Remove") {
-					/**
-					 * 
-					 */
-					private static final long serialVersionUID = 1L;
-
-					public void actionPerformed(ActionEvent e)
-					{
-						// get the Equivalence Node object from the drawing cell
-						EquivalenceNode currentENode = (EquivalenceNode) ((mxCell) cell).getValue();
-						String msg = "Number of edges connected to the eNode: ";
-						msg += graph.getModel().getEdgeCount(cell) + ".";
-						//System.out.println(msg);
-						// call AC_GUI to fully remove the port
-						AC_GUI.removeEquivalenceNode(currentENode);
-					}
-				});
-			}
-		}
-
-		return menu;
 	}
 }

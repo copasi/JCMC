@@ -28,4 +28,21 @@ public enum VariableType
 	{
 		return name;
 	}
+	
+	public static VariableType getType(String value)
+	{
+		if (value == null)
+		{
+			throw new IllegalArgumentException();
+		}
+		
+		for (VariableType v : values())
+		{
+			if (value.equals(v.toString()))
+			{
+				return v;
+			}
+		}
+		throw new IllegalArgumentException();
+	}
 }

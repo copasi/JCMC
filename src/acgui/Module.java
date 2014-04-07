@@ -1,300 +1,190 @@
+/**
+ * 
+ */
 package acgui;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.ListIterator;
 
 import javax.swing.tree.DefaultMutableTreeNode;
 
+import com.mxgraph.model.mxCell;
 import com.mxgraph.model.mxGeometry;
-import com.mxgraph.util.mxRectangle;
 
 /**
- * The information for a module.
- * @author T.C. Jones
- * @version July 6, 2012
+ * @author Thomas
+ *
  */
 public class Module implements Serializable
 {
+
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	private Module parent;
-	protected String name;
-	private String copasiDatamodelKey;
-	private DefaultMutableTreeNode treeNode;
-	private Object drawingCell;
-	private ArrayList<Module> children;
-	private ArrayList<Port> ports;
-	private ArrayList<Connection> connections;
-	private ArrayList<VisibleVariable> visibleVariables;
-	private ArrayList<EquivalenceNode> equivalenceNodes;
-	private mxGeometry drawingCellGeometry;
-	private String drawingCellStyle;
-	private String msmbData;
-	private String id;
 
-	/**
-	 * Construct a module.
-	 */
+	private Module parent;
+	private ModuleDefinition moduleDef;
+	private String id;
+	private String name;
+	private DefaultMutableTreeNode treeNode;
+	private mxCell drawingCell;
+	private mxGeometry drawingCellGeometry_Module;
+	private mxGeometry drawingCellGeometry_Submodule;
+	private String drawingCellStyle;
+	private ArrayList<Module> children;
+	private ArrayList<ACComponentNode> ports;
+	private ArrayList<ConnectionNode> connections;
+	private ArrayList<ACComponentNode> visibleVariables;
+	private ArrayList<ACComponentNode> equivalences;
+	
 	public Module()
 	{
-		parent = null;
-		name = "";
-		copasiDatamodelKey = "";
-		drawingCellStyle = "";
-		treeNode = null;
-		drawingCell = null;
 		children = new ArrayList<Module>();
-		ports = new ArrayList<Port>();
-		connections = new ArrayList<Connection>();
-		visibleVariables = new ArrayList<VisibleVariable>();
-		equivalenceNodes = new ArrayList<EquivalenceNode>();
-		id = "";
-	}
-
-	/**
-	 * Construct a module.
-	 * @param iName the name of the module
-	 */
-	public Module(String iName)
-	{
-		parent = null;
-		name = iName;
-		copasiDatamodelKey = "";
-		drawingCellStyle = "";
-		treeNode = null;
-		drawingCell = null;
-		children = new ArrayList<Module>();
-		ports = new ArrayList<Port>();
-		connections = new ArrayList<Connection>();
-		visibleVariables = new ArrayList<VisibleVariable>();
-		equivalenceNodes = new ArrayList<EquivalenceNode>();
-		id = "";
-	}
-
-	/**
-	 * Construct a module.
-	 * @param iName the name of the module
-	 * @param iKey the key of the copasi datamodel
-	 */
-	public Module(String iName, String iKey)
-	{
-		parent = null;
-		name = iName;
-		copasiDatamodelKey = iKey;
-		drawingCellStyle = "";
-		treeNode = null;
-		drawingCell = null;
-		children = new ArrayList<Module>();
-		ports = new ArrayList<Port>();
-		connections = new ArrayList<Connection>();
-		visibleVariables = new ArrayList<VisibleVariable>();
-		equivalenceNodes = new ArrayList<EquivalenceNode>();
-		id = "";
+		ports = new ArrayList<ACComponentNode>();
+		connections = new ArrayList<ConnectionNode>();
+		visibleVariables = new ArrayList<ACComponentNode>();
+		equivalences = new ArrayList<ACComponentNode>();
 	}
 	
-	/**
-	 * Construct a module.
-	 * @param iName the name of the module
-	 * @param iParent the parent to the module
-	 */
 	public Module(String iName, Module iParent)
 	{
-		parent = iParent;
+		this();
 		name = iName;
-		copasiDatamodelKey = "";
-		drawingCellStyle = "";
+		parent = iParent;
+		moduleDef = null;
+		id = null;
 		treeNode = null;
 		drawingCell = null;
-		children = new ArrayList<Module>();
-		ports = new ArrayList<Port>();
-		connections = new ArrayList<Connection>();
-		visibleVariables = new ArrayList<VisibleVariable>();
-		equivalenceNodes = new ArrayList<EquivalenceNode>();
-		id = "";
+		drawingCellGeometry_Module = null;
+		drawingCellGeometry_Submodule = null;
+		drawingCellStyle = null;
 	}
 	
-	/**
-	 * Construct a module.
-	 * @param iName the name of the module
-	 * @param iParent the parent to the module
-	 */
-	public Module(String iName, String iKey, Module iParent)
+	public Module(String iName, ModuleDefinition iModuleDef)
 	{
-		parent = iParent;
+		this();
 		name = iName;
-		copasiDatamodelKey = iKey;
-		drawingCellStyle = "";
+		moduleDef = iModuleDef;
+		parent = null;
+		id = null;
 		treeNode = null;
 		drawingCell = null;
-		children = new ArrayList<Module>();
-		ports = new ArrayList<Port>();
-		connections = new ArrayList<Connection>();
-		visibleVariables = new ArrayList<VisibleVariable>();
-		equivalenceNodes = new ArrayList<EquivalenceNode>();
-		id = "";
+		drawingCellGeometry_Module = null;
+		drawingCellGeometry_Submodule = null;
+		drawingCellStyle = null;
 	}
 	
-	public Module(String iName, String iKey, String imsmbData, Module iParent)
+	public Module(String iName, ModuleDefinition iModuleDef, Module iParent)
 	{
-		parent = iParent;
+		this();
 		name = iName;
-		copasiDatamodelKey = iKey;
-		msmbData = imsmbData;
-		drawingCellStyle = "";
+		moduleDef = iModuleDef;
+		parent = iParent;
+		id = null;
 		treeNode = null;
 		drawingCell = null;
-		children = new ArrayList<Module>();
-		ports = new ArrayList<Port>();
-		connections = new ArrayList<Connection>();
-		visibleVariables = new ArrayList<VisibleVariable>();
-		equivalenceNodes = new ArrayList<EquivalenceNode>();
-		id = "";
+		drawingCellGeometry_Module = null;
+		drawingCellGeometry_Submodule = null;
+		drawingCellStyle = null;
 	}
 	
-	/**
-	 * Construct a module.
-	 * @param iName the name of the module
-	 * @param tNode the tree node representing the module
-	 * @param dCell the drawn object representing the module
-	 */
-	public Module(String iName, DefaultMutableTreeNode tNode, Object dCell)
+	public Module(String iName, ModuleDefinition iModuleDef, Module iParent, mxGeometry iModuleGeo, mxGeometry iSubmoduleGeo, String iStyle)
 	{
+		this();
 		name = iName;
-		copasiDatamodelKey = "";
-		drawingCellStyle = "";
-		treeNode = tNode;
-		drawingCell = dCell;
-		children = new ArrayList<Module>();
-		ports = new ArrayList<Port>();
-		connections = new ArrayList<Connection>();
-		visibleVariables = new ArrayList<VisibleVariable>();
-		equivalenceNodes = new ArrayList<EquivalenceNode>();
-		id = "";
-	}
-	
-	/**
-	 * Construct a module.
-	 * @param iName the name of the module
-	 * @param iKey the Copasi datamodel key
-	 * @param imsmbData the msmb data representing the module
-	 * @param tNode the tree node representing the module
-	 * @param dCell the drawn object representing the module
-	 * @param iCellBounds the drawing cell bounds
-	 * @param iCellStyle the drawing cell style
-	 * @param iParent the parent to the module
-	 */
-	public Module(String iName, String iKey, String imsmbData, DefaultMutableTreeNode tNode, Object dCell, mxGeometry iCellGeometry, String iCellStyle, Module iParent)
-	{
+		moduleDef = iModuleDef;
 		parent = iParent;
-		name = iName;
-		msmbData = imsmbData;
-		copasiDatamodelKey = iKey;
-		drawingCellStyle = iCellStyle;
-		drawingCellGeometry = iCellGeometry;
-		treeNode = tNode;
-		drawingCell = dCell;
-		children = new ArrayList<Module>();
-		ports = new ArrayList<Port>();
-		connections = new ArrayList<Connection>();
-		visibleVariables = new ArrayList<VisibleVariable>();
-		equivalenceNodes = new ArrayList<EquivalenceNode>();
-		id = "";
+		treeNode = null;
+		drawingCell = null;
+		drawingCellGeometry_Module = iModuleGeo;
+		drawingCellGeometry_Submodule = iSubmoduleGeo;
+		drawingCellStyle = iStyle;
+	}
+	
+	public Module getParent()
+	{
+		return parent;
+	}
+	
+	public void setModuleDefinition(ModuleDefinition newDefinition)
+	{
+		moduleDef = newDefinition;
+	}
+	
+	public ModuleDefinition getModuleDefinition()
+	{
+		return moduleDef;
+	}
+	
+	public void setID(String newID)
+	{
+		id = newID;
 	}
 
-	/**
-	 * Set the name of the module.
-	 * @param iName the name of the module
-	 */
-	public void setName(String iName)
+	public String getID()
 	{
-		name = iName;
-		AC_GUI.drawingBoard.updateCellName(drawingCell, name);
+		return id;
 	}
-
-	/**
-	 * Get the name of the module.
-	 * @return the name of the module
-	 */
+	
+	public void setName(String newName)
+	{
+		name = newName;
+	}
+	
 	public String getName()
 	{
 		return name;
 	}
-
-	/**
-	 * Set the Copasi datamodel key of the module.
-	 * @param iKey the Copasi datamodel key of the module
-	 */
-	public void setKey(String iKey)
-	{
-		copasiDatamodelKey = iKey;
-	}
-
-	/**
-	 * Get the Copasi datamodel key of the module.
-	 * @return the Copasi datamodel key of the module
-	 */
-	public String getKey()
-	{
-		return copasiDatamodelKey;
-	}
 	
-	/**
-	 * Set the drawn object representing the module.
-	 * @param dCell the drawn object representing the module
-	 */
-	public void setDrawingCell(Object dCell)
+	public void setTreeNode(DefaultMutableTreeNode iNode)
 	{
-		drawingCell = dCell;
-		AC_GUI.drawingBoard.updateCellName(drawingCell, name);
+		treeNode = iNode;
 	}
 
-	/**
-	 * Get the drawn object representing the module.
-	 * @return the drawn object representing the module
-	 */
-	public Object getDrawingCell()
-	{
-		return drawingCell;
-	}
-
-	public void setDrawingCellStyle(String style)
-	{
-		drawingCellStyle = style;
-	}
-	
-	public String getDrawingCellStyle()
-	{
-		return drawingCellStyle;
-	}
-	
-	/**
-	 * Set the tree node representing the module.
-	 * @param tNode the tree node representing the module
-	 */
-	public void setTreeNode(DefaultMutableTreeNode tNode)
-	{
-		treeNode = tNode;
-	}
-
-	/**
-	 * Get the tree node representing the module.
-	 * @return the tree node representing the module
-	 */
 	public DefaultMutableTreeNode getTreeNode()
 	{
 		return treeNode;
 	}
 	
-	/**
-	 * Get the parent of the module.
-	 * @return the parent of the module
-	 */
-	public Module getParent()
+	public void setDrawingCell(mxCell iCell)
 	{
-		return parent;
+		drawingCell = iCell;
+	}
+	
+	public mxCell getDrawingCell()
+	{
+		return drawingCell;
+	}
+	
+	public void setDrawingCellGeometryModule(mxGeometry iGeo)
+	{
+		drawingCellGeometry_Module = iGeo;
+	}
+	
+	public mxGeometry getDrawingCellGeometryModule()
+	{
+		return drawingCellGeometry_Module;
+	}
+	
+	public void setDrawingCellGeometrySubmodule(mxGeometry iGeo)
+	{
+		drawingCellGeometry_Submodule = iGeo;
+	}
+	
+	public mxGeometry getDrawingCellGeometrySubmodule()
+	{
+		return drawingCellGeometry_Submodule;
+	}
+	
+	public void setDrawingCellStyle(String iStyle)
+	{
+		drawingCellStyle = iStyle;
+	}
+	
+	public String getDrawingCellStyle()
+	{
+		return drawingCellStyle;
 	}
 	
 	/**
@@ -304,7 +194,6 @@ public class Module implements Serializable
 	public void addChild(Module mod)
 	{
 		children.add(mod);
-		AC_GUI.masterModuleList.add(mod);
 	}
 	
 	/**
@@ -314,7 +203,6 @@ public class Module implements Serializable
 	public void removeChild(Module mod)
 	{
 		children.remove(mod);
-		AC_GUI.masterModuleList.remove(mod);
 	}
 	
 	/**
@@ -330,7 +218,7 @@ public class Module implements Serializable
 	 * Add the given port to the module.
 	 * @param port the port to add
 	 */
-	public void addPort(Port port)
+	public void addPort(PortNode port)
 	{
 		ports.add(port);
 	}
@@ -339,22 +227,24 @@ public class Module implements Serializable
 	 * Remove the given port from the list of ports.
 	 * @param port the port to be removed
 	 */
-	public void removePort(Port port)
+	public void removePort(PortNode port)
 	{
 		ports.remove(port);
+		/*
 		if(port.getRowIndex() != ports.size())
 		{
 			//the deleted Port did not occupy the last row in the Port table,
 			//the indices of the Ports listed below it must be updated.
 			updatePortIndices(port);
 		}
+		*/
 	}
 	
 	/**
 	 * Return the list of ports.
 	 * @return the list of ports
 	 */
-	public ArrayList<Port> getPorts()
+	public ArrayList<ACComponentNode> getPorts()
 	{
 		return ports;
 	}
@@ -363,7 +253,7 @@ public class Module implements Serializable
 	 * Add the given connection to the list of connections.
 	 * @param connection the connection to add
 	 */
-	public void addConnection(Connection connection)
+	public void addConnection(ConnectionNode connection)
 	{
 		connections.add(connection);
 	}
@@ -372,7 +262,7 @@ public class Module implements Serializable
 	 * Remove the given connection from the list of connections.
 	 * @param connection the connection to be removed
 	 */
-	public void removeConnection(Connection connection)
+	public void removeConnection(ConnectionNode connection)
 	{
 		connections.remove(connection);
 	}
@@ -381,69 +271,39 @@ public class Module implements Serializable
 	 * Return the list of connections.
 	 * @return the list of connections
 	 */
-	public ArrayList<Connection> getConnections()
+	public ArrayList<ConnectionNode> getConnections()
 	{
 		return connections;
 	}
 	
-	public void addVisibleVariable(VisibleVariable var)
+	public void addVisibleVariable(VisibleVariableNode var)
 	{
 		visibleVariables.add(var);
 	}
 	
-	public void removeVisibleVariable(VisibleVariable var)
+	public void removeVisibleVariable(VisibleVariableNode var)
 	{
 		visibleVariables.remove(var);
 	}
 	
-	public ArrayList<VisibleVariable> getVisibleVariables()
+	public ArrayList<ACComponentNode> getVisibleVariables()
 	{
 		return visibleVariables;
 	}
 	
-	public void addEquivalenceNode(EquivalenceNode eNode)
+	public void addEquivalence(EquivalenceNode eNode)
 	{
-		equivalenceNodes.add(eNode);
+		equivalences.add(eNode);
 	}
 	
-	public void removeEquivalenceNode(EquivalenceNode eNode)
+	public void removeEquivalence(EquivalenceNode eNode)
 	{
-		equivalenceNodes.remove(eNode);
+		equivalences.remove(eNode);
 	}
 	
-	public ArrayList<EquivalenceNode> getEquivalenceNodes()
+	public ArrayList<ACComponentNode> getEquivalences()
 	{
-		return equivalenceNodes;
-	}
-	
-	public void setDrawingCellGeometry(mxGeometry geo)
-	{
-		drawingCellGeometry = geo;
-	}
-	
-	public mxGeometry getDrawingCellGeometry()
-	{
-		return drawingCellGeometry;
-	}
-	
-	public void setMSMBData(String data)
-	{
-		msmbData = data;
-	}
-	
-	public String getMSMBData()
-	{
-		return msmbData;
-	}
-	
-	public void setID(String newID)
-	{
-		id = newID;
-	}
-	
-	public String getID()
-	{
-		return id;
+		return equivalences;
 	}
 	
 	/**
@@ -454,23 +314,5 @@ public class Module implements Serializable
 	public String toString()
 	{
 		return name;
-	}
-	
-	/**
-	 * Update the indices of the Ports listed after the given port.
-	 * @param deletedPort the Port that was deleted
-	 */
-	private void updatePortIndices(Port deletedPort)
-	{		
-		int index = deletedPort.getRowIndex();
-		
-		//create a list iterator that starts at the index of the deleted Port
-		ListIterator<Port> portsIterator = ports.listIterator(index);
-		//reset the index of each Port that occur after the deleted Port
-		while(portsIterator.hasNext())
-		{
-			portsIterator.next().setRowIndex(index);
-			index++;
-		}
 	}
 }

@@ -28,7 +28,7 @@ import com.mxgraph.swing.mxGraphComponent;
  * @author T.C. Jones
  * @version March 15, 2013
  */
-public class VariableAddEditor extends JDialog
+public class VariableAddEditor extends JDialog implements ActionListener
 {
 
 	/**
@@ -78,33 +78,12 @@ public class VariableAddEditor extends JDialog
 		JPanel lowerPanel = new JPanel();
 		lowerPanel.setLayout(new FlowLayout());
 		JButton addButton = new JButton("Add");
-		addButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e)
-			{
-				String msg;
-				
-				if (((String)comboBox1.getSelectedItem()).equals(""))
-				{
-					JOptionPane.showMessageDialog(null, "Please select a Ref Name.");
-				}
-				else
-				{
-					if (AC_GUI.visibleVariableValidation((String)comboBox1.getSelectedItem()))
-					{
-						AC_GUI.addVisibleVariable((String)comboBox1.getSelectedItem());
-						dispose();
-					}
-				}
-			}
-		});
+		addButton.setActionCommand("add");
+		addButton.addActionListener(this);
 		lowerPanel.add(addButton);
 		JButton cancelButton = new JButton("Cancel");
-		cancelButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e)
-			{
-				dispose();
-			}
-		});
+		cancelButton.setActionCommand("cancel");
+		cancelButton.addActionListener(this);
 		lowerPanel.add(cancelButton);
 
 		getContentPane().setLayout(new BorderLayout());
@@ -115,5 +94,32 @@ public class VariableAddEditor extends JDialog
 		setSize(650, 500);
 		pack();
 		setLocationRelativeTo(graphComponent);
+	}
+	
+	@Override
+	public void actionPerformed(ActionEvent ae)
+	{
+		if (ae.getActionCommand().equalsIgnoreCase("add"))
+		{
+			String msg;
+			
+			if (((String)comboBox1.getSelectedItem()).equals(""))
+			{
+				JOptionPane.showMessageDialog(null, "Please select a Ref Name.");
+			}
+			else
+			{
+				if (AC_Utility.showVariableValidation((String)comboBox1.getSelectedItem()))
+				{
+					//AC_GUI.addVisibleVariable((String)comboBox1.getSelectedItem());
+					AC_GUI.showVariable((String)comboBox1.getSelectedItem());
+					dispose();
+				}
+			}
+		}
+		else if (ae.getActionCommand().equalsIgnoreCase("cancel"))
+		{
+			dispose();
+		}
 	}
 }

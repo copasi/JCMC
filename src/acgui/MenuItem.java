@@ -18,7 +18,7 @@ public enum MenuItem
 	EXIT("Exit"), // exit application
 	// -------------------------------------------------------------------------------------
 	ADD_SUBMODULE_NEW("Add Submodule (New)"),
-	ADD_SUBMODULE_TEMPLATE("Add Submodule (Template)"),
+	ADD_SUBMODULE_LOAD("Add Submodule (Load)"),
 	ADD_SUMMATION_MODULE("Add Summation Module"),
 	ADD_PRODUCT_MODULE("Add Product Module"),
 	SAVE_SUBMODULE_AS_TEMPLATE("Save Submodule (As Template)"),

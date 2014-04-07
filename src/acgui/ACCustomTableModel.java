@@ -22,7 +22,7 @@ public class ACCustomTableModel extends CustomTableModel
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	private Vector<Port> portsListed;
+	private Vector<PortNode> portsListed;
 	private boolean displayUneditableTable;
 
 	/**
@@ -32,7 +32,7 @@ public class ACCustomTableModel extends CustomTableModel
 	public ACCustomTableModel(String name, boolean alwaysEmptyRow)
 	{
 		super(name, alwaysEmptyRow);
-		portsListed = new Vector<Port>();
+		portsListed = new Vector<PortNode>();
 		displayUneditableTable = false;
 		// TODO Auto-generated constructor stub
 	}
@@ -43,15 +43,15 @@ public class ACCustomTableModel extends CustomTableModel
 	public ACCustomTableModel(String name)
 	{
 		super(name);
-		portsListed = new Vector<Port>();
+		portsListed = new Vector<PortNode>();
 		// TODO Auto-generated constructor stub
 	}
 	
-	public void addPort(Port newPort)
+	public void addPort(PortNode newPort)
 	{
 		String refName = "";
 		
-		refName = newPort.getRefName();
+		refName = newPort.getPortDefinition().getRefName();
 		
 		if (newPort.getParent() != AC_GUI.activeModule)
 		{
@@ -60,13 +60,13 @@ public class ACCustomTableModel extends CustomTableModel
 		
 		Vector portInfo = new Vector();
 		portInfo.add(refName);
-		portInfo.add(newPort.getType());
-		portInfo.add(newPort.getName());
+		portInfo.add(newPort.getPortDefinition().getType());
+		portInfo.add(newPort.getPortDefinition().getName());
 		this.addRow(portInfo);
 		portsListed.add(newPort);
 	}
 	
-	public void removePort(Port port)
+	public void removePort(PortNode port)
 	{
 		//System.out.println("Port row index: " + port.getRowIndex());
 		//System.out.println("Port vector index: " + portsListed.indexOf(port));
@@ -77,12 +77,12 @@ public class ACCustomTableModel extends CustomTableModel
 		fireTableDataChanged();
 	}
 	
-	public int getPortIndex(Port port)
+	public int getPortIndex(PortNode port)
 	{
 		return portsListed.indexOf(port);
 	}
 	
-	public Port getPort(int index)
+	public PortNode getPort(int index)
 	{
 		return portsListed.get(index);
 	}
@@ -111,65 +111,146 @@ public class ACCustomTableModel extends CustomTableModel
 	@Override
 	public void setValueAt(Object selection, int row, int col) {
 		if(row < 0) return;
+		if(selection == null) return;
+		if (portsListed.size() == 0) return;
 		String value = (String)selection;
-		Port changed = portsListed.get(row);
+		PortNode changed = portsListed.get(row);
+		int userInput = -1;
+		boolean keepChanges = false;
 		//System.out.println("List Name: " + portName);
 		//System.out.println("Object Value: " + (String)value);
+		Vector r;
+		Object old;
 		
-		if (col == 1)
+		if (changed.getParent() != AC_GUI.activeModule)
 		{
-			if (value.equalsIgnoreCase(changed.getRefName() + " - " + changed.getVariableType().toString()))
-			{
-				// no change was made, the original refName was reselected
-				return;
-			}
-			
-			if (changed.getParent() != AC_GUI.activeModule)
-			{
-				String msg = "Cannot edit the Ref Name of a Submodule Port.";
-				JOptionPane.showMessageDialog(null, msg);
-				//fireTableDataChanged();
-				//fireTableCellUpdated(row, col);
-				return;
-			}
-			//VariableType vType= null;			
-			if (AC_GUI.portRefNameValidation(value))
-			{
-				if (value.endsWith(VariableType.SPECIES.toString()))
+			String msg = "Cannot edit the information of a Submodule Port." + AC_Utility.eol;
+			msg += "Please load the Submodule as the Active Module," + AC_Utility.eol;
+			msg += "then make changes.";
+			JOptionPane.showMessageDialog(null, msg);
+			// revert back to original value
+			//r.set(col, old);
+			//data.set(row, r);
+			//fireTableDataChanged();
+			//fireTableCellUpdated(row, col);
+			return;
+		}
+		
+		switch (col)
+		{
+			case 1:
+				if (value.equals(changed.getPortDefinition().getRefName() + " - " + changed.getPortDefinition().getVariableType().toString()))
 				{
-					value = value.replace(" - " + VariableType.SPECIES.toString(), "");
-					//vType = VariableType.SPECIES;
+					// no change was made, the original refName was reselected
+					return;
 				}
-				else if (value.endsWith(VariableType.GLOBAL_QUANTITY.toString()))
+				
+				//VariableType vType= null;			
+				if (AC_Utility.portRefNameValidation(value, AC_GUI.activeModule))
 				{
-					value = value.replace(" - " + VariableType.GLOBAL_QUANTITY.toString(), "");
-					//vType = VariableType.GLOBAL_QUANTITY;
+					// ask user if they want to change all instances
+					//userInput = AC_Utility.promptUserSubmoduleChange(AC_GUI.activeModule);
+					if (value.endsWith(VariableType.SPECIES.toString()))
+					{
+						value = value.replace(" - " + VariableType.SPECIES.toString(), "");
+						//vType = VariableType.SPECIES;
+					}
+					else if (value.endsWith(VariableType.GLOBAL_QUANTITY.toString()))
+					{
+						value = value.replace(" - " + VariableType.GLOBAL_QUANTITY.toString(), "");
+						//vType = VariableType.GLOBAL_QUANTITY;
+					}
+					else
+					{
+						System.err.println("ACCustomTableModel.setValueAt: A valid VariableType was not found.");
+					}
 				}
 				else
 				{
-					System.err.println("ACCustomTableModel.setValueAt: A valid VariableType was not found.");
+					return;
 				}
-			}
-			else
-			{
-				return;
-			}
-		}
-		else if (col == 3)
-		{
-			if (value.compareTo(changed.getName()) == 0)
-			{
-				// no change was made
-				return;
-			}
-			if (!AC_GUI.portNameValidation(value, changed.getParent()))
-			{
-				return;
-			}
+				break;
+			case 2:
+				if (value.equals(changed.getPortDefinition().getType().toString()))
+				{
+					// no change was made
+					return;
+				}
+				String msg = "Changing the port type will remove any existing connections to the port." + AC_Utility.eol;
+				msg += "Are you sure?";
+				Object[] options = {"Yes", "No"};
+				int n = JOptionPane.showOptionDialog(null,
+					    msg,
+					    "Modify Port Type",
+					    JOptionPane.YES_NO_OPTION,
+					    JOptionPane.WARNING_MESSAGE,
+					    null,     //do not use a custom Icon
+					    options,  //the titles of buttons
+					    options[1]); //default button title
+				switch(n)
+				{
+					case JOptionPane.YES_OPTION:
+						System.out.println("The user confirmed changing the port type.");
+						//userInput = AC_Utility.promptUserSubmoduleChange(AC_GUI.activeModule);
+						break;
+					case JOptionPane.NO_OPTION:
+						System.out.println("The user did not confirm changing the port type.");
+						return;
+						//break;
+				}
+				break;
+			case 3:
+				if (value.equals(changed.getPortDefinition().getName()))
+				{
+					// no change was made
+					return;
+				}
+				if (!AC_Utility.portNameValidation(value, changed.getParent()))
+				{
+					return;
+				}
+				//userInput = AC_Utility.promptUserSubmoduleChange(AC_GUI.activeModule);
+				break;
 		}
 		
-		Vector r = (Vector)data.get(row);
-		Object old = r.get(col);
+		// ask user if they want to change all instances
+		userInput = AC_Utility.promptUserSubmoduleChange(AC_GUI.activeModule);
+		
+		switch(userInput)
+		{
+			case JOptionPane.YES_OPTION:
+				//System.out.println("The user chose New Module.");
+				// copy the current module definition
+				if (AC_Utility.copyDefinition(AC_GUI.activeModule, null))
+				{
+					System.out.println("ACCustomTableModel.setValueAt(): definition copy success.");
+					AC_GUI.modelBuilder.setModuleDefinitionName(AC_GUI.activeModule.getModuleDefinition().getName());
+				}
+				else
+				{
+					System.err.println("ACCustomTableModel.setValueAt(): definition copy failed.");
+				}
+				// save the updated msmb data
+				byte[] code = AC_GUI.modelBuilder.saveModel();
+				if (code == null || code.length == 0)
+				{
+					System.err.println("ACCustomTableModel.setValueAt(): msmb data is NULL.");
+				}
+				AC_GUI.activeModule.getModuleDefinition().setMSMBData(code);
+				// change the port
+				break;
+			case JOptionPane.NO_OPTION:
+				//System.out.print("The user chose Current Module.");
+				// change the port for all instances
+				
+				break;
+			case JOptionPane.CANCEL_OPTION:
+				//System.out.println("The user chose Cancel.");
+				return;
+		}
+		
+		r = (Vector)data.get(row);
+		old = r.get(col);
 		r.set(col, value);
 		data.set(row, r);
 		fireTableDataChanged();

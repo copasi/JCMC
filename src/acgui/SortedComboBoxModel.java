@@ -1,6 +1,3 @@
-/**
- * 
- */
 package acgui;
 
 import java.util.Collections;
@@ -42,17 +39,19 @@ public class SortedComboBoxModel extends DefaultComboBoxModel<String>
 	 * @param items list of Strings
 	 * @param comp Comparator to compare the Strings
 	 */
-	public SortedComboBoxModel(Vector<String> items, Comparator<String> comp)
+	public SortedComboBoxModel(Vector<String> list, Comparator<String> comp)
 	{
-		super(sort(items, comp));
+		super(sort(new Vector<String>(list), comp));
 		comparator = comp;
 		//setSelectedItem(items.elementAt(0));
     }
-	
+
+	/*
 	/**
 	 * Add an element to the model.
 	 * @param element the String to add
 	 */
+	/*
 	@Override
 	public void addElement(String element)
 	{
@@ -65,6 +64,7 @@ public class SortedComboBoxModel extends DefaultComboBoxModel<String>
 	 * @param element the String to insert
 	 * @param index index to add the element, this is ignored
 	 */
+	/*
 	@Override
 	public void insertElementAt(String element, int index)
 	{
@@ -94,6 +94,19 @@ public class SortedComboBoxModel extends DefaultComboBoxModel<String>
 		
 		super.insertElementAt(element,  index);
 	}
+	*/
+	
+	public void resetModel(Vector<String> list)
+	{
+		Vector<String> newList = new Vector<String>(list);
+		this.removeAllElements();
+		newList = sort(newList, comparator);
+		for (int i = 0; i < newList.size(); i++)
+		{
+			//System.out.println("Port Name: " + newList.get(i));
+			this.addElement(newList.get(i));
+		}
+	}
 	
 	/**
 	 * Sort the given Vector according to the given Comparator.
@@ -103,9 +116,9 @@ public class SortedComboBoxModel extends DefaultComboBoxModel<String>
 	 * @param comp Comparator to compare the Strings
 	 * @return the list of Strings in sorted order
 	 */
-	public static Vector<String> sort(Vector<String> items, Comparator<String> comp)
+	public static Vector<String> sort(Vector<String> list, Comparator<String> comp)
 	{
-		Collections.sort(items, comp);
-		return items;
+		Collections.sort(list, comp);
+		return list;
 	}
 }

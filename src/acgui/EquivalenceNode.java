@@ -1,86 +1,74 @@
-/**
- * 
- */
 package acgui;
 
-import java.io.Serializable;
-
+import com.mxgraph.model.mxCell;
 import com.mxgraph.model.mxGeometry;
 
 /**
- * An equivalence node.
- * @author T.C. Jones
- * @version April 23, 2013
+ * @author Thomas
+ *
  */
-public class EquivalenceNode implements Serializable
+public class EquivalenceNode extends ACComponentNode
 {
 
-	private Module parent;
-	private String refName;
-	private Object drawingCell;
-	private mxGeometry drawingCellGeometry;
-	
+	/**
+	 * 
+	 */
 	private static final long serialVersionUID = 1L;
-
+	private EquivalenceDefinition definition;
+	
 	/**
-	 * Construct the Equivalence Node.
+	 * @param iParent
 	 */
-	public EquivalenceNode(Module iParent, String iName)
+	public EquivalenceNode(Module iParent)
 	{
-		parent = iParent;
-		refName = iName;
-		drawingCell = null;
-		drawingCellGeometry = null;
+		super(iParent);
 	}
 	
 	/**
-	 * Construct the Equivalence Node.
+	 * @param iParent
 	 */
-	public EquivalenceNode(Module iParent, String iName, Object iCell)
+	public EquivalenceNode(Module iParent, EquivalenceDefinition iDefinition)
 	{
-		parent = iParent;
-		refName = iName;
-		drawingCell = iCell;
-		drawingCellGeometry = null;
+		super(iParent);
+		definition = iDefinition;
 	}
 	
-	public Module getParent()
+	/**
+	 * @param iParent
+	 * @param iCell
+	 * @param iGeo
+	 */
+	public EquivalenceNode(Module iParent, mxCell iCell, mxGeometry iGeo)
 	{
-		return parent;
-	}
-	
-	public void setRefName(String iName)
-	{
-		refName = iName;
-	}
-	
-	public String getRefName()
-	{
-		return refName;
-	}
-	
-	public void setDrawingCell(Object iCell)
-	{
-		drawingCell = iCell;
-	}
-	
-	public Object getDrawingCell()
-	{
-		return drawingCell;
+		super(iParent, iCell, iGeo);
+		// TODO Auto-generated constructor stub
 	}
 
-	public void setDrawingCellGeometry(mxGeometry geo)
+	/**
+	 * @param iParent
+	 * @param iCell
+	 * @param iGeo
+	 * @param iStyle
+	 */
+	public EquivalenceNode(Module iParent, mxCell iCell, mxGeometry iGeo, String iStyle)
 	{
-		drawingCellGeometry = geo;
+		super(iParent, iCell, iGeo, iStyle);
+		// TODO Auto-generated constructor stub
+	}
+
+	public void setEquivalenceDefinition(EquivalenceDefinition iDef)
+	{
+		definition = iDef;
 	}
 	
-	public mxGeometry getDrawingCellGeometry()
+	public EquivalenceDefinition getEquivalenceDefinition()
 	{
-		return drawingCellGeometry;
+		return definition;
 	}
 	
+	@Override
 	public String toString()
 	{
-		return refName;
+		return definition.getRefName();
 	}
 }

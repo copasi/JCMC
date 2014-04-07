@@ -1,8 +1,9 @@
 package acgui;
 
-import java.util.ListIterator;
+import javax.swing.JOptionPane;
 
 import org.COPASI.*;
+import org.sbml.libsbml.GeneralGlyph;
 
 /**
  * A utility to handle all things Copasi.
@@ -22,26 +23,167 @@ public class CopasiUtility
 		}
 	}
 	
-	public void clear()
+	public static void clear()
 	{
-		CCopasiRootContainer.getDatamodelList().clear();
+		//CCopasiRootContainer.getDatamodelList().clear();
+		while (CCopasiRootContainer.getDatamodelList().size()!=0) 
+		{
+			CCopasiRootContainer.removeDatamodelWithIndex(0);
+		}
 		System.out.println("Number of models in the CCopasiRootContainer: " + CCopasiRootContainer.getDatamodelList().size());
 	}
 	
-	public CCopasiDataModel createDataModel()
+	public static CCopasiDataModel createDataModel()
 	{
 		return CCopasiRootContainer.addDatamodel();
 	}
 	
-	public String getSBML(String dataModelName)
+	public static CCopasiDataModel createDataModel(String copasiData)
+	{
+		return importModelFromString(copasiData);
+	}
+	
+	public static boolean removeDataModel(String dataModelName)
+	{
+		CCopasiDataModel dataModel = getCopasiModelFromModelName(dataModelName);
+		if (dataModel == null)
+		{
+			return false;
+		}
+		
+		return CCopasiRootContainer.removeDatamodel(dataModel);
+		
+		/*
+		String searchFor = "CN=Root,Model="+dataModelName;
+		 
+		DataModelVector modelList = CCopasiRootContainer.getDatamodelList();
+		CCopasiDataModel model = null;
+		for(long index = 0; index < modelList.size(); index++)
+		{
+			model = CCopasiRootContainer.get(index);
+			//System.out.println("model cn: " + model.getModel().getCN().getString());
+			CObjectInterface whatsit = model.getObject(new CCopasiObjectName(searchFor));
+			if (whatsit == null)
+			{
+							//System.out.println("dont have a: " + searchFor);
+			}
+			else 
+			{
+				return CCopasiRootContainer.removeDatamodelWithIndex(index);
+			}
+		}
+		return false;
+		*/
+	}
+	/*
+	public static Module importModuleCopasiData(String copasiData, GeneralGlyph glyph)
+	{
+		CCopasiDataModel dataModel = null;
+		String modelName = null;
+		Module mod = null;
+		
+		dataModel = importModelFromString(copasiData);
+		if (dataModel != null)
+		{
+			modelName = validateModelName(dataModel);
+			mod = AC_Utility.createModule(modelName, glyph, false);
+		}
+		return mod;
+	}
+	
+	public static Module importModuleCopasiData(String copasiData, Module parent, GeneralGlyph glyph)
+	{
+		CCopasiDataModel dataModel = null;
+		String modelName = null;
+		Module mod = null;
+		
+		dataModel = importModelFromString(copasiData);
+		if (dataModel != null)
+		{
+			modelName = validateModelName(dataModel);
+			mod = AC_Utility.createModule(modelName, parent, glyph, false);
+		}
+		return mod;
+	}
+	
+	public static Module importMathematicalAggregatorCopasiData(String copasiData, Module parent, int inputs, Operation op, GeneralGlyph glyph)
+	{
+		CCopasiDataModel dataModel = null;
+		String modelName = null;
+		Module mod = null;
+		
+		dataModel = importModelFromString(copasiData);
+		if (dataModel != null)
+		{
+			modelName = validateModelName(dataModel);
+			mod = AC_Utility.createMathematicalAggregator(modelName, parent, inputs, op, glyph);
+		}
+		return mod;
+	}
+	*/
+	public static Module importCopasiFile(String fileName)
+	{
+		CCopasiDataModel dataModel = null;
+		//String moduleDefinitionName = null;
+		String names[];
+		Module mod = null;
+		
+		dataModel = importModelFromFile(fileName);
+		
+		if (dataModel != null)
+		{
+			//moduleDefinitionName = validateModuleDefinitionName(dataModel);
+			names = assignNames(dataModel);
+			if (names != null)
+			{
+				mod = AC_Utility.createModule(names[0], names[1], false);
+				AC_Utility.addTreeNode(mod);
+			}
+			if (mod == null)
+			{
+				CCopasiRootContainer.removeDatamodel(dataModel);
+			}
+		}
+		
+		return mod;
+	}
+	
+	public static Module importCopasiFile(String fileName, Module parent)
+	{
+		CCopasiDataModel dataModel = null;
+		//String moduleDefinitionName = null;
+		String names[];
+		Module mod = null;
+		
+		dataModel = importModelFromFile(fileName);
+		
+		if (dataModel != null)
+		{
+			//moduleDefinitionName = validateModuleDefinitionName(dataModel);
+			names = assignNames(dataModel);
+			if (names != null)
+			{
+				mod = AC_Utility.createModule(names[0], names[1], parent, false);
+				AC_Utility.addTreeNode(mod);
+			}
+			if (mod == null)
+			{
+				CCopasiRootContainer.removeDatamodel(dataModel);
+			}
+		}
+		
+		return mod;
+	}
+	
+	public static String getSBML(String dataModelName)
 	{
 		String sbmlModel = "";
 		CCopasiDataModel dataModel = getCopasiModelFromModelName(dataModelName);
 		
 		if(dataModel == null)
 		{
-			System.out.println("Error accessing Copasi Data Models.");
-			System.exit(0);
+			System.err.println("Error accessing Copasi Data Models.");
+			return null;
 		}
 		
 		try
@@ -50,14 +192,13 @@ public class CopasiUtility
 		}
 		catch (Exception e)
 		{
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return sbmlModel;
 	}
 	
 	
-	public void exportModel(String dataModelName)
+	public static void exportModel(String dataModelName)
 	{
 		CCopasiDataModel dataModel = getCopasiModelFromModelName(dataModelName);
 
@@ -67,7 +208,6 @@ public class CopasiUtility
 		}
 		catch (Exception e)
 		{
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		System.out.println("Key: " + dataModel.getModel().getKey());
@@ -95,7 +235,7 @@ public class CopasiUtility
 	}
 	*/
 	
-	public CCopasiDataModel getCopasiModelFromModelName(String dataModelName) {
+	public static CCopasiDataModel getCopasiModelFromModelName(String dataModelName) {
 		String searchFor = "CN=Root,Model="+dataModelName;
 	 
 		DataModelVector modelList = CCopasiRootContainer.getDatamodelList();
@@ -105,9 +245,12 @@ public class CopasiUtility
 			model = CCopasiRootContainer.get(index);
 			//System.out.println("model cn: " + model.getModel().getCN().getString());
 			CObjectInterface whatsit = model.getObject(new CCopasiObjectName(searchFor));
-			if (whatsit == null) {
+			if (whatsit == null)
+			{
 							//System.out.println("dont have a: " + searchFor);
-			} else {
+			}
+			else 
+			{
 				return model;
 			}
 		}
@@ -115,12 +258,12 @@ public class CopasiUtility
 		return null;
 	}
 	
-	public long getNumberOfModels()
+	public static long getNumberOfModels()
 	{
 		return CCopasiRootContainer.getDatamodelList().size();
 	}
 	
-	public void printDataModelList()
+	public static void printDataModelList()
 	{
 		DataModelVector modelList = CCopasiRootContainer.getDatamodelList();
 		CCopasiDataModel model = null;
@@ -133,6 +276,120 @@ public class CopasiUtility
 		System.out.println();
 	}
 	
+	private static String[] assignNames(CCopasiDataModel dataModel)
+	{
+		String names[] = new String[2];
+		String moduleDefinitionName;
+		String moduleName;
+		
+		moduleDefinitionName = validateModuleDefinitionName(dataModel);
+		moduleName = validateModuleName(moduleDefinitionName);
+		
+		if ((moduleDefinitionName == null) || (moduleName == null))
+		{
+			return null;
+		}
+		
+		names[0] = moduleName;
+		names[1] = moduleDefinitionName;
+		
+		return names;
+	}
+	
+	private static CCopasiDataModel importModelFromFile(String fileName)
+	{
+		CCopasiDataModel dataModel = null;
+		
+		try
+		{
+			dataModel = createDataModel();
+			dataModel.loadModel(fileName);
+		}
+		catch (java.lang.Exception ex)
+		{
+			ex.printStackTrace();
+			System.err.println( "Error while importing the Copasi model from file named \"" + fileName + "\"." );
+		}
+		
+		return dataModel;
+	}
+	
+	private static CCopasiDataModel importModelFromString(String data)
+	{
+		CCopasiDataModel dataModel = null;
+		
+		try
+		{
+			dataModel = createDataModel();
+			dataModel.importSBMLFromString(data);
+		}
+		catch (java.lang.Exception ex)
+		{
+			ex.printStackTrace();
+		}
+		
+		return dataModel;
+	}
+	
+	private static String validateModuleDefinitionName(CCopasiDataModel dataModel)
+	{
+		String modelName = dataModel.getModel().getObjectName();
+		
+		if (modelName == null || modelName.isEmpty())
+		{
+			String message = "The imported Module Definition does not have a name.";
+			JOptionPane.showMessageDialog(null, message, "Invalid Name", JOptionPane.WARNING_MESSAGE);
+			
+			modelName = AC_Utility.promptUserForNewModuleName("Enter a Module Definition name:");
+		}
+		else
+		{
+			if (!AC_Utility.moduleNameValidation(modelName, true))
+			{
+				modelName = AC_Utility.promptUserForNewModuleName("Enter a Module Definition name:");
+			}
+		}
+		
+		if (modelName != null)
+		{
+			dataModel.getModel().setObjectName(modelName);
+		}
+		
+		return modelName;
+	}
+	
+	private static String validateModuleName(String definitionName)
+	{
+		if (definitionName == null)
+		{
+			return null;
+		}
+		String newName = null;
+		String message;
+		boolean validName = false;
+		
+		while (!validName)
+		{
+			newName = AC_Utility.promptUserForNewModuleName("Enter a Module name:");
+			if (newName == null)
+			{
+				return null;
+			}
+			if (newName.equals(definitionName))
+			{
+				message = "A Module and a Module Definition cannot share the same name." + AC_Utility.eol;
+				message += "Please enter a different name.";
+				JOptionPane.showMessageDialog(null, message, "Invalid Name", JOptionPane.ERROR_MESSAGE);
+			}
+			else
+			{
+				validName = true;
+			}
+		}
+		
+		return newName;
+	}
+	/*
 	private void setLayout(Module mod)
 	{
 		ListIterator<Module> children = mod.getChildren().listIterator();
@@ -190,4 +447,5 @@ public class CopasiUtility
 			System.out.println(info);
 		}
 	}
+	*/
 }

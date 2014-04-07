@@ -11,6 +11,7 @@ import javax.swing.JComboBox;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
@@ -42,9 +43,10 @@ public class ModelBuilder
 
 	final MSMB_Interface msmb;
 	private Module loadedModule;
-	private static ACCustomJTable jTableCustom;
-	private static ACCustomTableModel tableModel;
-	private Vector<String> refNames;
+	PortsPanel portsPanel;
+	//private static ACCustomJTable jTableCustom;
+	//private static ACCustomTableModel tableModel;
+	//private Vector<String> refNames;
 	
 	
 	/**
@@ -52,9 +54,9 @@ public class ModelBuilder
 	 */
 	public ModelBuilder()
 	{
-		msmb = new MainGui();
+		msmb = new MainGui(true);
 		loadedModule = null;
-		refNames = new Vector<String>();
+		//refNames = new Vector<String>();
 		addPortTab();
 		installListeners();
 	}
@@ -62,18 +64,21 @@ public class ModelBuilder
 	/**
 	 * Load the given Copasi model into the model builder.
 	 * @param key the unique Copasi key referencing the model
-	 */	
+	 */
 	public void loadModel(Module mod, boolean fromMSMBData, boolean uneditable, boolean display)
 	{
+		//System.out.println("Start ModelBuilder.load(" + mod.getModuleDefinition().getName() + "). Number of Copasi data models: " + CopasiUtility.getNumberOfModels());
 		if (fromMSMBData)
 		{
-			msmb.loadFromMSMB(mod.getMSMBData().getBytes(), uneditable);
+			//System.out.println("Number of copasi datamodels: " + CopasiUtility.getNumberOfModels());
+			msmb.loadFromMSMB(mod.getModuleDefinition().getMSMBData(), uneditable);
+			//System.out.println("Number of copasi datamodels: " + CopasiUtility.getNumberOfModels());
 		}
 		else
 		{
 			try 
 			{
-				 msmb.loadFromCopasiModelName(mod.getName(), uneditable);
+				 msmb.loadFromCopasiModelName(mod.getModuleDefinition().getName(), uneditable);
 			} catch (Exception e) {
 				 //I still don't know which exception I need to push to your part... probably it is enough for me to catch them and
 				 //display the usual error message that I already show... but I'm not sure, so I left the throw expception in the
@@ -84,13 +89,20 @@ public class ModelBuilder
 		
 		if (display)
 		{
-			tableModel.clearData();
+			portsPanel.clear();
 			updateRefNameColumn();
-			tableModel.setUneditableTable(uneditable);
-			jTableCustom.setUneditableTable(uneditable);
-			//jTableCustom.setEnabled(!uneditable);
+			portsPanel.setUneditable(uneditable);
+			msmb.setModelName(mod.getName());
+			msmb.setModelDefinition(mod.getModuleDefinition().getName());
+			setVisible(true);
 		}
 		loadedModule = mod;
+	}
+	
+	public void loadModel(byte[] data, Module setLoadedModule)
+	{
+		msmb.loadFromMSMB(data, false);
+		loadedModule = setLoadedModule;
 	}
 	
 	public byte[] saveModel()
@@ -137,8 +149,7 @@ public class ModelBuilder
 	 */
 	public Vector<String> getRefNames()
 	{
-		updateRefNames();
-		return refNames;
+		return portsPanel.getRefNames();
 	}
 	
 	public String getValue(String name)
@@ -158,29 +169,28 @@ public class ModelBuilder
 		}
 		
 		return name;
-		
 	}
 	
-	public void addPort(Port newPort)
+	public void addPort(PortNode newPort)
 	{
-		tableModel.addPort(newPort);
+		portsPanel.addPort(newPort);
 	}
 	
-	public void removePort(Port port)
+	public void removePort(PortNode port)
 	{
-		tableModel.removePort(port);
+		portsPanel.removePort(port);
 	}
 	
 	public void updatePorts()
 	{
-		tableModel.clearData();
+		portsPanel.clear();
 		updateRefNameColumn();
 		
 		//add activeModule's Ports
-		ListIterator<Port> portList = AC_GUI.activeModule.getPorts().listIterator();
+		ListIterator<ACComponentNode> portList = AC_GUI.activeModule.getPorts().listIterator();
 		while (portList.hasNext())
 		{
-			addPort(portList.next());
+			portsPanel.addPort((PortNode)portList.next());
 		}
 		
 		//add activeModule's Children's Ports
@@ -190,7 +200,7 @@ public class ModelBuilder
 			portList = children.next().getPorts().listIterator();
 			while (portList.hasNext())
 			{
-				addPort(portList.next());
+				portsPanel.addPort((PortNode)portList.next());
 			}
 		}
 	}
@@ -225,21 +235,13 @@ public class ModelBuilder
 		}
 	}
 	
-	public void setSelectedPort(Port port)
+	public void setSelectedPort(PortNode port)
 	{
 		//getMSMB_MainTabPanel() gets the JTabbed panel
 		JTabbedPane tabPanel = msmb.getMSMB_MainTabPanel();
 		int lastTabIndex = tabPanel.getTabCount() - 1;
 		tabPanel.setSelectedIndex(lastTabIndex);
-		int portIndex = tableModel.getPortIndex(port);
-		try
-		{
-			jTableCustom.setRowSelectionInterval(portIndex, portIndex);
-		}
-		catch(Exception e)
-		{
-			e.printStackTrace();
-		}
+		portsPanel.setSelectedPort(port);
 	}
 	
 	public void setSelectedVariable(String name, VariableType vType)
@@ -278,19 +280,24 @@ public class ModelBuilder
 		return msmb.getMSMB_MainTabPanel().getSelectedIndex();
 	}
 	
-	public void setModelName(String newName)
+	public void setModuleName(String name)
 	{
-		msmb.setModelName(newName);
+		msmb.setModelName(name);
 	}
 
-	public String getNameFromPortTable(int row)
+	public void setModuleDefinitionName(String name)
 	{
-		return (String)jTableCustom.getValueAt(row, 1);
+		msmb.setModelDefinition(name);
 	}
 	
-	public Port getPortFromPortTable(int row)
+	public String getNameFromPortTable(int row)
 	{
-		return tableModel.getPort(row);
+		return portsPanel.getPortName(row);
+	}
+	
+	public PortNode getPortFromPortTable(int row)
+	{
+		return portsPanel.getPort(row);
 	}
 	
 	public boolean isSpeciesListEmpty()
@@ -303,6 +310,16 @@ public class ModelBuilder
 		return loadedModule;
 	}
 	
+	public boolean isSpeciesName(String name)
+	{
+		return msmb.getMSMB_listOfSpecies().contains(name);
+	}
+	
+	public int validateModel()
+	{
+		return msmb.validateMSMB();
+	}
+	
 	/**
 	 * Display the Port tab with the rest of the MSMB panel.
 	 */
@@ -311,6 +328,9 @@ public class ModelBuilder
 		//getMSMB_MainTabPanel() gets the JTabbed panel
 		JTabbedPane tabPanel = msmb.getMSMB_MainTabPanel();
 		//now you can add your ports tab as a normal jtabbedpanel
+		portsPanel = new PortsPanel(msmb.getCustomFont());
+		tabPanel.addTab("Ports", null, portsPanel, null);
+		/*
 		JPanel panelPorts = new JPanel();
 		panelPorts.setLayout(new BorderLayout());
 		 
@@ -332,7 +352,7 @@ public class ModelBuilder
 		jTableCustom.setModel(tableModel);
 		jTableCustom.getTableHeader().setFont(msmb.getCustomFont()); //font for the header
 		jTableCustom.setCustomFont(msmb.getCustomFont()); // font for the content
-			
+		*/
 		
 		//Setup the RefName column
 		/*
@@ -358,10 +378,14 @@ public class ModelBuilder
 			System.out.println(msmb.getMSMB_listOfGlobalQuantities().size());
 		}
 		*/
+		
+		/*
 		updateRefNameColumn();
 		setupPortTypeColumn();
-			
-		jScrollPaneTablePorts.setViewportView(jTableCustom);
+		*/
+		
+		//jScrollPaneTablePorts.setViewportView(jTableCustom);
+		
 		//Add specific listeners
 		/*
 		 msmb.addChangeListener(
@@ -403,8 +427,7 @@ public class ModelBuilder
 					}, 
 					MSMB_Element.MODEL);
 		*/
-		panelPorts.add(jScrollPaneTablePorts, BorderLayout.CENTER);	
-		tabPanel.addTab("Ports", null, panelPorts, null);
+		//panelPorts.add(jScrollPaneTablePorts, BorderLayout.CENTER);
 	}
 	
 	/**
@@ -413,24 +436,7 @@ public class ModelBuilder
 	private void updateRefNameColumn()
 	{
 		updateRefNames();
-		
-		SortedComboBoxModel sortedModel = new SortedComboBoxModel(refNames, null);
-		JComboBox<String> comboBox = new JComboBox<String>(sortedModel);
-		TableColumn refNameColumn = jTableCustom.getColumnModel().getColumn(1);
-		refNameColumn.setCellEditor(new DefaultCellEditor(comboBox));
-		
-		/*
-		SortedComboBoxModel sortedModel = new SortedComboBoxModel(refNames, new RefNameComparator());
-		JComboBox<String> comboBox = new JComboBox<String>(sortedModel);
-		// has to be editable
-        comboBox.setEditable(true);
-        // get the combo boxes editor component
-        JTextComponent editor = (JTextComponent) comboBox.getEditor().getEditorComponent();
-        // change the editor's document
-        editor.setDocument(new ComboBoxFilter(comboBox));
-		TableColumn refNameColumn = jTableCustom.getColumnModel().getColumn(1);
-		refNameColumn.setCellEditor(new DefaultCellEditor(comboBox));
-		*/
+		portsPanel.updateRefNameColumn();
 	}
 	
 	/**
@@ -443,8 +449,7 @@ public class ModelBuilder
 		Vector<String> newSpeciesList = null;
 		Vector<String> globalq;
 		Vector<String> newGlobalQList = null;
-		//reset and update the refNames list
-		refNames.clear();
+		Vector<String> newRefNames = new Vector<String>();
 		
 		try
 		{
@@ -478,8 +483,9 @@ public class ModelBuilder
 		
 		if ((newSpeciesList != null) && (newGlobalQList != null))
 		{
-			refNames.addAll(newSpeciesList);
-			refNames.addAll(newGlobalQList);
+			newRefNames.addAll(newSpeciesList);
+			newRefNames.addAll(newGlobalQList);
+			portsPanel.updateRefNames(newRefNames);
 		}
 		else
 		{
@@ -487,21 +493,6 @@ public class ModelBuilder
 		}
 	}
 	
-	/**
-	 * Setup the items in the Port Type column.
-	 */
-	private void setupPortTypeColumn()
-	{
-		Vector<String> portTypes = new Vector<String>();
-		portTypes.add("Input");
-		portTypes.add("Output");
-		portTypes.add("Equivalence");
-		
-		JComboBox<String> comboBox = new JComboBox<String>(portTypes);
-		TableColumn portTypeColumn = jTableCustom.getColumnModel().getColumn(2);
-		portTypeColumn.setCellEditor(new DefaultCellEditor(comboBox));
-	}
-
 	public void openPreferencesMSMB() {
 		JMenuBar bar = msmb.getMSMB_MenuBar();
 		
@@ -536,7 +527,7 @@ public class ModelBuilder
 						ChangedElement after = (((MSMB_InterfaceChange)e.getSource()).getElementAfter());
 						if(before!=null) System.out.println("Species before = " + before.getName());
 						if(after!=null)  System.out.println("Species after = " + after.getName());
-						AC_GUI.changeName(before, after);
+						AC_Utility.changeName(before, after);
 					}
 				}, 
 				MSMB_Element.SPECIES);
@@ -549,7 +540,7 @@ public class ModelBuilder
 						ChangedElement after = (((MSMB_InterfaceChange)e.getSource()).getElementAfter());
 						if(before!=null) System.out.println("Global Quantity before = " + before.getName());
 						if(after!=null)  System.out.println("Global Quantity after = " + after.getName());
-						AC_GUI.changeName(before, after);
+						AC_Utility.changeName(before, after);
 					}
 				}, 
 				MSMB_Element.GLOBAL_QUANTITY);
@@ -562,10 +553,112 @@ public class ModelBuilder
 						ChangedElement after = (((MSMB_InterfaceChange)e.getSource()).getElementAfter());
 						if(before!=null) System.out.println("Model name before = " + before.getName());
 						if(after!=null)  System.out.println("Model name after = " + after.getName());
-						AC_GUI.changeModuleName(AC_GUI.activeModule, after.getName(), true);
+						if ((before != null) && (after != null))
+						{
+							if (before.getName().equals(after.getName()))
+							{
+								return;
+							}
+						}
+						if (AC_Utility.moduleNameValidation(after.getName(), true))
+						{
+							AC_Utility.changeModuleName(AC_GUI.activeModule, after.getName(), true);
+						}
+						else
+						{
+							setModuleName(before.getName());
+						}
 					}
 				}, 
-				MSMB_Element.MODEL);
+				MSMB_Element.MODEL_NAME);
+		
+		msmb.addChangeListener(
+				new ChangeListener() {
+					@Override
+					public void stateChanged(ChangeEvent e) {
+						ChangedElement before = (((MSMB_InterfaceChange)e.getSource()).getElementBefore());
+						ChangedElement after = (((MSMB_InterfaceChange)e.getSource()).getElementAfter());
+						if(before!=null) System.out.println("Model Definition name before = " + before.getName());
+						if(after!=null)  System.out.println("Model Definition name after = " + after.getName());
+						if ((before != null) && (after != null))
+						{
+							if (before.getName().equals(after.getName()))
+							{
+								return;
+							}
+						}
+						if (AC_Utility.moduleNameValidation(after.getName(), true))
+						{
+							if (AC_Utility.isSubmoduleDefinition(AC_GUI.activeModule.getModuleDefinition()))
+							{
+								if (AC_GUI.activeModule.getModuleDefinition().getInstances().size() > 1)
+								{
+									int userInput = AC_Utility.promptUserSubmoduleChange(AC_GUI.activeModule);
+									
+									byte[] code;
+									switch (userInput)
+									{
+										case JOptionPane.YES_OPTION:
+											// user chose to save a new module definition
+											// copy the current module definition
+											if (AC_Utility.copyDefinition(AC_GUI.activeModule, after.getName()))
+											{
+												System.out.println("ModelBuilder.Model_Definition_Name_Changed: definition copy success.");
+												//setModuleDefinitionName(activeModule.getModuleDefinition().getName());
+												//AC_Utility.changeModuleDefinitionName(AC_GUI.activeModule.getModuleDefinition(), after.getName(), true);
+											}
+											else
+											{
+												System.err.println("ModelBuilder.Model_Definition_Name_Changed: definition copy failed.");
+											}
+											// save the updated msmb data
+											code = saveModel();
+											if (code == null || code.length == 0)
+											{
+												System.err.println("ModelBuilder.Model_Definition_Name_Changed: msmb data is NULL.");
+											}
+											AC_GUI.activeModule.getModuleDefinition().setMSMBData(code);
+											if (!saveToCopasi(AC_GUI.activeModule.getModuleDefinition().getName()))
+											{
+												System.err.println("ModelBuilder.Model_Definition_Name_Changed: copasi datamodel not saved.");
+											}
+											break;
+										case JOptionPane.NO_OPTION:
+											// user chose to save the current module definition
+											// change the definition name
+											AC_Utility.changeModuleDefinitionName(AC_GUI.activeModule.getModuleDefinition(), after.getName(), true);
+											// save the updated msmb data
+											code = saveModel();
+											if (code == null || code.length == 0)
+											{
+												System.err.println("ModelBuilder.Model_Definition_Name_Changed: msmb data is NULL.");
+											}
+											AC_GUI.activeModule.getModuleDefinition().setMSMBData(code);
+											break;
+										case JOptionPane.CANCEL_OPTION:
+											//loadModelBuilder(activeModule, false, true);
+											setModuleDefinitionName(before.getName());
+											//setSavedInACDataStructure(true);
+											break;
+									}
+								}
+								else
+								{
+									AC_Utility.changeModuleDefinitionName(AC_GUI.activeModule.getModuleDefinition(), after.getName(), true);
+								}
+							}
+							else
+							{
+								AC_Utility.changeModuleDefinitionName(AC_GUI.activeModule.getModuleDefinition(), after.getName(), true);
+							}
+						}
+						else
+						{
+							setModuleDefinitionName(before.getName());
+						}
+					}
+				}, 
+				MSMB_Element.MODEL_DEFINITION);
 		
 		msmb.addChangeListener(
 				new ChangeListener() {// my part will call this state change.. this code the  actions you want to do once the change is triggered
@@ -573,10 +666,12 @@ public class ModelBuilder
 					public void stateChanged(ChangeEvent e) { 
 						//you don't need the before after, but you know that something has been changed, so you need to ask for the new value
 						Font newFont = msmb.getCustomFont();
+						portsPanel.updateFont(newFont);
+						/*
 						jTableCustom.getTableHeader().setFont(newFont);
 						//any other action that you need to do on your side when the size of the font is changed
 						jTableCustom.setCustomFont(newFont);
-						
+						*/
 					}
 				}, 
 				MSMB_Element.FONT);
@@ -635,6 +730,7 @@ public class ModelBuilder
 						//if(before!=null) System.out.println("Model name before = " + before.getName());
 						//if(after!=null)  System.out.println("Model name after = " + after.getName());
 						System.out.println("Something has changed in the ModelBuilder.");
+						AC_GUI.activeModuleChanged();
 					}
 				}, 
 				MSMB_Element.SOMETHING_CHANGED);

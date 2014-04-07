@@ -20,12 +20,13 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.text.JTextComponent;
 
+import com.mxgraph.model.mxCell;
 import com.mxgraph.swing.mxGraphComponent;
 
 /**
  * A dialog box to help the user add a port.
  */
-public class PortAddEditor extends JDialog
+public class PortAddEditor extends JDialog implements ActionListener
 {
 
 	/**
@@ -43,18 +44,18 @@ public class PortAddEditor extends JDialog
 	 * Constructs the object.
 	 * @param mod the module where the port will be added
 	 */
-	public PortAddEditor(Object cell, mxGraphComponent iGraphComponent)
+	public PortAddEditor(mxCell cell, mxGraphComponent iGraphComponent)
 	{
 		super();
-		module = AC_GUI.masterModuleList.findModule(cell);
+		module = (Module)cell.getValue();
 		graphComponent = iGraphComponent;
-		initComponents();
+		initializeComponents();
 	}
 
 	/**
 	 * Initialize and display the dialog box.
 	 */
-	private void initComponents()
+	private void initializeComponents()
 	{		
 		JPanel upperPanel = new JPanel();
 		upperPanel.setLayout(new GridLayout(0, 2, 15, 5));
@@ -111,60 +112,39 @@ public class PortAddEditor extends JDialog
 		JPanel lowerPanel = new JPanel();
 		lowerPanel.setLayout(new FlowLayout());
 		JButton addButton = new JButton("Add");
-		addButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e)
-			{
-				/*
-				int checkPorts = AC_GUI.portValidation(textfield.getText(), (String)comboBox1.getSelectedItem());
-				//System.out.println("checkPorts = " + checkPorts);
-				String msg;
-				switch(checkPorts)
-				{
-				case 0:
-					dispose();
-					AC_GUI.currentGUI.addPort(module, (String)comboBox1.getSelectedItem(), textfield.getText(), (PortType)comboBox2.getSelectedItem());
-					break;
-				case 1:
-					msg = "\"" + (String)comboBox1.getSelectedItem() + "\"";
-					msg += " is already associated with a Port.";
-					msg += " Cannot associate the same Ref Name with multiple Ports.";
-					JOptionPane.showMessageDialog(null, msg);
-					break;
-				case 2:
-					msg = "\"" + textfield.getText() + "\"";
-					msg += " is already the name of a Port.";
-					msg += " Cannot assign the same Port Name to multiple Ports.";
-					JOptionPane.showMessageDialog(null, msg);
-					break;
-				default:
-					
-				}
-				*/
-				boolean validPort = AC_GUI.portValidation(textfield.getText(), (String)comboBox1.getSelectedItem());
-				if (validPort)
-				{
-					dispose();
-					AC_GUI.currentGUI.addPort(module, (String)comboBox1.getSelectedItem(), textfield.getText(), (PortType)comboBox2.getSelectedItem());
-				}
-			}
-		});
+		addButton.setActionCommand("add");
+		addButton.addActionListener(this);
 		lowerPanel.add(addButton);
 		JButton cancelButton = new JButton("Cancel");
-		cancelButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e)
-			{
-				dispose();
-			}
-		});
+		cancelButton.setActionCommand("cancel");
+		cancelButton.addActionListener(this);
 		lowerPanel.add(cancelButton);
 
 		getContentPane().setLayout(new BorderLayout());
 		getContentPane().add(upperPanel, BorderLayout.CENTER);
 		getContentPane().add(lowerPanel, BorderLayout.SOUTH);
+		this.getRootPane().setDefaultButton(addButton);
 
 		setTitle("Add Port");
 		setSize(650, 500);
 		pack();
 		setLocationRelativeTo(graphComponent);
+	}
+
+	@Override
+	public void actionPerformed(ActionEvent ae)
+	{
+		if (ae.getActionCommand().equalsIgnoreCase("add"))
+		{
+			if (AC_Utility.portValidation(textfield.getText(), (String)comboBox1.getSelectedItem()))
+			{
+				AC_GUI.addPort(module, (String)comboBox1.getSelectedItem(), textfield.getText(), (PortType)comboBox2.getSelectedItem());
+				dispose();
+			}
+		}
+		else if (ae.getActionCommand().equalsIgnoreCase("cancel"))
+		{
+			dispose();
+		}
 	}
 }

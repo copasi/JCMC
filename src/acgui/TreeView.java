@@ -1,39 +1,34 @@
 package acgui;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 
 import javax.swing.AbstractAction;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
-import javax.swing.JScrollPane;
 import javax.swing.JTree;
 import javax.swing.SwingUtilities;
-import javax.swing.event.CellEditorListener;
-import javax.swing.event.ChangeEvent;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.DefaultMutableTreeNode;
-import javax.swing.tree.DefaultTreeCellEditor;
-import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
-import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 
 /**
- * The tree panel in the aggregation connector.
- * @author T.C. Jones
- * @version June 29, 2012
+ * @author Thomas
+ *
  */
 public class TreeView extends JPanel implements TreeSelectionListener
 {
+
+	/**
+	 * 
+	 */
 	private static final long serialVersionUID = 1L;
 	private DefaultMutableTreeNode rootNode;
 	private DefaultTreeModel treeModel;
@@ -62,7 +57,7 @@ public class TreeView extends JPanel implements TreeSelectionListener
 		this.setVisible(true);
 		this.add(tree);
 	}
-
+	
 	/**
 	 * Return the tree.
 	 * @return the tree
@@ -72,6 +67,11 @@ public class TreeView extends JPanel implements TreeSelectionListener
 		return tree;
 	}
 
+	public DefaultMutableTreeNode getRootNode()
+	{
+		return rootNode;
+	}
+	
 	public void clear()
 	{
 		DefaultMutableTreeNode node;
@@ -84,7 +84,14 @@ public class TreeView extends JPanel implements TreeSelectionListener
 	
 	public void refreshTree()
 	{
-		treeModel.reload();
+		//treeModel.reload();
+		tree.repaint();
+	}
+	
+	public void createNode(Module mod)
+	{
+		DefaultMutableTreeNode child = new DefaultMutableTreeNode(mod);
+		mod.setTreeNode(child);
 	}
 	
 	/**
@@ -150,11 +157,10 @@ public class TreeView extends JPanel implements TreeSelectionListener
 			parent = rootNode;
 		}
 		*/
-		child = new DefaultMutableTreeNode(mod);
-		mod.setTreeNode(child);
-		// create new child node
 		//child = new DefaultMutableTreeNode(mod);
+		//mod.setTreeNode(child);
 
+		child = mod.getTreeNode();
 		// insert the child node under the parent
 		treeModel.insertNodeInto(child, parent, parent.getChildCount());
 		// make sure the new node is visible
@@ -183,7 +189,7 @@ public class TreeView extends JPanel implements TreeSelectionListener
 		}
 		//tree.setSelectionPath(new TreePath(rootNode.getPath()));
 	}
-
+	
 	/**
 	 * Return the currently selected node in the tree.
 	 * @return the currently selected node in the tree
@@ -206,17 +212,17 @@ public class TreeView extends JPanel implements TreeSelectionListener
 	 */
 	public void setSelected(DefaultMutableTreeNode node)
 	{
-		TreePath path = new TreePath(node.getPath());
-		tree.setSelectionPath(path);
+		tree.setSelectionPath(new TreePath(node.getPath()));
 	}
-
+	
 	private JPopupMenu createPopupMenu(final Point pt, final Object cell) {
 		JPopupMenu menu = new JPopupMenu();
 		
-		menu.add(new AbstractAction("Rename") {
+		menu.add(new AbstractAction("Edit Name") {
 			public void actionPerformed(ActionEvent e) {
-				tree.setEditable(true);
-				tree.startEditingAtPath(tree.getSelectionPath());
+				//tree.setEditable(true);
+				//tree.startEditingAtPath(tree.getSelectionPath());
+				AC_Utility.promptUserEditModuleName(AC_GUI.selectedModule.getName());
 			}
 		});
 		
@@ -249,6 +255,7 @@ public class TreeView extends JPanel implements TreeSelectionListener
 		
 		return menu;
 	}
+	
 	/**
 	 * A tree node has been selected.
 	 * @see javax.swing.event.TreeSelectionListener#valueChanged(javax.swing.event.TreeSelectionEvent)
@@ -262,12 +269,12 @@ public class TreeView extends JPanel implements TreeSelectionListener
 		{
 			//Module mod = AC_GUI.moduleList.findModule(node);
 			//AC_GUI.drawingBoard.setSelected(mod.getDrawingCell());
-			AC_GUI.currentGUI.setSelectedModule(node);
+			AC_GUI.setSelectedModule(node);
 		}
 
 		//System.out.println("Tree node " + node.toString() + " selected.");
 	}
-	
+
 	private void installListeners()
 	{
 		// right-click listener
@@ -279,7 +286,7 @@ public class TreeView extends JPanel implements TreeSelectionListener
 				if (selRow != -1)
 				{
 					DefaultMutableTreeNode node = (DefaultMutableTreeNode)path.getLastPathComponent();
-					AC_GUI.currentGUI.setSelectedModule(node);
+					AC_GUI.setSelectedModule(node);
 					if(SwingUtilities.isRightMouseButton(e))
 					{
 						JPopupMenu menu = createPopupMenu(e.getPoint(), AC_GUI.selectedModule);

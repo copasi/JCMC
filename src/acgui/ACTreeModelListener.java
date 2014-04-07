@@ -30,10 +30,14 @@ public class ACTreeModelListener implements TreeModelListener
 			int index = tme.getChildIndices()[0];
 			node = (DefaultMutableTreeNode)(node.getChildAt(index));
 		}
-			
-		Module currentModule = AC_GUI.masterModuleList.findModule(node);
-		AC_GUI.changeModuleName(currentModule, (String)node.getUserObject(), false);
-		System.out.println("Name changed to: " + (String)node.getUserObject());
+		
+		String newName = (String)node.getUserObject();
+		Module currentModule = AC_GUI.selectedModule;
+		if (AC_Utility.moduleNameValidation(newName, true))
+		{
+			AC_Utility.changeModuleName(currentModule, newName, false);
+			System.out.println("Name changed to: " + newName);
+		}
 		node.setUserObject(currentModule);
 		AC_GUI.treeView.getTree().setEditable(false);
 	}
