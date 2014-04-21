@@ -5,9 +5,86 @@
 function(create_jar _TARGET_NAME)
     set(_JAVA_SOURCE_FILES ${ARGN})
 
+	#message("Compiling on OS: " ${CMAKE_HOST_SYSTEM_NAME})
+	#message("CMAKE_HOST_SYSTEM_VERSION "${CMAKE_HOST_SYSTEM_VERSION})
+	#message("CMAKE_HOST_SYSTEM_PROCESSOR: " ${CMAKE_HOST_SYSTEM_PROCESSOR})
+	#message("CMAKE_HOST_SYSTEM" ${CMAKE_HOST_SYSTEM})
+	#message("PROCESSOR_ARCHITEW6432: " $ENV{PROCESSOR_ARCHITEW6432})
+	#message("PROCESSOR_ARCHITECTURE: " $ENV{PROCESSOR_ARCHITECTURE})
+
+	if("${CMAKE_HOST_SYSTEM_NAME}" MATCHES "Windows")
+		set(COPASI_LIBRARY_NAME "CopasiJava.dll")
+		set(LIBSBML_LIBRARY_NAME "sbmlj.dll")
+		message("Windows detected!!")
+		set(COPASI_DIR_OS "win")
+		set(LIBSBML_DIR_OS "win")
+		 if($ENV{PROCESSOR_ARCHITEW6432} MATCHES "64")
+			message("64!!")
+			set(COPASI_DIR_ARCH 64)
+			set(LIBSBML_DIR_ARCH 64)
+		elseif($ENV{PROCESSOR_ARCHITEW6432} MATCHES "64")
+			message("32!!")
+			set(COPASI_DIR_ARCH 32)
+			set(LIBSBML_DIR_ARCH 32)
+		endif( $ENV{PROCESSOR_ARCHITEW6432} MATCHES "64")
+	endif("${CMAKE_HOST_SYSTEM_NAME}" MATCHES "Windows")
+
+	if("${CMAKE_HOST_SYSTEM_NAME}" MATCHES "Linux")
+		set(COPASI_LIBRARY_NAME "libCopasiJava.so")
+		set(LIBSBML_LIBRARY_NAME "libsbmlj.so")
+		message("Linux detected!!")
+		set(COPASI_DIR_OS "linux")
+		set(LIBSBML_DIR_OS "linux")
+		 if("${CMAKE_HOST_SYSTEM_PROCESSOR}" MATCHES "64")
+			message("64!!")
+			set(COPASI_DIR_ARCH 64)
+			set(LIBSBML_DIR_ARCH 64)
+		else ("${CMAKE_HOST_SYSTEM_PROCESSOR}" MATCHES "64")
+			message("32!!")
+			set(COPASI_DIR_ARCH 32)
+			set(LIBSBML_DIR_ARCH 32)
+		endif("${CMAKE_HOST_SYSTEM_PROCESSOR}" MATCHES "64")	
+	endif("${CMAKE_HOST_SYSTEM_NAME}" MATCHES "Linux")
+
+	if("${CMAKE_HOST_SYSTEM_NAME}" MATCHES "Darwin")
+		 message("Darwin detected!!")
+		 set(COPASI_DIR_OS "mac_universal")
+	endif("${CMAKE_HOST_SYSTEM_NAME}" MATCHES "Darwin")
+
     if (NOT DEFINED CMAKE_JAVA_TARGET_OUTPUT_DIR)
       set(CMAKE_JAVA_TARGET_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
     endif(NOT DEFINED CMAKE_JAVA_TARGET_OUTPUT_DIR)
+
+	#get the location of the msmb project
+	ExternalProject_Get_Property(msmb_jar binary_dir)
+	message(STATUS "msmb location: " ${binary_dir})
+	#copy the msmb.jar into the lib directory
+	#file(COPY ${binary_dir}/MSMB.jar DESTINATION 
+        #                     ${CMAKE_JAVA_TARGET_OUTPUT_DIR})
+	#copy the msmb libs folder into the lib directory
+	#file(COPY ${binary_dir}/libs DESTINATION 
+        #                     ${CMAKE_JAVA_TARGET_OUTPUT_DIR})
+	#copy the COPASI library into the lib directory
+	file(COPY ${ACGUI_SOURCE_DIR}/lib/MSMB/CopasiLibs/${COPASI_DIR_OS}${COPASI_DIR_ARCH}/${COPASI_LIBRARY_NAME} DESTINATION 
+                             ${CMAKE_JAVA_TARGET_OUTPUT_DIR}/lib)	
+	file(COPY ${ACGUI_SOURCE_DIR}/lib/MSMB/CopasiLibs/${COPASI_DIR_OS}${COPASI_DIR_ARCH}/copasi.jar DESTINATION 
+                             ${CMAKE_JAVA_TARGET_OUTPUT_DIR}/lib)
+	#copy the libSBML library into the lib directory
+	file(COPY ${ACGUI_SOURCE_DIR}/lib/libSBML/${LIBSBML_DIR_OS}${LIBSBML_DIR_ARCH}/${LIBSBML_LIBRARY_NAME} DESTINATION 
+                             ${CMAKE_JAVA_TARGET_OUTPUT_DIR}/lib)	
+	file(COPY ${ACGUI_SOURCE_DIR}/lib/libSBML/${LIBSBML_DIR_OS}${LIBSBML_DIR_ARCH}/libsbmlj.jar DESTINATION 
+                             ${CMAKE_JAVA_TARGET_OUTPUT_DIR}/lib)
+	#copy the jgraph library into the lib directory
+	file(COPY ${ACGUI_SOURCE_DIR}/lib/jgraphx.jar DESTINATION 
+                             ${CMAKE_JAVA_TARGET_OUTPUT_DIR}/lib)
+
+	file(GLOB MY_JARS "${CMAKE_JAVA_TARGET_OUTPUT_DIR}/lib/*.jar")
+	
+#message(STATUS "java path " ${CMAKE_JAVA_INCLUDE_PATH})
+	set(CMAKE_JAVA_INCLUDE_PATH ${MY_JARS}
+					${binary_dir}/MSMB.jar
+)
+#message(STATUS "java path " ${CMAKE_JAVA_INCLUDE_PATH})
 
     if (CMAKE_JAVA_JAR_ENTRY_POINT)
       set(_ENTRY_POINT_OPTION e)
@@ -96,6 +173,11 @@ function(create_jar _TARGET_NAME)
         endif (_JAVA_EXT MATCHES ".java")
     endforeach(_JAVA_SOURCE_FILE)
 
+	#Copy the version file in the OUTPUT path
+#	 file(COPY ${ACGUI_SOURCE_DIR}/version.txt DESTINATION 
+#                             ${CMAKE_JAVA_TARGET_OUTPUT_DIR})
+
+
     # create an empty java_class_filelist
     if (NOT EXISTS ${CMAKE_JAVA_CLASS_OUTPUT_PATH}/java_class_filelist)
         file(WRITE ${CMAKE_JAVA_CLASS_OUTPUT_PATH}/java_class_filelist "")
@@ -130,10 +212,12 @@ function(create_jar _TARGET_NAME)
     # create the manifest file for the jar file
     set(ManifestInfo 
 	"Manifest-Version: 1.0
-Class-Path: . ../lib/jgraphx.jar ../lib/copasi.jar ../lib/MSMB_Linux.jar ../lib/libsbmlj.jar ../lib/CopasiJava
+Class-Path: . ./lib/jgraphx.jar ./lib/copasi.jar ./lib/libsbmlj.jar ./msmb_jar-prefix/src/msmb_jar-build/MSMB.jar
 Main-Class: acgui.AC_GUI
 "
 )
+
+message(${ManifestInfo})
 
     set(_JAVA_JAR_MANIFEST_PATH ${CMAKE_JAVA_CLASS_OUTPUT_PATH}/MANIFEST.MF)
     file(WRITE ${_JAVA_JAR_MANIFEST_PATH} ${ManifestInfo})
@@ -227,4 +311,24 @@ Main-Class: acgui.AC_GUI
                 ${CMAKE_JAVA_CLASS_OUTPUT_PATH}
     )
 
+# on linux and MAC, for unknown reasons, the addLibrary from inside the MSMB does not seem to work
+# so we need to explicitly set the library path to the libs folder.
+# We created a "launcher" script that set the path according to the compilation setup.
+# If the final directory is moved, it is the user responsibility to change the parameter in the script accordingly.
+if(${COPASI_DIR_OS} MATCHES "linux")
+              execute_process(COMMAND echo "export LD_LIBRARY_PATH=./lib:$LD_LIBRARY_PATH \njava -jar" ${_TARGET_NAME}.jar
+WORKING_DIRECTORY ${CMAKE_JAVA_TARGET_OUTPUT_DIR}
+OUTPUT_FILE "${_TARGET_NAME}_launcher.sh")
+endif(${COPASI_DIR_OS} MATCHES "linux")
+
+if(${CMAKE_HOST_SYSTEM_NAME} MATCHES "Darwin")
+	#Copy the main script to reset the working directory of the launcher file 
+	file(COPY ${ACGUI_SOURCE_DIR}/MSMB/CopasiLibs/${COPASI_DIR_OS}${COPASI_DIR_ARCH}/scriptToRunJar.txt 
+		DESTINATION ${CMAKE_JAVA_TARGET_OUTPUT_DIR}
+		FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ)
+	file(RENAME ${CMAKE_JAVA_TARGET_OUTPUT_DIR}/scriptToRunJar.txt ${CMAKE_JAVA_TARGET_OUTPUT_DIR}/${_TARGET_NAME}_launcher.command )
+ 	file(APPEND ${CMAKE_JAVA_TARGET_OUTPUT_DIR}/${_TARGET_NAME}_launcher.command "\njava -Djava.library.path=./lib -jar ${_TARGET_NAME}.jar")
+endif(${CMAKE_HOST_SYSTEM_NAME} MATCHES "Darwin")
+
+add_dependencies(ACGUI msmb_jar)
 endfunction(create_jar)
