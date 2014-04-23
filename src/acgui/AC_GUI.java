@@ -72,6 +72,7 @@ public class AC_GUI extends JFrame
 		{
 			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 			addLibraryPath("..\\lib");
+			addLibraryPath(".\\lib");
 			System.loadLibrary("sbmlj");
 			//System.out.println("Using LibSBML: " + libsbml.getLibSBMLDottedVersion());
 		}
@@ -363,25 +364,55 @@ public class AC_GUI extends JFrame
 	 * Remove the given module, and its children, from all three panels.
 	 * @param mod the module to be removed
 	 */
-	public static void removeSubmodule(Module mod)
+	public static void removeSubmodule(Module mod, boolean directDeletion)
 	{
-		setSelectedModule(mod.getParent());
-		
-		treeView.removeNode(mod.getTreeNode());
-		
-		ArrayList<ACComponentNode> ports;
-		
-		// get the list of ports
-		ports = mod.getPorts();
-		
-		while(ports.size() > 0)
+		if (directDeletion)
 		{
-			removePort((PortNode)ports.get(0));
-		}
+			if (canModuleBeModified(mod))
+			{
+				setSelectedModule(mod.getParent());
+				
+				treeView.removeNode(mod.getTreeNode());
+				
+				ArrayList<ACComponentNode> ports;
+				
+				// get the list of ports
+				ports = mod.getPorts();
+				
+				while(ports.size() > 0)
+				{
+					removePort((PortNode)ports.get(0), false);
+				}
 
-		drawingBoard.removeCell(mod.getDrawingCell());
-		AC_Utility.deleteModule(mod);
-		setSavedInACFile(false);
+				drawingBoard.removeCell(mod.getDrawingCell());
+				AC_Utility.deleteModule(mod);
+				setSavedInACFile(false);
+			}
+			else
+			{
+				System.err.println("AC_GUI.removeSubmodule(): the module cannot be modified.");
+			}
+		}
+		else
+		{
+			setSelectedModule(mod.getParent());
+			
+			treeView.removeNode(mod.getTreeNode());
+			
+			ArrayList<ACComponentNode> ports;
+			
+			// get the list of ports
+			ports = mod.getPorts();
+			
+			while(ports.size() > 0)
+			{
+				removePort((PortNode)ports.get(0), false);
+			}
+
+			drawingBoard.removeCell(mod.getDrawingCell());
+			AC_Utility.deleteModule(mod);
+			setSavedInACFile(false);
+		}
 	}
 	/*
 	public static void addEquivalenceNode(Module parentMod, Object cell)
@@ -514,14 +545,33 @@ public class AC_GUI extends JFrame
 		setSavedInACDataStructure(false);
 	}
 	
-	public static void removeEquivalenceNode(EquivalenceNode eNode)
+	public static void removeEquivalenceNode(EquivalenceNode eNode, boolean directDeletion)
 	{
-		drawingBoard.removeEdges(eNode.getDrawingCell());
-		drawingBoard.removeCell(eNode.getDrawingCell());
-		//modelBuilder.removeSpecies(eNode.getEquivalenceDefinition().getRefName());
-		AC_Utility.deleteEquivalence(eNode);
-		setSavedInACFile(false);
-		setSavedInACDataStructure(false);
+		if (directDeletion)
+		{
+			if (canModuleBeModified(eNode.getParent()))
+			{
+				drawingBoard.removeEdges(eNode.getDrawingCell());
+				drawingBoard.removeCell(eNode.getDrawingCell());
+				//modelBuilder.removeSpecies(eNode.getEquivalenceDefinition().getRefName());
+				AC_Utility.deleteEquivalence(eNode);
+				setSavedInACFile(false);
+				setSavedInACDataStructure(false);
+			}
+			else
+			{
+				System.err.println("AC_GUI.removeEquivalenceNode(): the module cannot be modified.");
+			}
+		}
+		else
+		{
+			drawingBoard.removeEdges(eNode.getDrawingCell());
+			drawingBoard.removeCell(eNode.getDrawingCell());
+			//modelBuilder.removeSpecies(eNode.getEquivalenceDefinition().getRefName());
+			AC_Utility.deleteEquivalence(eNode);
+			setSavedInACFile(false);
+			setSavedInACDataStructure(false);
+		}
 	}
 	
 	public static void addVisibleVariable(String refName)
@@ -583,13 +633,31 @@ public class AC_GUI extends JFrame
 		setSavedInACDataStructure(false);
 	}
 	
-	public static void removeVisibleVariable(VisibleVariableNode var)
+	public static void removeVisibleVariable(VisibleVariableNode var, boolean directDeletion)
 	{
-		drawingBoard.removeEdges(var.getDrawingCell());
-		drawingBoard.removeCell(var.getDrawingCell());
-		//modelBuilder.removeSpecies(var.getVisibleVariableDefinition().getRefName());
-		AC_Utility.deleteVisibleVariable(var);
-		setSavedInACDataStructure(false);
+		if (directDeletion)
+		{
+			if (canModuleBeModified(var.getParent()))
+			{
+				drawingBoard.removeEdges(var.getDrawingCell());
+				drawingBoard.removeCell(var.getDrawingCell());
+				//modelBuilder.removeSpecies(var.getVisibleVariableDefinition().getRefName());
+				AC_Utility.deleteVisibleVariable(var);
+				setSavedInACDataStructure(false);
+			}
+			else
+			{
+				System.err.println("AC_GUI.removeVisibleVariable(): the module cannot be modified.");
+			}
+		}
+		else
+		{
+			drawingBoard.removeEdges(var.getDrawingCell());
+			drawingBoard.removeCell(var.getDrawingCell());
+			//modelBuilder.removeSpecies(var.getVisibleVariableDefinition().getRefName());
+			AC_Utility.deleteVisibleVariable(var);
+			setSavedInACDataStructure(false);
+		}
 	}
 	
 	/**
@@ -667,16 +735,37 @@ public class AC_GUI extends JFrame
 	 * Remove the given port.
 	 * @param port the port to be removed
 	 */
-	public static void removePort(PortNode pNode)
+	public static void removePort(PortNode pNode, boolean directDeletion)
 	{
-		// remove connections from the port
-		removeConnectionsFromPort(pNode);
-		// remove the drawing cell representation from the drawing board
-		drawingBoard.removeCell(pNode.getDrawingCell());
-		// remove the port from the model builder
-		modelBuilder.removePort(pNode);
-		// remove the port node
-		AC_Utility.deletePort(pNode);
+		if (directDeletion)
+		{
+			if (canModuleBeModified(pNode.getParent()))
+			{
+				// remove connections from the port
+				removeConnectionsFromPort(pNode);
+				// remove the drawing cell representation from the drawing board
+				drawingBoard.removeCell(pNode.getDrawingCell());
+				// remove the port from the model builder
+				modelBuilder.removePort(pNode);
+				// remove the port node
+				AC_Utility.deletePort(pNode);
+			}
+			else
+			{
+				System.err.println("AC_GUI.removePort(): the module cannot be modified.");
+			}
+		}
+		else
+		{
+			// remove connections from the port
+			removeConnectionsFromPort(pNode);
+			// remove the drawing cell representation from the drawing board
+			drawingBoard.removeCell(pNode.getDrawingCell());
+			// remove the port from the model builder
+			modelBuilder.removePort(pNode);
+			// remove the port node
+			AC_Utility.deletePort(pNode);
+		}
 	}
 	
 	public static void removeConnectionsFromPort(PortNode pNode)
@@ -745,10 +834,25 @@ public class AC_GUI extends JFrame
 	 * @param parentMod the module containing the connection
 	 * @param connectionCell the drawing cell representation of the connection to remove
 	 */
-	public static void removeConnection(ConnectionNode edge)
+	public static void removeConnection(ConnectionNode edge, boolean directDeletion)
 	{
-		drawingBoard.removeCell(edge.getDrawingCell());
-		AC_Utility.deleteConnection(edge);
+		if (directDeletion)
+		{
+			if (canModuleBeModified(edge.getParent()))
+			{
+				drawingBoard.removeCell(edge.getDrawingCell());
+				AC_Utility.deleteConnection(edge);
+			}
+			else
+			{
+				System.err.println("AC_GUI.removeConnection(): the module cannot be modified.");
+			}
+		}
+		else
+		{
+			drawingBoard.removeCell(edge.getDrawingCell());
+			AC_Utility.deleteConnection(edge);
+		}
 	}
 		
 	public static void updatePort(PortNode port, String value, int col)
@@ -925,6 +1029,91 @@ public class AC_GUI extends JFrame
 		return (activeModule != null);
 	}
 	
+	public static boolean canModuleBeModified(Module module)
+	{
+		ModuleDefinition definition = module.getModuleDefinition();
+		int userInput;
+		if (definition.getInstances().size() > 1)
+		{
+			userInput = AC_Utility.promptUserSubmoduleChange(module);
+			byte[] code;
+			switch (userInput)
+			{
+				case JOptionPane.YES_OPTION:
+					// user chose to save a new module definition
+					// copy the current module definition
+					if (AC_Utility.copyDefinition(activeModule, null))
+					{
+						System.out.println("AC_GUI.canModuleBeModified(): definition copy success.");
+						modelBuilder.setModuleDefinitionName(activeModule.getModuleDefinition().getName());
+					}
+					else
+					{
+						System.err.println("AC_GUI.canModuleBeModified(): definition copy failed.");
+					}
+					// save the updated msmb data
+					code = modelBuilder.saveModel();
+					if (code == null || code.length == 0)
+					{
+						System.err.println("AC_GUI.canModuleBeModified(): msmb data is NULL.");
+					}
+					activeModule.getModuleDefinition().setMSMBData(code);
+					break;
+				case JOptionPane.NO_OPTION:
+					// user chose to save the current module definition
+					// check if the definition is external
+					if (definition.isExternal())
+					{
+						int n = AC_Utility.promptUserExternalModuleChange(module);
+						
+						switch (n)
+						{
+							case  JOptionPane.YES_OPTION:
+								definition.setExternal(false);
+								break;
+							case  JOptionPane.NO_OPTION:
+								return false;
+								//break;
+						}
+					}
+					/*
+					// save the updated msmb data
+					code = modelBuilder.saveModel();
+					if (code == null || code.length == 0)
+					{
+						System.err.println("AC_GUI.canModuleBeModified(): msmb data is NULL.");
+					}
+					activeModule.getModuleDefinition().setMSMBData(code);
+					*/
+					break;
+				case JOptionPane.CANCEL_OPTION:
+					return false;
+					//loadModelBuilder(activeModule, false, true);
+					//setSavedInACDataStructure(true);
+					//break;
+			}
+		}
+		else
+		{
+			if (definition.isExternal())
+			{
+				userInput = AC_Utility.promptUserExternalModuleChange(module);
+				
+				switch (userInput)
+				{
+					case  JOptionPane.YES_OPTION:
+						definition.setExternal(false);
+						break;
+					case  JOptionPane.NO_OPTION:
+						return false;
+						//break;
+				}
+			}
+		}
+		
+		return true;
+	}
+	
 	public static void activeModuleChanged()
 	{
 		int n;
@@ -1007,6 +1196,23 @@ public class AC_GUI extends JFrame
 		}
 	}
 	
+	public static void applyExternalModuleChange(int userInput)
+	{
+		switch(userInput)
+		{
+			case JOptionPane.YES_OPTION:
+				//System.out.println("The user chose New Module.");
+				activeModule.getModuleDefinition().setExternal(false);
+				break;
+			case JOptionPane.NO_OPTION:
+				//System.out.print("The user chose Current Module.");
+				activeModule.getModuleDefinition().setExternal(true);
+				loadModelBuilder(activeModule, false, true);
+				setSavedInACDataStructure(true);
+				break;
+		}
+	}
+	
 	public static void changeActiveModule(Module mod)
 	{
 		if (activeModule != null)
@@ -1054,7 +1260,7 @@ public class AC_GUI extends JFrame
 	{
 		treeView.clear();
 		drawingBoard.clear();
-		modelBuilder.setVisible(false);
+		modelBuilder.clear();
 		CopasiUtility.clear();
 		AC_Utility.reset();
 		rootModule = null;

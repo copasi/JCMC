@@ -310,6 +310,13 @@ public class ModelBuilder
 		return loadedModule;
 	}
 	
+	public void clear()
+	{
+		portsPanel.clear();
+		setVisible(false);
+		loadedModule = null;
+	}
+	
 	public boolean isSpeciesName(String name)
 	{
 		return msmb.getMSMB_listOfSpecies().contains(name);
@@ -589,62 +596,55 @@ public class ModelBuilder
 						}
 						if (AC_Utility.moduleNameValidation(after.getName(), true))
 						{
-							if (AC_Utility.isSubmoduleDefinition(AC_GUI.activeModule.getModuleDefinition()))
+							if (AC_GUI.activeModule.getModuleDefinition().getInstances().size() > 1)
 							{
-								if (AC_GUI.activeModule.getModuleDefinition().getInstances().size() > 1)
+								int userInput = AC_Utility.promptUserSubmoduleChange(AC_GUI.activeModule);
+								
+								byte[] code;
+								switch (userInput)
 								{
-									int userInput = AC_Utility.promptUserSubmoduleChange(AC_GUI.activeModule);
-									
-									byte[] code;
-									switch (userInput)
-									{
-										case JOptionPane.YES_OPTION:
-											// user chose to save a new module definition
-											// copy the current module definition
-											if (AC_Utility.copyDefinition(AC_GUI.activeModule, after.getName()))
-											{
-												System.out.println("ModelBuilder.Model_Definition_Name_Changed: definition copy success.");
-												//setModuleDefinitionName(activeModule.getModuleDefinition().getName());
-												//AC_Utility.changeModuleDefinitionName(AC_GUI.activeModule.getModuleDefinition(), after.getName(), true);
-											}
-											else
-											{
-												System.err.println("ModelBuilder.Model_Definition_Name_Changed: definition copy failed.");
-											}
-											// save the updated msmb data
-											code = saveModel();
-											if (code == null || code.length == 0)
-											{
-												System.err.println("ModelBuilder.Model_Definition_Name_Changed: msmb data is NULL.");
-											}
-											AC_GUI.activeModule.getModuleDefinition().setMSMBData(code);
-											if (!saveToCopasi(AC_GUI.activeModule.getModuleDefinition().getName()))
-											{
-												System.err.println("ModelBuilder.Model_Definition_Name_Changed: copasi datamodel not saved.");
-											}
-											break;
-										case JOptionPane.NO_OPTION:
-											// user chose to save the current module definition
-											// change the definition name
-											AC_Utility.changeModuleDefinitionName(AC_GUI.activeModule.getModuleDefinition(), after.getName(), true);
-											// save the updated msmb data
-											code = saveModel();
-											if (code == null || code.length == 0)
-											{
-												System.err.println("ModelBuilder.Model_Definition_Name_Changed: msmb data is NULL.");
-											}
-											AC_GUI.activeModule.getModuleDefinition().setMSMBData(code);
-											break;
-										case JOptionPane.CANCEL_OPTION:
-											//loadModelBuilder(activeModule, false, true);
-											setModuleDefinitionName(before.getName());
-											//setSavedInACDataStructure(true);
-											break;
-									}
-								}
-								else
-								{
-									AC_Utility.changeModuleDefinitionName(AC_GUI.activeModule.getModuleDefinition(), after.getName(), true);
+									case JOptionPane.YES_OPTION:
+										// user chose to save a new module definition
+										// copy the current module definition
+										if (AC_Utility.copyDefinition(AC_GUI.activeModule, after.getName()))
+										{
+											System.out.println("ModelBuilder.Model_Definition_Name_Changed: definition copy success.");
+											//setModuleDefinitionName(activeModule.getModuleDefinition().getName());
+											//AC_Utility.changeModuleDefinitionName(AC_GUI.activeModule.getModuleDefinition(), after.getName(), true);
+										}
+										else
+										{
+											System.err.println("ModelBuilder.Model_Definition_Name_Changed: definition copy failed.");
+										}
+										// save the updated msmb data
+										code = saveModel();
+										if (code == null || code.length == 0)
+										{
+											System.err.println("ModelBuilder.Model_Definition_Name_Changed: msmb data is NULL.");
+										}
+										AC_GUI.activeModule.getModuleDefinition().setMSMBData(code);
+										if (!saveToCopasi(AC_GUI.activeModule.getModuleDefinition().getName()))
+										{
+											System.err.println("ModelBuilder.Model_Definition_Name_Changed: copasi datamodel not saved.");
+										}
+										break;
+									case JOptionPane.NO_OPTION:
+										// user chose to save the current module definition
+										// change the definition name
+										AC_Utility.changeModuleDefinitionName(AC_GUI.activeModule.getModuleDefinition(), after.getName(), true);
+										// save the updated msmb data
+										code = saveModel();
+										if (code == null || code.length == 0)
+										{
+											System.err.println("ModelBuilder.Model_Definition_Name_Changed: msmb data is NULL.");
+										}
+										AC_GUI.activeModule.getModuleDefinition().setMSMBData(code);
+										break;
+									case JOptionPane.CANCEL_OPTION:
+										//loadModelBuilder(activeModule, false, true);
+										setModuleDefinitionName(before.getName());
+										//setSavedInACDataStructure(true);
+										break;
 								}
 							}
 							else
@@ -730,7 +730,21 @@ public class ModelBuilder
 						//if(before!=null) System.out.println("Model name before = " + before.getName());
 						//if(after!=null)  System.out.println("Model name after = " + after.getName());
 						System.out.println("Something has changed in the ModelBuilder.");
-						AC_GUI.activeModuleChanged();
+						//AC_GUI.activeModuleChanged();
+						if (AC_GUI.canModuleBeModified(AC_GUI.activeModule))
+						{
+							// save the updated msmb data
+							byte[] code = saveModel();
+							if (code == null || code.length == 0)
+							{
+								System.err.println("ModelBuilder.installListeners(): something changed, msmb data is NULL.");
+							}
+							AC_GUI.activeModule.getModuleDefinition().setMSMBData(code);
+						}
+						else
+						{
+							AC_GUI.loadModelBuilder(AC_GUI.activeModule, false, true);
+						}
 					}
 				}, 
 				MSMB_Element.SOMETHING_CHANGED);

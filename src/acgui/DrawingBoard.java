@@ -939,11 +939,11 @@ public class DrawingBoard extends JPanel
 		{
 			if (node instanceof EquivalenceNode)
 			{
-				AC_GUI.removeEquivalenceNode((EquivalenceNode)node);
+				AC_GUI.removeEquivalenceNode((EquivalenceNode)node, false);
 			}
 			else if (node instanceof VisibleVariableNode)
 			{
-				AC_GUI.removeVisibleVariable((VisibleVariableNode)node);
+				AC_GUI.removeVisibleVariable((VisibleVariableNode)node, false);
 			}
 		}
 	}
@@ -979,7 +979,7 @@ public class DrawingBoard extends JPanel
 				// get the connection object from the drawing cell
 				edge = (ConnectionNode)edgeCell.getValue();
 				// remove the connection from the module
-				AC_GUI.removeConnection(edge);
+				AC_GUI.removeConnection(edge, false);
 				// remove any extensions
 				removeExtensions(oppositeTerminal);
 			}
@@ -2668,18 +2668,6 @@ public class DrawingBoard extends JPanel
 		JPopupMenu menu = new JPopupMenu();
 
 		cellValue = ((mxCell)cell).getValue();
-		menu.add(new AbstractAction("Edit Name") {
-			/**
-			 * 
-			 */
-			private static final long serialVersionUID = 1L;
-
-			public void actionPerformed(ActionEvent e)
-			{
-				//graphComponent.startEditingAtCell(cell);
-				AC_Utility.promptUserEditModuleName(AC_GUI.selectedModule.getName());
-			}
-		});
 
 		if (((mxCell)cell).isEdge())
 		{
@@ -2695,7 +2683,7 @@ public class DrawingBoard extends JPanel
 					// get the connection object from the drawing cell
 					ConnectionNode edge = (ConnectionNode)((mxCell)cell).getValue();
 					// remove the connection from the module
-					AC_GUI.removeConnection(edge);
+					AC_GUI.removeConnection(edge, true);
 					//System.out.println("Connected edge count: " + graph.getModel().getEdgeCount(((mxCell)cell).getSource()));
 				}
 			});
@@ -2755,6 +2743,19 @@ public class DrawingBoard extends JPanel
 		{
 			if (cellValue instanceof Module)
 			{
+				menu.add(new AbstractAction("Edit Name") {
+					/**
+					 * 
+					 */
+					private static final long serialVersionUID = 1L;
+
+					public void actionPerformed(ActionEvent e)
+					{
+						//graphComponent.startEditingAtCell(cell);
+						AC_Utility.promptUserEditModuleName(AC_GUI.selectedModule.getName());
+					}
+				});
+				
 				if (activeModule == (Module)cellValue)
 				{
 					menu.add(new AbstractAction("Add Port") {
@@ -2841,7 +2842,7 @@ public class DrawingBoard extends JPanel
 							msg += graph.getModel().getEdgeCount(cell) + ".";
 							//System.out.println(msg);
 							// call AC_GUI to fully remove the port
-							AC_GUI.removePort(currentPort);
+							AC_GUI.removePort(currentPort, true);
 						}
 					});
 	
@@ -2877,8 +2878,8 @@ public class DrawingBoard extends JPanel
 						String msg = "Number of edges connected to the variable: ";
 						msg += graph.getModel().getEdgeCount(cell) + ".";
 						//System.out.println(msg);
-						// call AC_GUI to fully remove the port
-						AC_GUI.removeVisibleVariable(currentVar);
+						// call AC_GUI to fully remove the variable
+						AC_GUI.removeVisibleVariable(currentVar, true);
 					}
 				});
 			}
@@ -2897,8 +2898,8 @@ public class DrawingBoard extends JPanel
 						String msg = "Number of edges connected to the eNode: ";
 						msg += graph.getModel().getEdgeCount(cell) + ".";
 						//System.out.println(msg);
-						// call AC_GUI to fully remove the port
-						AC_GUI.removeEquivalenceNode(currentENode);
+						// call AC_GUI to fully remove the equivalence node
+						AC_GUI.removeEquivalenceNode(currentENode, true);
 					}
 				});
 			}

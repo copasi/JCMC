@@ -213,6 +213,7 @@ public class ACCustomTableModel extends CustomTableModel
 				break;
 		}
 		
+		/*
 		// ask user if they want to change all instances
 		userInput = AC_Utility.promptUserSubmoduleChange(AC_GUI.activeModule);
 		
@@ -247,6 +248,11 @@ public class ACCustomTableModel extends CustomTableModel
 			case JOptionPane.CANCEL_OPTION:
 				//System.out.println("The user chose Cancel.");
 				return;
+		}
+		*/
+		if (!AC_GUI.canModuleBeModified(AC_GUI.activeModule))
+		{
+			return;
 		}
 		
 		r = (Vector)data.get(row);

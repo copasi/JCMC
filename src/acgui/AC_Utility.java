@@ -686,10 +686,10 @@ public class AC_Utility
 		switch(n)
 		{
 			case JOptionPane.YES_OPTION:
-				System.out.println("The user chose New Module.");
+				System.out.println("The user chose to save as a New Module.");
 				break;
 			case JOptionPane.NO_OPTION:
-				System.out.print("The user chose Current Module.");
+				System.out.print("The user chose not to save changes.");
 				break;
 		}
 		return n;
@@ -1085,7 +1085,7 @@ public class AC_Utility
 		{
 			if (!isSubmoduleDefinition(definition))
 			{
-				addSubmoduleDefinition(module.getModuleDefinition());
+				addSubmoduleDefinition(definition);
 			}
 			return;
 		}
@@ -1856,6 +1856,7 @@ public class AC_Utility
 		// sync connection nodes to connection definitions
 		syncConnections(module.getConnections(), newDefinition.getConnections());
 		moduleNameList.add(newName);
+		newDefinition.setExternal(false);
 		return newDefinition;
 	}
 	

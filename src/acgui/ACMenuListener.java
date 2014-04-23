@@ -374,7 +374,7 @@ public class ACMenuListener implements ActionListener
 					{
 						if (AC_GUI.selectedModule != AC_GUI.activeModule)
 						{
-							AC_GUI.removeSubmodule(AC_GUI.selectedModule);
+							AC_GUI.removeSubmodule(AC_GUI.selectedModule, true);
 						}
 						else
 						{
@@ -429,8 +429,8 @@ public class ACMenuListener implements ActionListener
 					"Needs further discussion and exploration (not yet implemented).");
 			break;
 		case HELP_CONTENTS:
-			JOptionPane.showMessageDialog(null, "Will display some sort of help tool (not yet implemented).");
-			//AC_Utility.printModuleTree();
+			//JOptionPane.showMessageDialog(null, "Will display some sort of help tool (not yet implemented).");
+			AC_Utility.printModuleTree();
 			break;
 		case ABOUT_AGGREGATION_CONNECTOR:
 			JOptionPane.showMessageDialog(null, "Will give information about the tool (not yet implemented).");
