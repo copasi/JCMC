@@ -1,0 +1,357 @@
+/**
+ * JTB template file created by SF JavaCC plugin 1.5.17+ wizard for JTB 1.4.0.2+ and JavaCC 1.5.0+
+ */options{  JDK_VERSION = "1.5";  JTB_P="msmb.parsers.chemicalReaction";
+  STATIC = false;
+  JTB_JD=true;
+  JTB_F=true;
+  JTB_PRINTER=true;
+  JTB_W=false; //Do not overwrite existing files} PARSER_BEGIN(MR_ChemicalReaction_Parser)package msmb.parsers.chemicalReaction;
+import msmb.parsers.chemicalReaction.syntaxtree.*;import msmb.parsers.chemicalReaction.visitor.*; 
+import java.io.*;
+import msmb.parsers.mathExpression.MR_Expression_ParserConstants;
+
+public class MR_ChemicalReaction_Parser{  public static void main(String args [])  {      System.out.println("MR_ChemicalReaction_Parser...");
+
+    
+    try
+    {
+      String expression = new String("A + B -> C; MOD  ldsdfa;sf");
+      InputStream is = new ByteArrayInputStream(expression.getBytes("UTF-8"));
+	  MR_ChemicalReaction_Parser react = new MR_ChemicalReaction_Parser(is);
+  	  CompleteReaction start = react.CompleteReaction();
+      DepthFirstVoidVisitor v = new MyVisitor();
+      start.accept(v);
+      System.out.println("...................................");
+      /*expression = new String("-> A; MOD");
+      is = new ByteArrayInputStream(expression.getBytes("UTF-8"));
+	  react = new MR_ChemicalReaction_Parser(is);
+  	  start = react.CompleteReaction();
+      v = new MyVisitor();
+      start.accept(v);
+      System.out.println("...................................");
+      expression = new String("A ->; MOD");
+      is = new ByteArrayInputStream(expression.getBytes("UTF-8"));
+	  react = new MR_ChemicalReaction_Parser(is);
+  	  start = react.CompleteReaction();
+      v = new MyVisitor();
+      start.accept(v);
+      System.out.println("...................................");
+      expression = new String("A;c + b;d ->; MOD");
+      is = new ByteArrayInputStream(expression.getBytes("UTF-8"));
+	  react = new MR_ChemicalReaction_Parser(is);
+  	  start = react.CompleteReaction();
+      v = new MyVisitor();
+      start.accept(v);
+      System.out.println("...................................");
+      expression = new String("A;c -> ; MOD");
+      is = new ByteArrayInputStream(expression.getBytes("UTF-8"));
+	  react = new MR_ChemicalReaction_Parser(is);
+  	  start = react.CompleteReaction(); 
+      v = new MyVisitor();
+      start.accept(v);*/
+
+	  expression = new String("2 * a ->");
+      is = new ByteArrayInputStream(expression.getBytes("UTF-8"));
+	  react = new MR_ChemicalReaction_Parser(is);
+  	  start = react.CompleteReaction();
+      v = new MyVisitor();
+      start.accept(v);
+      System.out.println("...................................");
+
+
+      expression = new String("Cdh1(p{1:10}) -> Cdh1(SDFGSDFGSDF(p))");
+      is = new ByteArrayInputStream(expression.getBytes("UTF-8"));
+	  react = new MR_ChemicalReaction_Parser(is);
+  	  start = react.CompleteReaction();
+      v = new MyVisitor();
+      start.accept(v);
+      System.out.println("...................................");
+
+
+ 	  expression = new String("\"Cdh1\"(p{1:10}) -> \"Cdh1 boh\"(SDFGSDFGSDF(p))");
+      is = new ByteArrayInputStream(expression.getBytes("UTF-8"));
+	  react = new MR_ChemicalReaction_Parser(is);
+  	  start = react.CompleteReaction();
+      v = new MyVisitor();
+      start.accept(v);
+      System.out.println("...................................");
+
+      
+       expression = new String("cdhNOTbool(p{\"TRUE\",\"FALSE\",somethingElse})  -> cdhNOTbool(succ(p))");
+      is = new ByteArrayInputStream(expression.getBytes("UTF-8"));
+	  react = new MR_ChemicalReaction_Parser(is);
+  	  start = react.CompleteReaction();
+      v = new MyVisitor();
+      start.accept(v);
+      System.out.println("...................................");
+        expression = new String("cdhNOTbool(p{\"TRUE\", \"FALSE\",somethingElse})  -> cdhNOTbool(succ(p))");
+      is = new ByteArrayInputStream(expression.getBytes("UTF-8"));
+	  react = new MR_ChemicalReaction_Parser(is);
+  	  start = react.CompleteReaction();
+      v = new MyVisitor();
+      start.accept(v);
+      System.out.println("...................................");
+
+
+         expression = new String("\"Complex_br_(Axin/PP2A/_br_Adenomatous Polyposis Coli)\" + \"_Beta_-Catenin\"(cmp{\"Plasma Membrane\"}) -> \"Complex_br_(Adenomatous Polyposis Coli/Axin/_br__Beta_-Catenin/PP2A)\"");
+      is = new ByteArrayInputStream(expression.getBytes("UTF-8"));
+	  react = new MR_ChemicalReaction_Parser(is);
+  	  start = react.CompleteReaction();
+      v = new MyVisitor();
+      start.accept(v);
+      System.out.println("...................................");
+
+      expression = new String("Wnt(cmp{\"Cell Membrane\"}) -> Wnt(cmp{default})");
+      is = new ByteArrayInputStream(expression.getBytes("UTF-8"));
+	  react = new MR_ChemicalReaction_Parser(is);
+  	  start = react.CompleteReaction();
+      v = new MyVisitor();
+      start.accept(v);
+      System.out.println("...................................");
+
+
+
+      expression = new String("SBF(p{0}) + Whi5(p{0:2}) -> CmplxSBFWhi5(sbf_p=SBF.p;whi5_p=Whi5.p)");
+      is = new ByteArrayInputStream(expression.getBytes("UTF-8"));
+	  react = new MR_ChemicalReaction_Parser(is);
+  	  start = react.CompleteReaction();
+      v = new MyVisitor();
+      start.accept(v);
+      System.out.println("...................................");
+
+       expression = new String("CmplxSBFWhi5 -> SBF(p=CmplxSBFWhi5.sbf_p) + Whi5(p=CmplxSBFWhi5.whi5_p)");
+      is = new ByteArrayInputStream(expression.getBytes("UTF-8"));
+	  react = new MR_ChemicalReaction_Parser(is);
+  	  start = react.CompleteReaction();
+      v = new MyVisitor();
+      start.accept(v);
+      System.out.println("...................................");
+
+       expression = new String("CmplxSBFWhi5 -> SBF(p=CmplxSBFWhi5.sbf_p)");
+      is = new ByteArrayInputStream(expression.getBytes("UTF-8"));
+	  react = new MR_ChemicalReaction_Parser(is);
+  	  start = react.CompleteReaction();
+      v = new MyVisitor();
+      start.accept(v);
+      System.out.println("...................................");
+      expression = new String("CmplxSBFWhi5 -> SBF(p=succ(CmplxSBFWhi5.sbf_p))");
+      is = new ByteArrayInputStream(expression.getBytes("UTF-8"));
+	  react = new MR_ChemicalReaction_Parser(is);
+  	  start = react.CompleteReaction();
+      v = new MyVisitor();
+      start.accept(v);
+      System.out.println("...................................");
+
+
+ 	 //No spaces are allowed in species names (not even in multistateSpecies) because it creates problem in parsing the reactions
+    // expression = new String("SBF( p{0} ) + Whi5(p{0:2}) -> CmplxSBFWhi5(sbf_p=SBF.p;whi5_p=Whi5.p)");
+
+
+
+      expression = new String("\"EGFR(Y1068~P!?)\" ->");
+      is = new ByteArrayInputStream(expression.getBytes("UTF-8"));
+	  react = new MR_ChemicalReaction_Parser(is);
+  	  start = react.CompleteReaction();
+      v = new MyVisitor();
+      start.accept(v);
+      System.out.println("...................................");
+  		expression = new String("\"EGFR(L!1,CR1).EGF(R!1)\" ->");
+      is = new ByteArrayInputStream(expression.getBytes("UTF-8"));
+	  react = new MR_ChemicalReaction_Parser(is);
+  	  start = react.CompleteReaction();
+      v = new MyVisitor();
+      start.accept(v);
+      System.out.println("...................................");
+      	expression = new String("\"EGFR(L!+,CR1)\" ->");
+      is = new ByteArrayInputStream(expression.getBytes("UTF-8"));
+	  react = new MR_ChemicalReaction_Parser(is);
+  	  start = react.CompleteReaction();
+      v = new MyVisitor();
+      start.accept(v);
+      System.out.println("...................................");
+
+      
+    expression = new String("Cdh1(p{1:10}) + ClbM -> Cdh1(pred(p))");
+      is = new ByteArrayInputStream(expression.getBytes("UTF-8"));
+	  react = new MR_ChemicalReaction_Parser(is);
+  	  start = react.CompleteReaction();
+      v = new MyVisitor();
+      start.accept(v);
+      System.out.println("...................................");
+
+       expression = new String("Cdh1(p) -> _Cdh1(AAA=Cdh1.p)");
+      is = new ByteArrayInputStream(expression.getBytes("UTF-8"));
+	  react = new MR_ChemicalReaction_Parser(is);
+  	  start = react.CompleteReaction();
+      v = new MyVisitor();
+      start.accept(v);
+      System.out.println("...................................");
+
+      expression = new String("A1=A(p) + A2 = A(p) -> Complex(p1=A1.p;p2=A2.p)");
+      is = new ByteArrayInputStream(expression.getBytes("UTF-8"));
+	  react = new MR_ChemicalReaction_Parser(is);
+  	  start = react.CompleteReaction();
+      v = new MyVisitor();
+      start.accept(v);
+      System.out.println("...................................");
+
+       expression = new String("A1=A(p{2:4}) + A2=A(p{1:3}) -> Complex(p1=A1.p;p2=A2.p)");
+      is = new ByteArrayInputStream(expression.getBytes("UTF-8"));
+	  react = new MR_ChemicalReaction_Parser(is);
+  	  start = react.CompleteReaction();
+      v = new MyVisitor();
+      start.accept(v);
+      System.out.println("...................................");
+
+         expression = new String("A(p{2:up-1})  -> ");
+      is = new ByteArrayInputStream(expression.getBytes("UTF-8"));
+	  react = new MR_ChemicalReaction_Parser(is);
+  	  start = react.CompleteReaction();
+      v = new MyVisitor();
+      start.accept(v);
+      System.out.println("...................................");
+
+        expression = new String("Cdh1(p{low:up-1}) -> Cdh1(succ(p))");
+      is = new ByteArrayInputStream(expression.getBytes("UTF-8"));
+	  react = new MR_ChemicalReaction_Parser(is);
+  	  start = react.CompleteReaction();
+      v = new MyVisitor();
+      start.accept(v);
+      System.out.println("...................................");
+
+
+     }
+    catch (Exception e)
+    {
+      System.out.println("Oops.");
+      System.out.println(e.getMessage());
+    }  }}
+
+class MyVisitor extends DepthFirstVoidVisitor
+{
+  public void visit(NodeToken n)
+  {
+    
+    System.out.println("visit " + MR_ChemicalReaction_ParserConstants.tokenImage[n.kind] + "-->" + n.tokenImage);
+  }
+
+  	@Override
+	public void visit(Species n) {
+	  //System.out.println("visit Species");
+	 String noQuotes= new String(MR_Expression_ParserConstants.tokenImage[MR_Expression_ParserConstants.EXTENSION_CONC]);
+      noQuotes = noQuotes.substring(1,noQuotes.length()-1);
+	/*  if(n.nodeToken.tokenImage.toString().endsWith(noQuotes))  {			//System.out.println("something wrong");
+	  }*/
+	 super.visit(n); 
+    
+	}
+
+	@Override
+	public void visit(AdditiveExpression n) {
+		//System.out.println("visit AdditiveExpression");
+	 	super.visit(n); 
+    }
+
+public void visit(SpeciesWithCoeff n) {
+	//	System.out.println("visit SpeciesWithCoeff");
+	 	super.visit(n); 
+    }
+
+ 
+}PARSER_END(MR_ChemicalReaction_Parser)SKIP :{ "\t"| "\n"| "\r"| < "//" (~[ "\n", "\r" ])*    (      "\n"    | "\r"    | "\r\n"    ) >| < "/*" (~[ "*" ])* "*"    (      ~[ "/" ] (~[ "*" ])* "*"    )*    "/" >}
+
+
+/*TOKEN :
+{
+  < TIME: "Time">
+| < SUM: "SUM">
+| < FLOOR: "floor">
+| < SQRT: "sqrt">
+| < LOG: "log">
+}*/
+TOKEN : /* LITERALS */{
+    < INTEGER_LITERAL :    < DECIMAL_LITERAL > ([ "l", "L" ])?  | < HEX_LITERAL > ([ "l", "L" ])?  | < OCTAL_LITERAL > ([ "l", "L" ])?     >
+|
+  < FLOATING_POINT_LITERAL:
+        (["0"-"9"])+ "." (["0"-"9"])* (<EXPONENT>)? (["f","F","d","D"])?
+      | "." (["0"-"9"])+ (<EXPONENT>)? (["f","F","d","D"])?
+      | (["0"-"9"])+ <EXPONENT> (["f","F","d","D"])?
+      | (["0"-"9"])+ (<EXPONENT>)? ["f","F","d","D"]
+  >
+  |
+  < #EXPONENT: ["e","E"] (["+","-"])? (["0"-"9"])+ >| < #DECIMAL_LITERAL : [ "1"-"9" ] ([ "0"-"9" ])* >| < #HEX_LITERAL : "0" [ "x", "X" ] ([ "0"-"9", "a"-"f", "A"-"F" ])+ >| < #OCTAL_LITERAL : "0" ([ "0"-"7" ])* >}
+/* IDENTIFIERS */
+
+TOKEN :
+{
+	< IDENTIFIER : < STRING_LITERAL > | 
+   				 ( < LETTER >|<DIGIT>| ";"|"="|"= "|" = "|","|", "|" , "|" ,"|< STRING_LITERAL >)* (< LETTER >|<DIGIT>|< STRING_LITERAL >)>
+|  < #DIGIT:   ["0"-"9"]  >
+|  < #STRING_LITERAL: 
+      "\""
+      (   (~["\"","\\","\n","\r"])
+        | ["\u0370"-"\u03ff"] 
+        | ("\\"
+            ( ["n","t","b","r","f","\\","'","\""]
+            | ["0"-"7"] ( ["0"-"7"] )?
+            | ["0"-"3"] ["0"-"7"] ["0"-"7"] 
+            ) 
+          )
+        | " "
+     )*
+      "\""
+  >
+ 			
+  |  < #LETTER:   ["A"-"Z", "_", "a"-"z","'",
+				".", ":", "<", ">", "|", "&",
+						"!", "?", "@", "#", "$", "%", "^",
+						"~", "`", "[", "]",
+						"+", "-", "*", "/",						
+						"("  , ")"  ,  "{"  ,  "}", "\u0370"-"\u03ff"
+						/*,  "\""*/
+				] >
+}
+
+/* SEPARATORS */
+
+TOKEN:
+{
+  	< ARROW : " ->" > |   < ARROW2 : "-> " >
+}
+
+
+ 
+/*****************************************
+ * THE MULTIREMI CHEMICAL REACTION GRAMMAR STARTS HERE *
+ *****************************************/
+void CompleteReaction() : {} {
+  Reaction() <EOF>
+}
+
+void CompleteSpeciesWithCoefficient() :{}
+{
+  SpeciesWithCoeff() <EOF>}
+
+void Reaction() :{}
+{ 
+ 
+(AdditiveExpression())? (Blank())*
+	 < ARROW > ((LOOKAHEAD(2)(" ")(Blank())* (AdditiveExpression())?))?
+	 ((Blank())*";"(Blank())* ListModifiers())?
+ | < ARROW2 > (Blank())* (AdditiveExpression())? ((Blank())*";"(Blank())* ListModifiers())?
+  
+}
+
+void AdditiveExpression() :{}{  SpeciesWithCoeff() (LOOKAHEAD(2)(Blank())*" + "(Blank())* SpeciesWithCoeff() )*}void SpeciesWithCoeff() :{}{  (Stoichiometry() (LOOKAHEAD(2)Blank())*" * "(Blank())*)? Species()}
+
+
+void Blank():
+{}{ 	 " " }
+
+void ListModifiers():
+{}
+{
+  Species() ((Blank())+ Species() )*}void Species() throws ParseException:{}{	  < IDENTIFIER >    (< IDENTIFIER >)*
+}
+
+void Stoichiometry() : {} {  < INTEGER_LITERAL > |  <FLOATING_POINT_LITERAL>}

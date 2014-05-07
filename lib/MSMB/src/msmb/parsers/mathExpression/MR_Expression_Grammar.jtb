@@ -1,0 +1,795 @@
+/**
+ * JTB template file created by SF JavaCC plugin 1.5.17+ wizard for JTB 1.4.0.2+ and JavaCC 1.5.0+
+ */options{  JDK_VERSION = "1.5";  STATIC = false;
+  JTB_JD=true;
+  JTB_F=true;
+  JTB_PRINTER=true;
+  JTB_P="msmb.parsers.mathExpression";
+  JTB_W=false; //Do not overwrite existing files}
+
+/*|  < #LETTER:   ["A"-"Z", "_", "a"-"z","'"]  | < ESCAPE > >*/
+/*|  < ESCAPE :  "\\" [	".", ",", ";", ":", "<", ">", "|", "&",
+						"!", "?", "@", "#", "$", "%", "^",
+						"+", "-", "*", "/", "~", "`", 
+						"("  , ")"  ,  "{"  ,  "}", " ", "[", "]",
+					 	"\\", "\""]  > */PARSER_BEGIN(MR_Expression_Parser)package  msmb.parsers.mathExpression;
+import  msmb.parsers.mathExpression.syntaxtree.*;import  msmb.parsers.mathExpression.visitor.*;
+import java.io.*; 
+
+
+public class MR_Expression_Parser {
+  public static void main(String args [])  {
+    try    {     
+       String expression = new String("1*floor(Time/tau)");
+      InputStream is = new ByteArrayInputStream(expression.getBytes("UTF-8"));
+	  MR_Expression_Parser react = new MR_Expression_Parser(is);
+  	  CompleteExpression start = react.CompleteExpression();
+      DepthFirstVoidVisitor v = new MyVisitor();
+      start.accept(v);
+      System.out.println("...................................");
+
+       String expression2 = new String("(asdf < sdf && (a < 3 && a > 4)) > 1");
+      InputStream is2 = new ByteArrayInputStream(expression2.getBytes("UTF-8"));
+	  MR_Expression_Parser react2 = new MR_Expression_Parser(is2);
+  	  CompleteExpression start2 = react2.CompleteExpression();
+      DepthFirstVoidVisitor v2 = new MyVisitor();
+      start2.accept(v2);
+      System.out.println("...................................");
+
+
+	expression2 = new String("if(ara> 0 && pulse_flag==1,cAra,dAra*ara)");
+is2 = new ByteArrayInputStream(expression2.getBytes("UTF-8"));
+	   react2 = new MR_Expression_Parser(is2);
+  	  start2 = react2.CompleteExpression();
+      v2 = new MyVisitor();
+      start2.accept(v2);
+      System.out.println("...................................");
+
+expression2 = new String("-C1*a13+O*b13");
+is2 = new ByteArrayInputStream(expression2.getBytes("UTF-8"));
+	   react2 = new MR_Expression_Parser(is2);
+  	  start2 = react2.CompleteExpression();
+      v2 = new MyVisitor();
+      start2.accept(v2);
+      System.out.println("...................................");
+
+
+      
+      
+	expression2 = new String("asdf < sdf xor (a < 3 && a > 4)");
+	 is2 = new ByteArrayInputStream(expression2.getBytes("UTF-8"));
+	   react2 = new MR_Expression_Parser(is2);
+  	  start2 = react2.CompleteExpression();
+      v2 = new MyVisitor();
+      start2.accept(v2);
+      System.out.println("...................................");
+
+
+
+expression2 = new String("if(24 < 0 xor Time < 0,Time-24*ceil(Time/24),Time-24*floor(Time/24)) > 1");
+ is2 = new ByteArrayInputStream(expression2.getBytes("UTF-8"));
+	  
+     react2 = new MR_Expression_Parser(is2);
+  	  start2 = react2.CompleteExpression();
+      v2 = new MyVisitor();
+      start2.accept(v2);
+      System.out.println("...................................");
+      
+      expression2 = new String("if(X1 > 0,Ks^\"No. of transit compartment (slow)\"/6*exp(-Ks*X1)*X1^(\"No. of transit compartment (slow)\"-1),0)");
+ is2 = new ByteArrayInputStream(expression2.getBytes("UTF-8"));
+	  
+     react2 = new MR_Expression_Parser(is2);
+  	  start2 = react2.CompleteExpression();
+      v2 = new MyVisitor();
+      start2.accept(v2);
+      System.out.println("...................................");
+      
+
+      
+	expression2 = new String("1/((exp(0.15*(-V-50))+1))");
+	 is2 = new ByteArrayInputStream(expression2.getBytes("UTF-8"));
+	  
+     react2 = new MR_Expression_Parser(is2);
+  	  start2 = react2.CompleteExpression();
+      v2 = new MyVisitor();
+      start2.accept(v2);
+      System.out.println("...................................");
+      
+      expression2 = new String("\"funaasdf \"(GLQ v, GLQ t)");
+      is2 = new ByteArrayInputStream(expression2.getBytes("UTF-8"));
+	  react2 = new MR_Expression_Parser(is2);
+  	  CompleteFunctionDeclaration start3 = react2.CompleteFunctionDeclaration();
+      v2 = new MyVisitor();
+      start3.accept(v2);
+      System.out.println("...................................");
+
+
+ 	expression2 = new String("function(par1, par2, %ModTime%)");
+      is2 = new ByteArrayInputStream(expression2.getBytes("UTF-8"));
+	  react2 = new MR_Expression_Parser(is2);
+  	  start2 = react2.CompleteExpression();
+      v2 = new MyVisitor();
+      start2.accept(v2);
+      System.out.println("...................................");
+
+      
+       expression2 = new String("k1*a^b");
+      is2 = new ByteArrayInputStream(expression2.getBytes("UTF-8"));
+	  react2 = new MR_Expression_Parser(is2);
+  	  start2 = react2.CompleteExpression();
+      v2 = new MyVisitor();
+      start2.accept(v2);
+      System.out.println("...................................");
+
+      expression2 = new String("k1 * a^b");
+      is2 = new ByteArrayInputStream(expression2.getBytes("UTF-8"));
+	  react2 = new MR_Expression_Parser(is2);
+  	  start2 = react2.CompleteExpression();
+      v2 = new MyVisitor();
+      start2.accept(v2);
+      System.out.println("...................................");
+      expression2 = new String("NaN");
+      is2 = new ByteArrayInputStream(expression2.getBytes("UTF-8"));
+	  react2 = new MR_Expression_Parser(is2);
+  	  start2 = react2.CompleteExpression();
+      v2 = new MyVisitor();
+      start2.accept(v2);
+      System.out.println("...................................");
+
+
+        expression2 = new String("SUM(Cdh1)");
+      is2 = new ByteArrayInputStream(expression2.getBytes("UTF-8"));
+	  react2 = new MR_Expression_Parser(is2);
+  	  start2 = react2.CompleteExpression();
+      v2 = new MyVisitor();
+      start2.accept(v2);
+      System.out.println("...................................");
+      
+       expression2 = new String("SUM(Cdh1;p)");
+      is2 = new ByteArrayInputStream(expression2.getBytes("UTF-8"));
+	  react2 = new MR_Expression_Parser(is2);
+  	  start2 = react2.CompleteExpression();
+      v2 = new MyVisitor();
+      start2.accept(v2);
+      System.out.println("...................................");
+       expression2 = new String("SUM(Cdh1;p{2,3})");
+      is2 = new ByteArrayInputStream(expression2.getBytes("UTF-8"));
+	  react2 = new MR_Expression_Parser(is2);
+  	  start2 = react2.CompleteExpression();
+      v2 = new MyVisitor();
+      start2.accept(v2);
+      System.out.println("...................................");
+       expression2 = new String("SUM(Cdh1;p{2,3}; weight(p,k1))");
+      is2 = new ByteArrayInputStream(expression2.getBytes("UTF-8"));
+	  react2 = new MR_Expression_Parser(is2);
+  	  start2 = react2.CompleteExpression();
+      v2 = new MyVisitor();
+      start2.accept(v2);
+      System.out.println("...................................");
+
+       expression2 = new String("SUM(Cdh1;p{0:10};q)");
+      is2 = new ByteArrayInputStream(expression2.getBytes("UTF-8"));
+	  react2 = new MR_Expression_Parser(is2);
+  	  start2 = react2.CompleteExpression();
+      v2 = new MyVisitor();
+      start2.accept(v2);
+      System.out.println("...................................");
+
+
+   /*    expression2 = new String("SUM(Cdh1;p,1,2)");
+      is2 = new ByteArrayInputStream(expression2.getBytes("UTF-8"));
+	  react2 = new MR_Expression_Parser(is2);
+  	  start2 = react2.CompleteExpression();
+      v2 = new MyVisitor();
+      start2.accept(v2);
+      System.out.println("...................................");*/
+
+
+       expression2 = new String("kmisfoldSUB*SUB*(ROS*cytosol)");
+       is2 = new ByteArrayInputStream(expression2.getBytes("UTF-8"));
+	  react2 = new MR_Expression_Parser(is2);
+  	  start2 = react2.CompleteExpression();
+      v2 = new MyVisitor();
+      start2.accept(v2);
+      System.out.println("...................................");
+
+       expression2 = new String("1e-006*k*GAP*MOD");
+       is2 = new ByteArrayInputStream(expression2.getBytes("UTF-8"));
+	  react2 = new MR_Expression_Parser(is2);
+  	  start2 = react2.CompleteExpression();
+      v2 = new MyVisitor();
+      start2.accept(v2);
+      System.out.println("...................................");
+
+
+	expression2 = new String("\"function something\"(par1, cdh1(p{1}), %ModTime%)");
+      is2 = new ByteArrayInputStream(expression2.getBytes("UTF-8"));
+	  react2 = new MR_Expression_Parser(is2);
+  	  start2 = react2.CompleteExpression();
+      v2 = new MyVisitor();
+      start2.accept(v2);
+      System.out.println("...................................");
+
+      expression2 = new String("\"function_4_Melatonin free radical  diffusion phagosome/cytoplasm_1\"(\"Melatonin free radical\"(cmp{cytoplasm}),\"Melatonin free radical\"(cmp{phagosome}),k17,phagosome)");
+      is2 = new ByteArrayInputStream(expression2.getBytes("UTF-8"));
+	  react2 = new MR_Expression_Parser(is2);
+  	  start2 = react2.CompleteExpression();
+      v2 = new MyVisitor();
+      start2.accept(v2);
+      System.out.println("...................................");
+
+
+       expression2 = new String("stepfunc(model_time.glq,1799.99,0,1800,10000000)");
+      is2 = new ByteArrayInputStream(expression2.getBytes("UTF-8"));
+	  react2 = new MR_Expression_Parser(is2);
+  	  start2 = react2.CompleteExpression();
+      v2 = new MyVisitor();
+      start2.accept(v2);
+      System.out.println("...................................");
+
+
+
+      expression2 =  new String("(1+2)+stepfunc(model_time.glq*2*(3)*(4),1799.99,0,1800,10000000)"); //new String("-!+!((+3))");//new String("((ks+!!((1)+(3))))");//new String("!((!((1+3))))"); //new String("A+(B+(2*4))");//new String("(B+(2*4))");//
+      is2 = new ByteArrayInputStream(expression2.getBytes("UTF-8"));
+	  react2 = new MR_Expression_Parser(is2);
+  	  start2 = react2.CompleteExpression();
+      ExpressionBracketsVisitor vis = new ExpressionBracketsVisitor();
+	  start2.accept(vis);
+	  if(vis.getExceptions().size() == 0) {
+				String tmp  = vis.reprintExpression(false);
+				System.out.println("expression: "+tmp);
+		} else {
+				throw vis.getExceptions().get(0);
+		}
+      System.out.println("...................................");
+
+
+      expression2 =  new String("(((Day_in_hours))-((Time)))<=((12))&&(((Day_in_hours))-((Time)))>((0))");
+	is2 = new ByteArrayInputStream(expression2.getBytes("UTF-8"));
+	  react2 = new MR_Expression_Parser(is2);
+  	  start2 = react2.CompleteExpression();
+      vis = new ExpressionBracketsVisitor();
+	  start2.accept(vis);
+	  if(vis.getExceptions().size() == 0) {
+				String tmp  = vis.reprintExpression(false);
+				System.out.println("expression: "+tmp);
+		} else {
+				throw vis.getExceptions().get(0);
+		}
+      System.out.println("...................................");
+
+       expression2 =  new String("((((Day_in_hours))-((Time)))<=((12)))&&((((Day_in_hours))-((Time)))>((0)))");
+	  is2 = new ByteArrayInputStream(expression2.getBytes("UTF-8"));
+	  react2 = new MR_Expression_Parser(is2);
+  	  start2 = react2.CompleteExpression();
+      vis = new ExpressionBracketsVisitor();
+	  start2.accept(vis);
+	  if(vis.getExceptions().size() == 0) {
+				String tmp  = vis.reprintExpression(false);
+				System.out.println("expression: "+tmp);
+		} else {
+				throw vis.getExceptions().get(0);
+		}
+      System.out.println("...................................");
+
+
+	  expression2 = new String("function_4_v4(ATP,atot,k4,3PG)");
+      is2 = new ByteArrayInputStream(expression2.getBytes("UTF-8"));
+	  react2 = new MR_Expression_Parser(is2);
+  	  SingleFunctionCall start33 = react2.SingleFunctionCall();
+      v2 = new MyVisitor();
+      start33.accept(v2);
+      System.out.println("...................................");
+
+   
+      
+  	  expression2 = new String("if(Time<0 xor 24<0,Time-24*ceil(Time/24),Time-24*floor(Time/24))>1");
+      is2 = new ByteArrayInputStream(expression2.getBytes("UTF-8"));
+	  react2 = new MR_Expression_Parser(is2, "UTF-8");
+  	  start2 = react2.CompleteExpression();
+      v2 = new MyVisitor();
+      start2.accept(v2);
+      System.out.println("...................................");
+
+      expression2 = new String("(36*PI)^(1/3)*V^(2/3)"); 
+      is2 = new ByteArrayInputStream(expression2.getBytes("UTF-8"));
+	  react2 = new MR_Expression_Parser(is2, "UTF-8");
+  	  start2 = react2.CompleteExpression();
+      v2 = new MyVisitor();
+      start2.accept(v2);
+      System.out.println("...................................");
+
+       expression2 = new String("not FALSE"); 
+      is2 = new ByteArrayInputStream(expression2.getBytes("UTF-8"));
+	  react2 = new MR_Expression_Parser(is2, "UTF-8");
+  	  start2 = react2.CompleteExpression();
+      v2 = new MyVisitor();
+      start2.accept(v2);
+      System.out.println("...................................");
+
+        expression2 = new String("\"max\"(ATP,atot,k4,3PG)");
+      is2 = new ByteArrayInputStream(expression2.getBytes("UTF-8"));
+	  react2 = new MR_Expression_Parser(is2);
+  	  start33 = react2.SingleFunctionCall();
+      v2 = new MyVisitor();
+      start33.accept(v2);
+      System.out.println("...................................");
+
+
+
+
+         expression2 = new String("gamm*(H(Tot,sig,Wterm)-Active)");
+      is2 = new ByteArrayInputStream(expression2.getBytes("UTF-8"));
+	  react2 = new MR_Expression_Parser(is2);
+  	  start2 = react2.CompleteExpression();
+      v2 = new MyVisitor(); 
+      start2.accept(v2);
+      System.out.println("...................................");
+
+         expression2 = new String("A1/(1+exp((-A2)*A3))");
+      is2 = new ByteArrayInputStream(expression2.getBytes("UTF-8"));
+	  react2 = new MR_Expression_Parser(is2);
+  	  start2 = react2.CompleteExpression();
+      v2 = new MyVisitor(); 
+      start2.accept(v2);
+      System.out.println("...................................");
+
+         expression2 = new String("synt_withTF(ks_b2,ks_b2_m1,MCM1)*MASS");
+      is2 = new ByteArrayInputStream(expression2.getBytes("UTF-8"));
+	  react2 = new MR_Expression_Parser(is2);
+  	  start2 = react2.CompleteExpression();
+      v2 = new MyVisitor(); 
+      start2.accept(v2);
+      System.out.println("...................................");
+
+         expression2 = new String("ks_spn*heav(CLB2-Jspn)");
+      is2 = new ByteArrayInputStream(expression2.getBytes("UTF-8"));
+	  react2 = new MR_Expression_Parser(is2);
+  	  start2 = react2.CompleteExpression();
+      v2 = new MyVisitor(); 
+      start2.accept(v2);
+      System.out.println("...................................");
+      
+    expression2 = new String("g\u03b1\u03b1");
+      is2 = new ByteArrayInputStream(expression2.getBytes("UTF-8"));
+	  react2 = new MR_Expression_Parser(is2, "UTF-8");
+  	  start2 = react2.CompleteExpression();
+      v2 = new MyVisitor();
+      start2.accept(v2);
+      System.out.println("...................................");
+
+
+
+		  expression2 = new String("SUM(Cdh1;p{(low+5)*0.5:upper-1})");
+      is2 = new ByteArrayInputStream(expression2.getBytes("UTF-8"));
+	  react2 = new MR_Expression_Parser(is2, "UTF-8");
+  	  start2 = react2.CompleteExpression();
+      v2 = new MyVisitor();
+      start2.accept(v2);
+      System.out.println("...................................");
+
+        expression2 = new String("k1@M1 + k1@M2");
+      is2 = new ByteArrayInputStream(expression2.getBytes("UTF-8"));
+	  react2 = new MR_Expression_Parser(is2, "UTF-8");
+  	  start2 = react2.CompleteExpression();
+      v2 = new MyVisitor();
+      start2.accept(v2);
+      System.out.println("...................................");
+
+        expression2 = new String("@M1 + @M2");
+      is2 = new ByteArrayInputStream(expression2.getBytes("UTF-8"));
+	  react2 = new MR_Expression_Parser(is2, "UTF-8");
+  	  start2 = react2.CompleteExpression();
+      v2 = new MyVisitor();
+      start2.accept(v2);
+      System.out.println("...................................");
+   } catch(Exception ex)  {
+    ex.printStackTrace();  }   	  }}
+
+class MyVisitor extends DepthFirstVoidVisitor
+{
+  public void visit(NodeToken n)
+  {
+    
+    System.out.println("visit " + MR_Expression_ParserConstants.tokenImage[n.kind] + "-->" + n.tokenImage);
+  }
+		  
+}
+PARSER_END(MR_Expression_Parser)SKIP :{  " "| "\t"| "\n"| "\r"| < "//" (~[ "\n", "\r" ])*    (      "\n"    | "\r"    | "\r\n"    ) >| < "/*" (~[ "*" ])* "*"    (      ~[ "/" ] (~[ "*" ])* "*"    )*    "/" >}
+/* RESERVED WORDS AND LITERALS */
+
+TOKEN :
+{
+  < IF: "if" >
+//| < THEN: "then" >
+//| < ELSE: "else" >
+
+| < FALSE: < FALSE_1> | < FALSE_2> | < FALSE_3> >
+| < TRUE: < TRUE_1> | < TRUE_2> | < TRUE_3>>
+| < #TRUE_1 : "true">
+| < #TRUE_2 : "True">
+| < #TRUE_3 : "TRUE">
+| < #FALSE_1 : "false">
+| < #FALSE_2 : "False">
+| < #FALSE_3 : "FALSE">
+| < TIME: "Time">
+
+| < TYPE_PAR :  "GLQ" >
+| < TYPE_VAR :  "VAR" >
+| < TYPE_SUB :  "SUB" >
+| < TYPE_PROD :  "PROD" >
+| < TYPE_MOD :  "MOD" > 
+| < TYPE_SITE :  "SITE" >
+| < TYPE_VOL :  "VOL" >
+| < TYPE_TIME :  "TIME" >
+| < EXTENSION_CONC :  ".cnc" >
+| < EXTENSION_PARTICLE :  ".prt" >
+| < EXTENSION_TRANS :  ".trns" >
+| < EXTENSION_INIT :  ".init" >
+| < EXTENSION_RATE :  ".rate" >
+| < EXTENSION_SPECIES :  ".spc" >
+| < EXTENSION_GLOBALQ :  ".glq" >
+| < EXTENSION_COMPARTMENT :  ".cmp" >
+| < EXTENSION_REACTION :  ".rct" >
+| < EXTENSION_FUNCTION :  ".fnc" >
+| < EXTENSION_FLUX :  ".flx" >
+| < MY_SPECIAL_EXTENSION :  ".*MY*SPECIAL*EXTENSION" >
+| < SUM: "SUM">
+| < DELAY: "delay">
+| < FLOOR: "floor">
+| < CEIL: "ceil">
+| < COS: "cos">
+| < SIN: "sin">
+| < TAN: "tan">
+| < ACOS: "acos">
+| < ASIN: "asin">
+| < ATAN: "atan">
+|  < TANH: "tanh">
+| < COSH: "cosh">
+| < SEC : "sec">
+| < CSC : "csc">
+| < COT: "cot" >
+| < SINH: "sinh">
+| < ARCSEC : "arcsec" >
+| < ARCCSC: "arccsc">
+| < ARCCOT: "arccot">
+| < ARCSINH: "arcsinh">
+| < ARCCOSH: "arccosh">
+| < ARCTANH: "arctanh">
+| < ARCSECH: "arcsech">
+| < ARCCSCH: "arccsch">
+| < ARCCOTH: "arccoth">
+| < SQRT: "sqrt">
+| < FACTORIAL: "factorial">
+| < EXP: "exp">
+| < LOG: "log">
+| < LOG10: "log10">
+| < ABS: "abs">
+| < MIN: "min">
+| < MAX: "max">
+| < PI: "PI">
+|  < EXPONENTIALE : "EXPONENTIALE">
+| < NAN1: "NaN" >
+| < NAN2: "nan" >
+//| < NAN3: "NAN" >
+| < CONST_AVOGADRO : "NA" >
+| < CONST_QUANTITY_CONV_FACTOR : "%QFC%" >
+| < CONST_MODEL_TIME : "%ModTime%" >
+| < CONST_MODEL_TIME_INITIAL : "%ModTime.i%" >
+}
+/* NUMBERS */
+
+TOKEN :
+{
+  < INTEGER_LITERAL:  (["0"-"9"])+ >
+|
+  < FLOATING_POINT_LITERAL:
+        (["0"-"9"])+ "." (["0"-"9"])* (<EXPONENT>)? (["f","F","d","D"])?
+      | "." (["0"-"9"])+ (<EXPONENT>)? (["f","F","d","D"])?
+      | (["0"-"9"])+ <EXPONENT> (["f","F","d","D"])?
+      | (["0"-"9"])+ (<EXPONENT>)? ["f","F","d","D"]
+  >
+|
+  < #EXPONENT: ["e","E"] (["+","-"])? (["0"-"9"])+ >
+}
+
+
+
+
+/* SEPARATORS */
+
+TOKEN :
+{
+  < LPAREN: "(" >
+| < RPAREN: ")" >
+| < LBRACE: "{" >
+| < RBRACE: "}" >
+| < LBRACKET: "[" >
+| < RBRACKET: "]" >
+| < SEMICOLON: ";" >
+| < COMMA: "," >
+| < COLON: ":" >
+| < DOT: "." >
+}
+
+/* OPERATORS */
+
+TOKEN :
+{
+  < PLUS: "+" >
+| < MINUS: "-" >
+| < TIMES: "*" >
+| < DIV: "/" >
+| < ASSIGN: "=" >
+| < GT: ">" >
+| < LT: "<" >
+| < BANG: "not" >
+| < CARET: "^" >
+| < PERC: "%" >
+| < EQ: "==" >
+| < LEQ: "<=" >
+| < GEQ: ">=" >
+| < NE: "!=" >
+| < OR: "||" >
+| < XOR: "xor" >
+| < AND: "&&" >
+| < MUTANT_PARENT_SEPARATOR: "@" >
+}
+
+/* IDENTIFIERS */
+
+TOKEN :
+{
+   < IDENTIFIER: < STRING_LITERAL > |  (<LETTER>|<DIGIT>)+ >
+|  <#LETTER:   ["A"-"Z", "_", "a"-"z", "'","\u0370"-"\u03ff"] >
+|  <#DIGIT:   ["0"-"9"] >
+|  <#STRING_LITERAL: 
+      "\""
+      (   (~["\"","\\","\n","\r"])
+        | ["\u0370"-"\u03ff"] 
+        | ("\\"
+            ( ["n","t","b","r","f","\\","'","\""]
+            | ["0"-"7"] ( ["0"-"7"] )?
+            | ["0"-"3"] ["0"-"7"] ["0"-"7"]
+            )
+          )
+      
+      )* 
+      "\""
+  >
+}
+
+
+/*****************************************
+ * THE MULTIREMI EXPRESSION GRAMMAR STARTS HERE *
+ *****************************************/ 
+void CompleteExpression() : {} { 
+  Expression() <EOF>
+}
+
+void CompleteListOfExpression() : {} { 
+  Expression() (< COMMA > Expression())* <EOF>
+}
+
+void CompleteListOfExpression_Events() : {} { 
+  Expression() (< SEMICOLON > Expression())* <EOF>
+}
+
+void SingleFunctionCall() : {} { 
+ Name() < LPAREN > ( ArgumentList() )?  <  RPAREN > <EOF>
+}
+ 
+void CompleteFunctionDeclaration() :{} {
+  FunctionDeclarator() <EOF>}
+
+void FunctionDeclarator() :
+{}
+{
+  <IDENTIFIER> (FormalParameters())? 
+}
+
+void FormalParameters() :
+{}
+{
+  "(" [ FormalParameter() ( "," FormalParameter() )* ] ")"
+} 
+
+void FormalParameter() :
+{}
+{
+  PrimitiveType() VariableDeclaratorId()
+}
+
+void PrimitiveType() :{}
+{
+  < TYPE_PAR > 
+| < TYPE_VAR >
+| < TYPE_SUB >
+| < TYPE_PROD >
+| < TYPE_MOD >
+| < TYPE_SITE >
+| < TYPE_VOL >
+| < TYPE_TIME >
+}
+
+
+void VariableDeclaratorId() :{}
+{
+   <IDENTIFIER> 
+}
+
+void IfExpression() : {} {
+< IF > < LPAREN > Expression() < COMMA > Expression() (< COMMA > Expression())?  <  RPAREN > 
+}
+
+void LeftExpression() : {}{
+  AdditiveExpression() ( RelationalOperator()  Expression() )?}
+
+void Expression() :{}
+{
+	//AdditiveExpression() ( RelationalOperator()  Expression() (LOOKAHEAD(2) LogicalOperator() Expression())*)? 
+	LeftExpression() (LOOKAHEAD(2) LogicalOperator() Expression())*
+} 
+
+void RelationalOperator() :{}
+{
+	(LOOKAHEAD(2)  < ASSIGN >  |< EQ > ) |  < LT > | < GT > | < GEQ > | < LEQ > | < NE>
+}
+
+void LogicalOperator() :{}
+{
+  < AND > | < OR > | < XOR >
+}
+
+
+void AdditiveExpression() :
+{}
+{
+  MultiplicativeExpression() ( ( < PLUS > | < MINUS > ) MultiplicativeExpression() )*
+}
+
+void MultiplicativeExpression() :
+{}
+{
+  PowerExpression() ( ( < TIMES > | < DIV > ) PowerExpression() )*
+}
+
+
+void PowerExpression() :
+{}
+{
+  UnaryExpression() ( ( < CARET > ) UnaryExpression() )* 
+}
+
+void UnaryExpression() :{}
+{
+  ( < PLUS > | < MINUS > ) UnaryExpression()
+|
+  UnaryExpressionNotPlusMinus()
+}
+
+void UnaryExpressionNotPlusMinus() :{}
+{
+  < BANG > UnaryExpression()
+|
+  PrimaryExpression()
+}
+
+void PrimaryExpression() :{}
+{
+  PrimaryPrefix() 
+}
+
+void PrimaryPrefix() :
+{}
+{
+  Literal()
+| < LPAREN > Expression() <  RPAREN >
+| SpeciesReferenceOrFunctionCall()
+| MultistateSum()
+| IfExpression()
+| < CONST_MODEL_TIME >  |  <  CONST_QUANTITY_CONV_FACTOR > | < CONST_MODEL_TIME_INITIAL >
+}
+
+void MultistateSum() : {}
+
+{
+  < SUM > < LPAREN > ArgumentList_MultistateSum() <  RPAREN >}
+
+
+void Name() : {}
+{	
+	  <IDENTIFIER> /*(LOOKAHEAD(2)PossibleExtensions())?*/
+	|  PrimitiveType()
+	| < PI >| < EXPONENTIALE > | < CONST_AVOGADRO > | < TIME > | < FLOOR> | < DELAY > | < CEIL >| < FACTORIAL >
+	| < ASIN > | < ACOS > | < ATAN > | < TAN > | < TANH > | < COSH > | < LOG10 >|< ABS> | < COS > | < SIN >
+	|  < SEC>| < CSC >| < COT >| < SINH>| < ARCSEC  >| < ARCCSC>
+	| < ARCCOT>| < ARCSINH>| < ARCCOSH>| < ARCTANH>| < ARCSECH>
+    | < ARCCSCH>| < ARCCOTH> | < MIN > | < MAX >
+	| < LOG > | < EXP > | < NAN1 > | < NAN2 >// | < NAN3 >
+	| < MUTANT_PARENT_SEPARATOR > < IDENTIFIER >
+}
+
+void SpeciesReferenceOrFunctionCall_prefix() :{}
+{
+   Name() [< LPAREN > [  ArgumentList() ] <  RPAREN >]
+ }
+
+
+void SpeciesReferenceOrFunctionCall() :{}
+{
+	SpeciesReferenceOrFunctionCall_prefix() ((PossibleExtensions()))*
+}
+
+void PossibleExtensions() :{}
+{      (      < EXTENSION_CONC > 	| < EXTENSION_COMPARTMENT > | < EXTENSION_PARTICLE >
+  	| < EXTENSION_TRANS > | < EXTENSION_INIT > 	| < EXTENSION_RATE >
+  	| < EXTENSION_SPECIES >  | < EXTENSION_GLOBALQ >
+  	| < EXTENSION_FUNCTION > | < EXTENSION_REACTION >
+	| < EXTENSION_FLUX >
+  	| < MY_SPECIAL_EXTENSION >
+  	| "."< IDENTIFIER >
+  	| < MUTANT_PARENT_SEPARATOR > < IDENTIFIER >
+	) (LOOKAHEAD(2)PossibleExtensions())* }
+
+void Literal() :{}
+{
+  <INTEGER_LITERAL>
+|
+  <FLOATING_POINT_LITERAL>
+|
+  BooleanLiteral()
+}
+
+void BooleanLiteral() :{}
+{
+  < TRUE > |  < FALSE >
+}
+
+
+void ArgumentList() :{}
+{
+  LOOKAHEAD(2)
+  MultistateSites_list() |
+  AdditiveExpression() ( < COMMA > AdditiveExpression() )*
+ 
+ 
+}
+
+void ArgumentList_MultistateSum() :{}
+{
+ 	Name()  [ ArgumentList_MultistateSum_Selectors() ]
+}
+
+
+void ArgumentList_MultistateSum_Selectors() :{}
+{
+	< SEMICOLON > Selector() (< SEMICOLON > Selector())*
+}
+
+void Selector() :{} 
+{
+ 	Name()	//name of the site or of the function
+ 	 [  SiteSelector_postFix() | //it's a site, and those are the extremes
+ 	    CoeffFunction_postFix() ]	//it's a function and those are the parameters
+	
+}
+
+void SiteSelector_postFix() : {}
+{
+ < LBRACE >  Expression()  //(Name() | Literal())
+  (     ( < COMMA >  (Name() | Literal())  )+ |
+  ( < COLON >  Expression()  ) //(Name() | Literal())
+  )?
+   < RBRACE >}
+
+void CoeffFunction_postFix():{}{
+  < LPAREN > [  ArgumentList() ] <  RPAREN > }
+
+void MultistateSite() :{}
+{
+   Name() < LBRACE > ( Name() | Literal()  )  < RBRACE >}
+
+void MultistateSites_list() :{}
+{
+  MultistateSite()  (< SEMICOLON >  MultistateSite())*}
