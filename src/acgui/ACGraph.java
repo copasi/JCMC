@@ -72,7 +72,7 @@ public class ACGraph extends mxGraph
 		{
 			if(((PortNode)((mxCell)cell).getValue()).getParent() == AC_GUI.activeModule)
 			{
-				//return ((PortNode)((mxCell)cell).getValue()).getPortDefinition().getRefName() + " = " + AC_GUI.modelBuilder.getValue(((PortNode)((mxCell)cell).getValue()).getPortDefinition().getRefName());
+				return ((PortNode)((mxCell)cell).getValue()).getPortDefinition().getRefName() + " = " + AC_GUI.modelBuilder.getValue(((PortNode)((mxCell)cell).getValue()).getPortDefinition().getRefName());
 			}
 		}
 		

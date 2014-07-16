@@ -167,8 +167,59 @@ public class ACMenuListener implements ActionListener
 			*/
 			break;
 		case SAVE_AS:
-			JOptionPane.showMessageDialog(null,
+			/*JOptionPane.showMessageDialog(null,
 					"Will save the entire model in one SBML file (not yet implemented).");
+			*/
+			if (AC_GUI.isModuleOpen())
+			{
+				fileName = null;
+				fileChooser = new JFileChooser (new File ("."));
+				fileChooser.setFileFilter (new FileNameExtensionFilter("Model file (.ac)","ac"));
+				while (fileChooser.showSaveDialog(null) == JFileChooser.APPROVE_OPTION)
+				{
+					file = fileChooser.getSelectedFile();
+					fileName = file.getName();
+					try
+					{
+						if (file.exists())
+						{
+							String msg = "A file named \"" + fileName + "\" already exists.  Do you want to replace it?";
+							int n = JOptionPane.showConfirmDialog(null, msg, "", JOptionPane.OK_CANCEL_OPTION);
+							if (n == JOptionPane.OK_OPTION)
+							{
+								fileName = file.getAbsolutePath();
+								if (!fileName.endsWith(".ac"))
+								{
+									fileName += ".ac";
+								}
+								AC_GUI.save(AC_GUI.activeModule, fileName);
+								JOptionPane.showMessageDialog(null, "The module has been saved in " + fileName);
+								break;
+							}
+						}
+						else
+						{
+							fileName = file.getAbsolutePath();
+							if (!fileName.endsWith(".ac"))
+							{
+								fileName += ".ac";
+							}
+							AC_GUI.save(AC_GUI.activeModule, fileName);
+							JOptionPane.showMessageDialog(null, "The module has been saved in " + fileName);
+							break;
+						}
+					}
+					catch (Exception e)
+					{
+						System.err.println("ACMenuListener: save failed.");
+						e.printStackTrace();
+					}
+				}
+			}
+			else
+			{
+				JOptionPane.showMessageDialog(null, "Please create a new module first.");
+			}
 			break;
 		case EXPORT_SBML:
 			if (AC_GUI.isModuleOpen())
@@ -176,16 +227,6 @@ public class ACMenuListener implements ActionListener
 				fileName = null;
 				fileChooser = new JFileChooser (new File ("."));
 				fileChooser.setFileFilter (new FileNameExtensionFilter("SBML file (.xml)","xml"));
-				if (fileChooser.showSaveDialog(null) == JFileChooser.APPROVE_OPTION)
-				{
-					fileName = fileChooser.getSelectedFile().getAbsolutePath();
-					if (!fileName.endsWith (".xml"))
-					{
-						fileName += ".xml";
-					}
-					//AC_GUI.currentGUI.save(fileName2);
-					AC_GUI.exportSBML(fileName);
-				}
 				while (fileChooser.showSaveDialog(null) == JFileChooser.APPROVE_OPTION)
 				{
 					file = fileChooser.getSelectedFile();
@@ -204,7 +245,7 @@ public class ACMenuListener implements ActionListener
 									fileName += ".xml";
 								}
 								AC_GUI.exportSBML(fileName);
-								JOptionPane.showMessageDialog(null, "The SBML file has been saved in " + fileName);
+								//JOptionPane.showMessageDialog(null, "The SBML file has been saved in " + fileName);
 								break;
 							}
 						}
@@ -216,7 +257,7 @@ public class ACMenuListener implements ActionListener
 								fileName += ".xml";
 							}
 							AC_GUI.exportSBML(fileName);
-							JOptionPane.showMessageDialog(null, "The SBML file has been saved in " + fileName);
+							//JOptionPane.showMessageDialog(null, "The SBML file has been saved in " + fileName);
 							break;
 						}
 					}
@@ -255,10 +296,22 @@ public class ACMenuListener implements ActionListener
 			//JOptionPane.showMessageDialog(null, "Will add an empty submodule under the module selected in the TreeView (not yet implemented).");
 			if (AC_GUI.isModuleOpen())
 			{
-				moduleAddEditor = new ModuleAddEditor(AC_GUI.activeModule, AC_GUI.drawingBoard.graphComponent, "Add");
-				moduleAddEditor.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-				moduleAddEditor.setModal(true);
-				moduleAddEditor.setVisible(true);
+				/*
+				if (AC_GUI.canModuleBeModified(AC_GUI.activeModule))
+				{
+					moduleAddEditor = new ModuleAddEditor(AC_GUI.activeModule, AC_GUI.drawingBoard.graphComponent, "Add");
+					moduleAddEditor.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+					moduleAddEditor.setModal(true);
+					moduleAddEditor.setVisible(true);
+				}
+				*/
+				if (AC_GUI.canModuleAddSubmodule(AC_GUI.activeModule))
+				{
+					moduleAddEditor = new ModuleAddEditor(AC_GUI.activeModule, AC_GUI.drawingBoard.graphComponent, "Add");
+					moduleAddEditor.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+					moduleAddEditor.setModal(true);
+					moduleAddEditor.setVisible(true);
+				}
 			}
 			else
 			{
@@ -269,10 +322,22 @@ public class ACMenuListener implements ActionListener
 			//JOptionPane.showMessageDialog(null,"Will open up a file selection dialog box to select an already saved template model and will add that as a submodule under the selected module (not yet implemented).");
 			if (AC_GUI.isModuleOpen())
 			{
-				SubmoduleAddEditor tae = new SubmoduleAddEditor(AC_GUI.drawingBoard.graphComponent);
-				tae.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-				tae.setModal(true);
-				tae.setVisible(true);
+				/*
+				if (AC_GUI.canModuleBeModified(AC_GUI.activeModule))
+				{
+					SubmoduleAddEditor tae = new SubmoduleAddEditor(AC_GUI.drawingBoard.graphComponent);
+					tae.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+					tae.setModal(true);
+					tae.setVisible(true);
+				}
+				*/
+				if (AC_GUI.canModuleAddSubmodule(AC_GUI.activeModule))
+				{
+					SubmoduleAddEditor tae = new SubmoduleAddEditor(AC_GUI.drawingBoard.graphComponent);
+					tae.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+					tae.setModal(true);
+					tae.setVisible(true);
+				}
 			}
 			else
 			{
@@ -331,10 +396,22 @@ public class ACMenuListener implements ActionListener
 			*/
 			if (AC_GUI.isModuleOpen())
 			{
-				mathAddEditor = new MathematicalAggregatorAddEditor(AC_GUI.drawingBoard.graphComponent, Operation.SUM);
-				mathAddEditor.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-				mathAddEditor.setModal(true);
-				mathAddEditor.setVisible(true);
+				/*
+				if (AC_GUI.canModuleBeModified(AC_GUI.activeModule))
+				{
+					mathAddEditor = new MathematicalAggregatorAddEditor(AC_GUI.drawingBoard.graphComponent, Operation.SUM);
+					mathAddEditor.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+					mathAddEditor.setModal(true);
+					mathAddEditor.setVisible(true);
+				}
+				*/
+				if (AC_GUI.canModuleAddSubmodule(AC_GUI.activeModule))
+				{
+					mathAddEditor = new MathematicalAggregatorAddEditor(AC_GUI.drawingBoard.graphComponent, Operation.SUM);
+					mathAddEditor.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+					mathAddEditor.setModal(true);
+					mathAddEditor.setVisible(true);
+				}
 			}
 			else
 			{
@@ -350,10 +427,22 @@ public class ACMenuListener implements ActionListener
 			*/
 			if (AC_GUI.isModuleOpen())
 			{
-				mathAddEditor = new MathematicalAggregatorAddEditor(AC_GUI.drawingBoard.graphComponent, Operation.PRODUCT);
-				mathAddEditor.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-				mathAddEditor.setModal(true);
-				mathAddEditor.setVisible(true);
+				/*
+				if (AC_GUI.canModuleBeModified(AC_GUI.activeModule))
+				{
+					mathAddEditor = new MathematicalAggregatorAddEditor(AC_GUI.drawingBoard.graphComponent, Operation.PRODUCT);
+					mathAddEditor.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+					mathAddEditor.setModal(true);
+					mathAddEditor.setVisible(true);
+				}
+				*/
+				if (AC_GUI.canModuleAddSubmodule(AC_GUI.activeModule))
+				{
+					mathAddEditor = new MathematicalAggregatorAddEditor(AC_GUI.drawingBoard.graphComponent, Operation.PRODUCT);
+					mathAddEditor.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+					mathAddEditor.setModal(true);
+					mathAddEditor.setVisible(true);
+				}
 			}
 			else
 			{
@@ -374,7 +463,10 @@ public class ACMenuListener implements ActionListener
 					{
 						if (AC_GUI.selectedModule != AC_GUI.activeModule)
 						{
-							AC_GUI.removeSubmodule(AC_GUI.selectedModule, true);
+							if (AC_GUI.canModuleRemoveSubmodule(AC_GUI.activeModule))
+							{
+								AC_GUI.removeSubmodule(AC_GUI.selectedModule, true);
+							}
 						}
 						else
 						{

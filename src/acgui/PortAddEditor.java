@@ -36,8 +36,8 @@ public class PortAddEditor extends JDialog implements ActionListener
 	private Component parent;
 	private Module module;
 	private JTextField textfield;
-	private JComboBox<String> comboBox1;
-	private JComboBox<PortType> comboBox2;
+	private JComboBox comboBox1;
+	private JComboBox comboBox2;
 	private mxGraphComponent graphComponent;
 
 	/**
@@ -61,9 +61,9 @@ public class PortAddEditor extends JDialog implements ActionListener
 		upperPanel.setLayout(new GridLayout(0, 2, 15, 5));
 
 		//create, fill, and add the Ref Name combo box
-		Vector<String> refNames = AC_GUI.modelBuilder.getRefNames();
+		Vector refNames = AC_GUI.modelBuilder.getRefNames();
 		SortedComboBoxModel sortedModel = new SortedComboBoxModel(refNames, new RefNameComparator());
-		comboBox1 = new JComboBox<String>(sortedModel);
+		comboBox1 = new JComboBox(sortedModel);
 		// has to be editable
         comboBox1.setEditable(true);
         // get the combo boxes editor component
@@ -80,7 +80,7 @@ public class PortAddEditor extends JDialog implements ActionListener
 		upperPanel.add(comboBox1);
 		
 		//create, fill, and add the Port Type combo box
-		comboBox2 = new JComboBox<PortType>();
+		comboBox2 = new JComboBox();
 		comboBox2.addItem(PortType.INPUT);
 		comboBox2.addItem(PortType.OUTPUT);
 		comboBox2.addItem(PortType.EQUIVALENCE);

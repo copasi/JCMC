@@ -37,7 +37,7 @@ public class VariableAddEditor extends JDialog implements ActionListener
 	private static final long serialVersionUID = 1L;
 
 	private JTextField textfield;
-	private JComboBox<String> comboBox1;
+	private JComboBox comboBox1;
 	private mxGraphComponent graphComponent;
 	
 	
@@ -59,7 +59,7 @@ public class VariableAddEditor extends JDialog implements ActionListener
 		//create, fill, and add the Ref Name combo box
 		Vector<String> refNames = AC_GUI.modelBuilder.getRefNames();
 		SortedComboBoxModel sortedModel = new SortedComboBoxModel(refNames, new RefNameComparator());
-		comboBox1 = new JComboBox<String>(sortedModel);
+		comboBox1 = new JComboBox(sortedModel);
 		// has to be editable
         comboBox1.setEditable(true);
         // get the combo boxes editor component

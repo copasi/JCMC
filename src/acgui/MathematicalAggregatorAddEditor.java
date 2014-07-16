@@ -38,11 +38,9 @@ public class MathematicalAggregatorAddEditor extends JDialog implements ActionLi
 	private static final long serialVersionUID = 1L;
 	private JTextField textfield1;
 	private JTextField textfield2;
-	private JComboBox<String> comboBox1;
 	private mxGraphComponent graphComponent;
 	private String type;
 	private Operation op;
-	private String eol;
 	
 	/**
 	 * 
@@ -62,7 +60,6 @@ public class MathematicalAggregatorAddEditor extends JDialog implements ActionLi
 			type = "Product";
 		}
 		initializeComponents();
-		eol = System.getProperty("line.separator");
 	}
 
 	private void initializeComponents()

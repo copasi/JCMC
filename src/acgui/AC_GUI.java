@@ -5,10 +5,16 @@ import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.ListIterator;
+import java.util.Vector;
 
 import javax.swing.JFrame;
 import javax.swing.JMenu;
@@ -21,6 +27,8 @@ import javax.swing.JSplitPane;
 import javax.swing.KeyStroke;
 import javax.swing.UIManager;
 import javax.swing.tree.DefaultMutableTreeNode;
+
+import msmb.gui.MainGui;
 
 import org.COPASI.CCopasiDataModel;
 import org.sbml.libsbml.GeneralGlyph;
@@ -49,6 +57,16 @@ public class AC_GUI extends JFrame
 	protected static boolean isSavedInACDataStructure;
 	protected static boolean isSavedInACFile;
 	
+	private static JMenuBar menuBar;
+	private static JMenu fileMenu;
+	private static JMenu recentFilesMenu;
+	private static JMenu moduleMenu;
+	private static JMenu toolsMenu;
+	private static JMenu helpMenu;
+	
+	private static String file_RecentFiles = new String();
+	private static Vector<String> recentFiles = new Vector<String>();
+	
 	/**
 	 * Construct the AC_GUI object.
 	 */
@@ -74,7 +92,7 @@ public class AC_GUI extends JFrame
 			addLibraryPath("..\\lib");
 			addLibraryPath(".\\lib");
 			System.loadLibrary("sbmlj");
-			//System.out.println("Using LibSBML: " + libsbml.getLibSBMLDottedVersion());
+			System.out.println("Using LibSBML: " + libsbml.getLibSBMLDottedVersion());
 		}
 		catch (Exception e1)
 		{
@@ -156,6 +174,7 @@ public class AC_GUI extends JFrame
 		{
 			return;
 		}
+		addRecentFile(fileName);
 		rootModule = mod;
 		AC_Utility.addSubmoduleDefinitionsToList(mod);
 		changeActiveModule(mod);
@@ -210,6 +229,7 @@ public class AC_GUI extends JFrame
 			AC_Utility.addSubmoduleDefinition(mod.getModuleDefinition());
 		}
 		*/
+		addRecentFile(fileName);
 		AC_Utility.addSubmoduleDefinitionsToList(mod);
 		setSavedInACFile(false);
 		changeActiveModule(activeModule);
@@ -239,6 +259,7 @@ public class AC_GUI extends JFrame
 			drawingBoard.saveCurrentPositions();
 		}
 		AC_IO.saveModule(module, fileName);
+		addRecentFile(fileName);
 		setSavedInACFile(true);
 		setSavedInACDataStructure(true);
 	}
@@ -255,6 +276,7 @@ public class AC_GUI extends JFrame
 		if (SBMLParser.exportSBML(activeModule, fileName))
 		{
 			JOptionPane.showMessageDialog(null, "The module has been saved in " + fileName);
+			addRecentFile(fileName);
 			setSavedInACDataStructure(true);
 		}
 		else
@@ -307,6 +329,11 @@ public class AC_GUI extends JFrame
 		Module mod = AC_Utility.createModule(name, "", parent, true);
 		treeView.addNode(mod);
 		drawingBoard.addModuleCell(mod);
+		if (AC_Utility.isSubmoduleDefinition(parent.getModuleDefinition()))
+		{
+			AC_Utility.removeSubmoduleDefinition(parent.getModuleDefinition());
+		}
+		AC_Utility.addSubmoduleDefinitionsToList(mod);
 		setSavedInACFile(false);
 		return mod;
 	}
@@ -318,6 +345,10 @@ public class AC_GUI extends JFrame
 		treeView.addNode(maModule);
 		drawingBoard.addMathematicalAggregator(maModule);
 		loadPortsIntoModelBuilder(maModule);
+		if (AC_Utility.isSubmoduleDefinition(activeModule.getModuleDefinition()))
+		{
+			AC_Utility.removeSubmoduleDefinition(activeModule.getModuleDefinition());
+		}
 		setSavedInACFile(false);
 		return maModule;
 	}
@@ -357,6 +388,10 @@ public class AC_GUI extends JFrame
 		drawingBoard.addModuleCell(mod);
 		drawingBoard.changeModule(activeModule);
 		modelBuilder.updatePorts();
+		if (AC_Utility.isSubmoduleDefinition(parent.getModuleDefinition()))
+		{
+			AC_Utility.removeSubmoduleDefinition(parent.getModuleDefinition());
+		}
 		setSavedInACFile(false);
 	}
 	
@@ -366,6 +401,7 @@ public class AC_GUI extends JFrame
 	 */
 	public static void removeSubmodule(Module mod, boolean directDeletion)
 	{
+		Module parent = mod.getParent();
 		if (directDeletion)
 		{
 			if (canModuleBeModified(mod))
@@ -386,6 +422,10 @@ public class AC_GUI extends JFrame
 
 				drawingBoard.removeCell(mod.getDrawingCell());
 				AC_Utility.deleteModule(mod);
+				if ((parent != rootModule) && (parent.getChildren().size() == 0))
+				{
+					AC_Utility.addSubmoduleDefinition(parent.getModuleDefinition());
+				}
 				setSavedInACFile(false);
 			}
 			else
@@ -411,6 +451,10 @@ public class AC_GUI extends JFrame
 
 			drawingBoard.removeCell(mod.getDrawingCell());
 			AC_Utility.deleteModule(mod);
+			if ((parent != rootModule) && (parent.getChildren().size() == 0))
+			{
+				AC_Utility.addSubmoduleDefinition(parent.getModuleDefinition());
+			}
 			setSavedInACFile(false);
 		}
 	}
@@ -479,6 +523,10 @@ public class AC_GUI extends JFrame
 				case INPUT:
 					node = AC_Utility.createVisibleVariable(refName, vType, activeModule);
 					drawingBoard.addComponentNodeCell(node);
+					if (!AC_Utility.addNodetoRemainingInstances(activeModule, ((VisibleVariableNode)node).getVisibleVariableDefinition()))
+					{
+						System.err.println("Error AC_GUI.showVariable(): VisibleVariableNodes were not successfully added to all Module instances.");
+					}
 					source = port.getDrawingCell();
 					sourceType = TerminalType.PORT;
 					target = node.getDrawingCell();
@@ -488,6 +536,10 @@ public class AC_GUI extends JFrame
 				case OUTPUT:
 					node = AC_Utility.createVisibleVariable(refName, vType, activeModule);
 					drawingBoard.addComponentNodeCell(node);
+					if (!AC_Utility.addNodetoRemainingInstances(activeModule, ((VisibleVariableNode)node).getVisibleVariableDefinition()))
+					{
+						System.err.println("Error AC_GUI.showVariable(): VisibleVariableNodes were not successfully added to all Module instances.");
+					}
 					source = node.getDrawingCell();
 					sourceType = TerminalType.VISIBLEVARIABLE;
 					target = port.getDrawingCell();
@@ -497,6 +549,10 @@ public class AC_GUI extends JFrame
 				case EQUIVALENCE:
 					node = AC_Utility.createEquivalence(refName, vType, activeModule);
 					drawingBoard.addComponentNodeCell(node);
+					if (!AC_Utility.addNodetoRemainingInstances(activeModule, ((EquivalenceNode)node).getEquivalenceDefinition()))
+					{
+						System.err.println("Error AC_GUI.showVariable(): EquivalenceNodes were not successfully added to all Module instances.");
+					}
 					source = node.getDrawingCell();
 					sourceType = TerminalType.EQUIVALENCE;
 					target = port.getDrawingCell();
@@ -533,6 +589,10 @@ public class AC_GUI extends JFrame
 			// species is not listed, add a new species to msmb
 			modelBuilder.addSpecies(refName);
 		}
+		if (!AC_Utility.addNodetoRemainingInstances(activeModule, eNode.getEquivalenceDefinition()))
+		{
+			System.err.println("Error AC_GUI.addEquivalenceNode(): EquivalenceNodes were not successfully added to all Module instances.");
+		}
 		setSavedInACFile(false);
 		setSavedInACDataStructure(false);
 	}
@@ -549,19 +609,12 @@ public class AC_GUI extends JFrame
 	{
 		if (directDeletion)
 		{
-			if (canModuleBeModified(eNode.getParent()))
-			{
-				drawingBoard.removeEdges(eNode.getDrawingCell());
-				drawingBoard.removeCell(eNode.getDrawingCell());
-				//modelBuilder.removeSpecies(eNode.getEquivalenceDefinition().getRefName());
-				AC_Utility.deleteEquivalence(eNode);
-				setSavedInACFile(false);
-				setSavedInACDataStructure(false);
-			}
-			else
-			{
-				System.err.println("AC_GUI.removeEquivalenceNode(): the module cannot be modified.");
-			}
+			drawingBoard.removeEdges(eNode.getDrawingCell());
+			drawingBoard.removeCell(eNode.getDrawingCell());
+			//modelBuilder.removeSpecies(eNode.getEquivalenceDefinition().getRefName());
+			AC_Utility.deleteEquivalence(eNode);
+			setSavedInACFile(false);
+			setSavedInACDataStructure(false);
 		}
 		else
 		{
@@ -594,6 +647,10 @@ public class AC_GUI extends JFrame
 		
 		VisibleVariableNode variableNode = AC_Utility.createVisibleVariable(refName, vType, activeModule);
 		drawingBoard.addComponentNodeCell(variableNode);
+		if (!AC_Utility.addNodetoRemainingInstances(activeModule, variableNode.getVisibleVariableDefinition()))
+		{
+			System.err.println("Error AC_GUI.addVisibleVariable(): VisibleVariableNodes were not successfully added to all Module instances.");
+		}
 		setSavedInACDataStructure(false);
 	}
 	
@@ -608,6 +665,10 @@ public class AC_GUI extends JFrame
 		{
 			// species is not listed, add a new species to msmb
 			modelBuilder.addSpecies(refName);
+		}
+		if (!AC_Utility.addNodetoRemainingInstances(activeModule, variableNode.getVisibleVariableDefinition()))
+		{
+			System.err.println("Error AC_GUI.addVisibleVariable(): VisibleVariableNodes were not successfully added to all Module instances.");
 		}
 		setSavedInACDataStructure(false);
 	}
@@ -637,18 +698,11 @@ public class AC_GUI extends JFrame
 	{
 		if (directDeletion)
 		{
-			if (canModuleBeModified(var.getParent()))
-			{
-				drawingBoard.removeEdges(var.getDrawingCell());
-				drawingBoard.removeCell(var.getDrawingCell());
-				//modelBuilder.removeSpecies(var.getVisibleVariableDefinition().getRefName());
-				AC_Utility.deleteVisibleVariable(var);
-				setSavedInACDataStructure(false);
-			}
-			else
-			{
-				System.err.println("AC_GUI.removeVisibleVariable(): the module cannot be modified.");
-			}
+			drawingBoard.removeEdges(var.getDrawingCell());
+			drawingBoard.removeCell(var.getDrawingCell());
+			//modelBuilder.removeSpecies(var.getVisibleVariableDefinition().getRefName());
+			AC_Utility.deleteVisibleVariable(var);
+			setSavedInACDataStructure(false);
 		}
 		else
 		{
@@ -688,6 +742,10 @@ public class AC_GUI extends JFrame
 		modelBuilder.addPort(pNode);
 		drawingBoard.addPort(pNode);
 		//drawingBoard.addPort(parentMod, pNode);
+		if (!AC_Utility.addNodetoRemainingInstances(parentMod, pNode.getPortDefinition()))
+		{
+			System.err.println("Error AC_GUI.addPort(): PortNodes were not successfully added to all Module instances.");
+		}
 		setSavedInACDataStructure(false);
 	}
 	
@@ -739,21 +797,14 @@ public class AC_GUI extends JFrame
 	{
 		if (directDeletion)
 		{
-			if (canModuleBeModified(pNode.getParent()))
-			{
-				// remove connections from the port
-				removeConnectionsFromPort(pNode);
-				// remove the drawing cell representation from the drawing board
-				drawingBoard.removeCell(pNode.getDrawingCell());
-				// remove the port from the model builder
-				modelBuilder.removePort(pNode);
-				// remove the port node
-				AC_Utility.deletePort(pNode);
-			}
-			else
-			{
-				System.err.println("AC_GUI.removePort(): the module cannot be modified.");
-			}
+			// remove connections from the port
+			removeConnectionsFromPort(pNode);
+			// remove the drawing cell representation from the drawing board
+			drawingBoard.removeCell(pNode.getDrawingCell());
+			// remove the port from the model builder
+			modelBuilder.removePort(pNode);
+			// remove the port node
+			AC_Utility.deletePort(pNode);
 		}
 		else
 		{
@@ -820,6 +871,10 @@ public class AC_GUI extends JFrame
 	{
 		// make a connection object
 		ConnectionNode edge = AC_Utility.createConnection(parentMod, connectionCell, sourceType, targetType);
+		if (!AC_Utility.addNodetoRemainingInstances(parentMod, edge))
+		{
+			System.err.println("Error AC_GUI.addConnection(): ConnectionNodes were not successfully added to all Module instances.");
+		}
 	}
 	
 	public static void addConnection(Module parentMod, mxCell source, TerminalType sourceType, mxCell target, TerminalType targetType, String drawingCellStyle)
@@ -827,6 +882,10 @@ public class AC_GUI extends JFrame
 		//ConnectionNode edge = new ConnectionNode(parentMod);
 		ConnectionNode edge = AC_Utility.createConnection(parentMod, source, sourceType, target, targetType, drawingCellStyle);
 		drawingBoard.addComponentNodeCell(edge);
+		if (!AC_Utility.addNodetoRemainingInstances(parentMod, edge))
+		{
+			System.err.println("Error AC_GUI.addConnection(): ConnectionNodes were not successfully added to all Module instances.");
+		}
 	}
 	
 	/**
@@ -838,15 +897,8 @@ public class AC_GUI extends JFrame
 	{
 		if (directDeletion)
 		{
-			if (canModuleBeModified(edge.getParent()))
-			{
-				drawingBoard.removeCell(edge.getDrawingCell());
-				AC_Utility.deleteConnection(edge);
-			}
-			else
-			{
-				System.err.println("AC_GUI.removeConnection(): the module cannot be modified.");
-			}
+			drawingBoard.removeCell(edge.getDrawingCell());
+			AC_Utility.deleteConnection(edge);
 		}
 		else
 		{
@@ -854,10 +906,9 @@ public class AC_GUI extends JFrame
 			AC_Utility.deleteConnection(edge);
 		}
 	}
-		
+	
 	public static void updatePort(PortNode port, String value, int col)
 	{
-		
 		switch (col)
 		{
 			case 1:
@@ -892,7 +943,6 @@ public class AC_GUI extends JFrame
 		while (portList.hasNext())
 		{
 			portDefinition = (PortDefinition)portList.next();
-			
 		}
 	}
 	
@@ -1114,6 +1164,85 @@ public class AC_GUI extends JFrame
 		return true;
 	}
 	
+	public static boolean canModuleAddSubmodule(Module module)
+	{
+		ModuleDefinition definition = module.getModuleDefinition();
+		int userInput;
+		if (definition.getInstances().size() > 1)
+		{
+			userInput = AC_Utility.promptUserAddSubmodule(module);
+			byte[] code;
+			switch (userInput)
+			{
+				case JOptionPane.YES_OPTION:
+					// user chose to save a new module definition
+					// copy the current module definition
+					if (AC_Utility.copyDefinition(activeModule, null))
+					{
+						System.out.println("AC_GUI.canModuleAddSubmodule(): definition copy success.");
+						modelBuilder.setModuleDefinitionName(activeModule.getModuleDefinition().getName());
+					}
+					else
+					{
+						System.err.println("AC_GUI.canModuleBeModified(): definition copy failed.");
+					}
+					// save the updated msmb data
+					code = modelBuilder.saveModel();
+					if (code == null || code.length == 0)
+					{
+						System.err.println("AC_GUI.canModuleBeModified(): msmb data is NULL.");
+					}
+					activeModule.getModuleDefinition().setMSMBData(code);
+					break;
+				case JOptionPane.NO_OPTION:
+					return false;
+					//break;
+			}
+		}
+		else
+		{
+			if (definition.isExternal())
+			{
+				userInput = AC_Utility.promptUserExternalModuleChange(module);
+				
+				switch (userInput)
+				{
+					case  JOptionPane.YES_OPTION:
+						definition.setExternal(false);
+						break;
+					case  JOptionPane.NO_OPTION:
+						return false;
+						//break;
+				}
+			}
+		}
+		
+		return true;
+	}
+	
+	public static boolean canModuleRemoveSubmodule(Module module)
+	{
+		int userInput;
+		ModuleDefinition definition = module.getModuleDefinition();
+		if (definition.isExternal())
+		{
+			userInput = AC_Utility.promptUserExternalModuleChange(module);
+			
+			switch (userInput)
+			{
+				case  JOptionPane.YES_OPTION:
+					definition.setExternal(false);
+					break;
+				case  JOptionPane.NO_OPTION:
+					return false;
+					//break;
+			}
+		}
+
+		return true;
+	}
+	
+	/*
 	public static void activeModuleChanged()
 	{
 		int n;
@@ -1133,6 +1262,7 @@ public class AC_GUI extends JFrame
 			}
 		}
 	}
+	*/
 	
 	public static void applyActiveModuleChanges(int userInput)
 	{
@@ -1272,6 +1402,7 @@ public class AC_GUI extends JFrame
 	
 	public static void exit()
 	{
+		saveRecentFiles();
 		System.exit(0);
 	}
 	
@@ -1296,6 +1427,7 @@ public class AC_GUI extends JFrame
 		JScrollPane treeWindow = new JScrollPane(treeView);
 		treeWindow.setOpaque(true);
 
+		file_RecentFiles = Constants.RECENT_FILE_NAME;
 		initializeMenuItems();
 
 		JSplitPane verticalLine = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, treeWindow, drawingBoard);
@@ -1324,7 +1456,7 @@ public class AC_GUI extends JFrame
 		ACMenuListener menuListener = new ACMenuListener();
 		
 		// File
-		JMenu fileMenu = new JMenu("File");
+		fileMenu = new JMenu("File");
 		fileMenu.add(makeMenuItem(MenuItem.NEW, menuListener, KeyEvent.VK_N));
 		fileMenu.add(makeMenuItem(MenuItem.OPEN, menuListener, KeyEvent.VK_O));
 		// recentMenuItem = new JMenu("Recent Files");
@@ -1338,12 +1470,16 @@ public class AC_GUI extends JFrame
 		fileMenu.addSeparator();
 	
 		fileMenu.add(makeMenuItem(MenuItem.PREFERENCES, menuListener, -1));
+		recentFilesMenu = new JMenu("Recent Files");
+		fileMenu.add(recentFilesMenu);
+		loadRecentFiles();
+		//recentFilesMenu.add(makeMenuItem(MenuItem.RECENT, menuListener, -1));
 		fileMenu.addSeparator();
 		
 		fileMenu.add(makeMenuItem(MenuItem.EXIT, menuListener, -1));
 
 		// Module
-		JMenu moduleMenu = new JMenu("Module");
+		moduleMenu = new JMenu("Module");
 		moduleMenu.add(makeMenuItem(MenuItem.ADD_SUBMODULE_NEW, menuListener, -1));
 		moduleMenu.add(makeMenuItem(MenuItem.ADD_SUBMODULE_LOAD, menuListener, -1));
 		moduleMenu.addSeparator();
@@ -1355,7 +1491,7 @@ public class AC_GUI extends JFrame
 		moduleMenu.add(makeMenuItem(MenuItem.REMOVE_SUBMODULE, menuListener, -1));
 
 		// Tools
-		JMenu toolsMenu = new JMenu("Tools");
+		toolsMenu = new JMenu("Tools");
 		toolsMenu.add(makeMenuItem(MenuItem.VALIDATE_MODEL, menuListener, -1));
 		toolsMenu.addSeparator();
 		toolsMenu.add(makeMenuItem(MenuItem.VIEW_MODEL, menuListener, -1));
@@ -1364,12 +1500,12 @@ public class AC_GUI extends JFrame
 		toolsMenu.add(makeMenuItem(MenuItem.DECOMPOSE_INTO_MODULES, menuListener, -1));
 		
 		// Help
-		JMenu helpMenu = new JMenu("Help");
+		helpMenu = new JMenu("Help");
 		helpMenu.add(makeMenuItem(MenuItem.HELP_CONTENTS, menuListener, -1));
 		helpMenu.add(makeMenuItem(MenuItem.ABOUT_AGGREGATION_CONNECTOR, menuListener, -1));
 
 		// Add items to the menu bar
-		JMenuBar menuBar = new JMenuBar();
+		menuBar = new JMenuBar();
 		menuBar.add(fileMenu);
 		menuBar.add(moduleMenu);
 		menuBar.add(toolsMenu);
@@ -1399,6 +1535,86 @@ public class AC_GUI extends JFrame
 			item.setAccelerator(KeyStroke.getKeyStroke(keyEvent, defaultShortcutMask));
 		}
 		return item;
+	}
+	
+	private static void loadRecentFiles() 
+	{	
+		BufferedReader fin;
+		String strLine;
+		if(file_RecentFiles.length() == 0)
+		{
+			return;
+		}
+		
+		try
+		{
+			fin = new BufferedReader(new FileReader(file_RecentFiles));
+			while ((strLine = fin.readLine()) != null)
+			{
+				 addRecentFile(strLine);
+			}
+			fin.close();
+		}
+		catch (Exception e)
+		{
+			//e.printStackTrace();
+			recentFiles = new Vector(5);
+		}
+	}
+	
+	private static void addRecentFile(String fileName)
+	{
+		File file = new File(fileName);
+		
+		//a file that has been moved or deleted is not going to be shown in the list
+		if(!file.exists())
+		{
+			return;
+		}
+		
+		int index = recentFiles.indexOf(file.getAbsolutePath());
+		if(index!= -1)
+		{
+			recentFiles.remove(index);
+			recentFilesMenu.remove(recentFilesMenu.getItemCount()-index-1);
+		}
+		
+		if(recentFiles.size() > 11)
+		{
+				recentFiles.remove(0);
+				recentFilesMenu.remove(0);
+		}
+		
+		
+		
+		recentFiles.add(file.getAbsolutePath());
+		JMenuItem item = new JMenuItem(file.getName());
+		//item.addActionListener(new RecentItemActionListener(f));
+    
+		recentFilesMenu.add(item,0);
+		recentFilesMenu.validate();
+	}
+	
+	private static void saveRecentFiles()
+	{
+		BufferedWriter out; 
+		try
+		{
+			out = new BufferedWriter(new FileWriter(file_RecentFiles));
+			
+			for(int i = 0; i < recentFiles.size(); i++)
+			{
+				out.write(recentFiles.get(i).toString());
+				out.write(AC_Utility.eol);
+			}
+			out.flush();
+			out.close();
+		}
+		catch (Exception e)
+		{
+			System.err.println("Trouble writing recentFiles directories: "+ e);
+			e.printStackTrace();
+		}
 	}
 	
 	private static boolean saveModules()

@@ -19,12 +19,16 @@ import javax.swing.table.TableColumn;
 public class PortsPanel extends JPanel
 {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	private static ACCustomJTable jTableCustom;
 	private static ACCustomTableModel tableModel;
 	private Vector<String> refNames;
 	SortedComboBoxModel refNameModel;
-	JComboBox<String> refNameComboBox;
-	JComboBox<String> portTypeComboBox;
+	JComboBox refNameComboBox;
+	JComboBox portTypeComboBox;
 	
 	/**
 	 * 
@@ -71,7 +75,7 @@ public class PortsPanel extends JPanel
 	public void updateRefNameColumn()
 	{
 		refNameModel.resetModel(refNames);
-		refNameComboBox = new JComboBox<String>(refNameModel);
+		refNameComboBox = new JComboBox(refNameModel);
 		jTableCustom.getColumnModel().getColumn(1).setCellEditor(new DefaultCellEditor(refNameComboBox));
 	}
 	
@@ -138,7 +142,7 @@ public class PortsPanel extends JPanel
 		        return (res != 0) ? res : str1.compareTo(str2);
 		    }
 		});
-		refNameComboBox = new JComboBox<String>(refNameModel);
+		refNameComboBox = new JComboBox(refNameModel);
 		jTableCustom.getColumnModel().getColumn(1).setCellEditor(new DefaultCellEditor(refNameComboBox));
 	}
 	
@@ -152,7 +156,7 @@ public class PortsPanel extends JPanel
 		portTypes.add("Output");
 		portTypes.add("Equivalence");
 		
-		portTypeComboBox = new JComboBox<String>(portTypes);
+		portTypeComboBox = new JComboBox(portTypes);
 		jTableCustom.getColumnModel().getColumn(2).setCellEditor(new DefaultCellEditor(portTypeComboBox));
 	}
 }

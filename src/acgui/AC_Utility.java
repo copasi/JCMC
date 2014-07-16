@@ -26,6 +26,7 @@ public class AC_Utility
 	{
 		Module module = new Module(name, definition, parent);
 		definition.addInstance(module);
+		setMSMBData(module);
 		module.setDrawingCellStyle("Submodule_No_Show_Information");
 		AC_GUI.treeView.createNode(module);
 		AC_GUI.drawingBoard.createCell(module);
@@ -42,6 +43,7 @@ public class AC_Utility
 		Module module = new Module(name, definition, parent);
 		module.setID(modulesbmlID);
 		definition.addInstance(module);
+		setMSMBData(module);
 		module.setDrawingCellStyle("Submodule_No_Show_Information");
 		//masterModuleList.add(mod);
 		AC_GUI.treeView.createNode(module);
@@ -52,6 +54,25 @@ public class AC_Utility
 		}
 		moduleNameList.add(name);
 		return module;
+	}
+	
+	public static Module createInstance(String name, ModuleDefinition definition, Module parent, mxGeometry moduleGeo, mxGeometry submoduleGeo, String cellStyle)
+	{
+		// called from AC_IO
+		//public Module(ModuleDefinition iModuleDef, Module iParent, DefaultMutableTreeNode iTreeNode, mxCell iCell, mxGeometry iModuleGeo, mxGeometry iSubmoduleGeo, String iStyle)
+		//public ModuleDefinition(String iName, ModuleDefinition iParent, String imsmbData)
+		//ModuleDefinition modDef = createModuleDefinition(definitionName, modDefParent, msmbData, createDatamodel);
+		Module mod = new Module(name, definition, parent, moduleGeo, submoduleGeo, cellStyle);
+		definition.addInstance(mod);
+		//setMSMBData(mod);
+		AC_GUI.treeView.createNode(mod);
+		AC_GUI.drawingBoard.createCell(mod);
+		if (parent != null)
+		{
+			parent.addChild(mod);
+		}
+		moduleNameList.add(name);
+		return mod;
 	}
 	
 	/**
@@ -191,7 +212,7 @@ public class AC_Utility
 		moduleNameList.add(name);
 		return mod;
 	}
-
+	
 	public static Module createMathematicalAggregator(String name, String definitionName, Module parent, int terms, Operation op)
 	{
 		MathematicalAggregatorDefinition maDefinition = createMathematicalAggregatorDefinition(definitionName, parent.getModuleDefinition(), terms, op, true);
@@ -362,10 +383,85 @@ public class AC_Utility
 		return cNode;
 	}
 	
+	public static ConnectionNode createConnectionNode(Module parent, ConnectionNode templateNode)
+	{
+		ACComponentNode sourceNode = getTerminalNode(parent, templateNode.getConnectionDefinition().getSourceType(), templateNode.getConnectionDefinition().getSourceDefinition().getRefName());
+		ACComponentNode targetNode = getTerminalNode(parent, templateNode.getConnectionDefinition().getTargetType(), templateNode.getConnectionDefinition().getTargetDefinition().getRefName());
+		ConnectionNode node = new ConnectionNode(parent, templateNode.getConnectionDefinition(), templateNode.getDrawingCellStyle());
+		AC_GUI.drawingBoard.createConnection(node, sourceNode.getDrawingCell(), targetNode.getDrawingCell());
+		parent.addConnection(node);
+		
+		return node;
+	}
+	
+	public static boolean addNodetoRemainingInstances(Module module, ConnectionNode templateNode)
+	{
+		boolean success = true;
+		ModuleDefinition definition = module.getModuleDefinition();
+		if (definition.getInstances().size() <= 1)
+		{
+			return success;
+		}
+		ListIterator<Module> moduleList = definition.getInstances().listIterator();
+		Module parent;
+		while (moduleList.hasNext())
+		{
+			parent = moduleList.next();
+			if (parent == module)
+			{
+				continue;
+			}
+			else
+			{
+				if (createConnectionNode(parent, templateNode) == null)
+				{
+					success = false;
+				}
+			}
+		}
+		return success;
+	}
+	
 	public static void deleteConnection(ConnectionNode cNode)
 	{
-		cNode.getParent().removeConnection(cNode);
-		deleteConnectionDefinition(cNode.getConnectionDefinition());
+		ConnectionDefinition connectionDefinition = cNode.getConnectionDefinition();
+		ModuleDefinition definition = cNode.getParent().getModuleDefinition();
+		if (definition.getInstances().size() == 1)
+		{
+			// there is only one instance of the module,
+			// we only need to delete one connection node
+			cNode.getParent().removeConnection(cNode);
+		}
+		else
+		{
+			// there are multiple instances of the module,
+			// we need to delete the connection node from each instance
+			ListIterator<Module> moduleList = definition.getInstances().listIterator();
+			Module parent;
+			ConnectionNode node;
+			while (moduleList.hasNext())
+			{
+				parent = moduleList.next();
+				node = getConnectionNode(parent, connectionDefinition);
+				if (node == null)
+				{
+					String msg = "AC_Utility.deleteConnection(): ConnectionNode is null." + eol;
+					msg += "ConnectionNode information:" + eol;
+					msg += "Source Definition refName: " + connectionDefinition.getSourceDefinition().getRefName();
+					msg += eol;
+					msg += "Target Definition refName: " + connectionDefinition.getTargetDefinition().getRefName();
+					msg += eol;
+					System.err.println(msg);
+				}
+				else
+				{
+					parent.removeConnection(node);
+				}
+			}
+		}
+		
+		// delete the connection definition
+		deleteConnectionDefinition(connectionDefinition);
 	}
 	
 	public static EquivalenceNode createEquivalence(String refName, VariableType vType, Module parent)
@@ -404,6 +500,16 @@ public class AC_Utility
 		return eNode;
 	}
 	
+	public static EquivalenceNode createEquivalenceNode(Module parent, EquivalenceDefinition eDefinition)
+	{
+		EquivalenceNode eNode = new EquivalenceNode(parent, eDefinition);
+		AC_GUI.drawingBoard.createEquivalenceNode(eNode);
+		
+		parent.addEquivalence(eNode);
+		
+		return eNode;
+	}
+	
 	public static EquivalenceNode createEquivalenceNode(Module parent, EquivalenceDefinition eDefinition, GeneralGlyph glyph)
 	{
 		EquivalenceNode eNode = new EquivalenceNode(parent, eDefinition);
@@ -414,9 +520,70 @@ public class AC_Utility
 		return eNode;
 	}
 	
+	public static boolean addNodetoRemainingInstances(Module module, EquivalenceDefinition eDefinition)
+	{
+		boolean success = true;
+		ModuleDefinition definition = module.getModuleDefinition();
+		if (definition.getInstances().size() <= 1)
+		{
+			return success;
+		}
+		ListIterator<Module> moduleList = definition.getInstances().listIterator();
+		Module parent;
+		while (moduleList.hasNext())
+		{
+			parent = moduleList.next();
+			if (parent == module)
+			{
+				continue;
+			}
+			else
+			{
+				if (createEquivalenceNode(parent, eDefinition) == null)
+				{
+					success = false;
+				}
+			}
+		}
+		return success;
+	}
+	
 	public static void deleteEquivalence(EquivalenceNode eNode)
 	{
-		eNode.getParent().removeEquivalence(eNode);
+		EquivalenceDefinition eDefinition = eNode.getEquivalenceDefinition();
+		ModuleDefinition definition = eNode.getParent().getModuleDefinition();
+		if (definition.getInstances().size() == 1)
+		{
+			// there is only one instance of the module,
+			// we only need to delete one equivalence node
+			eNode.getParent().removeEquivalence(eNode);
+		}
+		else
+		{
+			// there are multiple instances of the module,
+			// we need to delete the equivalence node from each instance
+			ListIterator<Module> moduleList = definition.getInstances().listIterator();
+			Module parent;
+			EquivalenceNode node;
+			while (moduleList.hasNext())
+			{
+				parent = moduleList.next();
+				node = (EquivalenceNode)getEquivalenceNode(parent, eDefinition.getRefName());
+				if (node == null)
+				{
+					String msg = eol;
+					msg += "AC_Utility.deleteEquivalence(): EquivalenceNode is null." + eol;
+					msg += "EquivalenceNode refName: " + eDefinition.getRefName() + eol;
+					System.err.println(msg);
+				}
+				else
+				{
+					parent.removeEquivalence(node);
+				}
+			}
+		}
+
+		// delete the equivalence definition
 		deleteEquivalenceDefinition(eNode.getEquivalenceDefinition());
 	}
 	
@@ -442,6 +609,16 @@ public class AC_Utility
 		return pNode;
 	}
 	
+	public static PortNode createPortNode(Module parent, PortDefinition definition)
+	{
+		PortNode pNode = new PortNode(parent, definition);
+		AC_GUI.drawingBoard.createPort(pNode);
+		
+		parent.addPort(pNode);
+		
+		return pNode;
+	}
+	
 	public static PortNode createPortNode(Module parent, String name, PortDefinition definition, GeneralGlyph glyph)
 	{
 		PortNode pNode = new PortNode(parent, definition);
@@ -452,10 +629,71 @@ public class AC_Utility
 		return pNode;
 	}
 	
+	public static boolean addNodetoRemainingInstances(Module module, PortDefinition pDefinition)
+	{
+		boolean success = true;
+		ModuleDefinition definition = module.getModuleDefinition();
+		if (definition.getInstances().size() <= 1)
+		{
+			return success;
+		}
+		ListIterator<Module> moduleList = definition.getInstances().listIterator();
+		Module parent;
+		while (moduleList.hasNext())
+		{
+			parent = moduleList.next();
+			if (parent == module)
+			{
+				continue;
+			}
+			else
+			{
+				if (createPortNode(parent, pDefinition) == null)
+				{
+					success = false;
+				}
+			}
+		}
+		return success;
+	}
+	
 	public static void deletePort(PortNode pNode)
 	{
-		pNode.getParent().removePort(pNode);
-		deletePortDefinition(pNode.getPortDefinition());
+		PortDefinition pDefinition = pNode.getPortDefinition();
+		ModuleDefinition definition = pNode.getParent().getModuleDefinition();
+		if (definition.getInstances().size() == 1)
+		{
+			// there is only one instance of the module,
+			// we only need to delete one port node
+			pNode.getParent().removePort(pNode);
+		}
+		else
+		{
+			// there are multiple instances of the module,
+			// we need to delete the port node from each instance
+			ListIterator<Module> moduleList = definition.getInstances().listIterator();
+			Module parent;
+			PortNode node;
+			while (moduleList.hasNext())
+			{
+				parent = moduleList.next();
+				node = (PortNode)getPortNode(parent, pDefinition.getRefName());
+				if (node == null)
+				{
+					String msg = eol;
+					msg += "AC_Utility.deletePort(): PortNode is null." + eol;
+					msg += "PortNode refName: " + pDefinition.getRefName() + eol;
+					System.err.println(msg);
+				}
+				else
+				{
+					parent.removePort(node);
+				}
+			}
+		}
+		
+		// delete the port definition
+		deletePortDefinition(pDefinition);
 	}
 	
 	public static VisibleVariableNode createVisibleVariable(String refName, VariableType vType, Module parent)
@@ -491,6 +729,16 @@ public class AC_Utility
 		return vNode;
 	}
 	
+	public static VisibleVariableNode createVisibleVariableNode(Module parent, VisibleVariableDefinition vDefinition)
+	{
+		VisibleVariableNode vNode = new VisibleVariableNode(parent, vDefinition);
+		AC_GUI.drawingBoard.createVisibleVariable(vNode);
+		
+		parent.addVisibleVariable(vNode);
+		
+		return vNode;
+	}
+	
 	public static VisibleVariableNode createVisibleVariableNode(Module parent, VisibleVariableDefinition vDefinition, GeneralGlyph glyph)
 	{
 		VisibleVariableNode vNode = new VisibleVariableNode(parent, vDefinition);
@@ -501,10 +749,75 @@ public class AC_Utility
 		return vNode;
 	}
 	
+	public static boolean addNodetoRemainingInstances(Module module, VisibleVariableDefinition vDefinition)
+	{
+		boolean success = true;
+		ModuleDefinition definition = module.getModuleDefinition();
+		if (definition.getInstances().size() <= 1)
+		{
+			return success;
+		}
+		ListIterator<Module> moduleList = definition.getInstances().listIterator();
+		Module parent;
+		while (moduleList.hasNext())
+		{
+			parent = moduleList.next();
+			if (parent == module)
+			{
+				continue;
+			}
+			else
+			{
+				if (createVisibleVariableNode(parent, vDefinition) == null)
+				{
+					success = false;
+				}
+			}
+		}
+		return success;
+	}
+	
 	public static void deleteVisibleVariable(VisibleVariableNode vNode)
 	{
-		vNode.getParent().removeVisibleVariable(vNode);
-		deleteVisibleVariableDefinition(vNode.getVisibleVariableDefinition());
+		VisibleVariableDefinition vDefinition = vNode.getVisibleVariableDefinition();
+		ModuleDefinition definition = vNode.getParent().getModuleDefinition();
+		if (definition.getInstances().size() == 1)
+		{
+			// there is only one instance of the module,
+			// we only need to delete one visible variable  node
+			vNode.getParent().removeVisibleVariable(vNode);
+		}
+		else
+		{
+			// there are multiple instances of the module,
+			// we need to delete the visible variable node from each instance
+			ListIterator<Module> moduleList = definition.getInstances().listIterator();
+			Module parent;
+			VisibleVariableNode node;
+			while (moduleList.hasNext())
+			{
+				parent = moduleList.next();
+				node = (VisibleVariableNode)getVisibleVariableNode(parent, vDefinition.getRefName());
+				if (node == null)
+				{
+					String msg = eol;
+					msg += "AC_Utility.deleteVisibleVariable(): VisibleVariableNode is null." + eol;
+					msg += "VisibleVariableNode refName: " + vDefinition.getRefName() + eol;
+					System.err.println(msg);
+				}
+				else
+				{
+					while (node != null)
+					{
+						parent.removeVisibleVariable(node);
+						node = (VisibleVariableNode)getVisibleVariableNode(parent, vDefinition.getRefName());
+					}
+				}
+			}
+		}
+		
+		// delete the visible variable definition
+		deleteVisibleVariableDefinition(vDefinition);
 	}
 	
 	public static boolean copyDefinition(Module module, String newName)
@@ -548,6 +861,7 @@ public class AC_Utility
 		AC_GUI.treeView.createNode(module);
 		AC_GUI.drawingBoard.createCell(module);
 		definition.addInstance(module);
+		moduleNameList.add(moduleName);
 		parent.addChild(module);
 		ListIterator<ACComponentNode> iterator;
 		
@@ -593,7 +907,8 @@ public class AC_Utility
 			ACComponentNode targetNode = getTerminalNode(module, templateCNode.getConnectionDefinition().getTargetType(), templateCNode.getConnectionDefinition().getTargetDefinition().getRefName());
 			ConnectionNode node = new ConnectionNode(module, templateCNode.getConnectionDefinition(), templateCNode.getDrawingCellStyle());
 			AC_GUI.drawingBoard.createConnection(node, sourceNode.getDrawingCell(), targetNode.getDrawingCell());
-			parent.addConnection(node);
+			//parent.addConnection(node);
+			module.addConnection(node);
 		}
 		
 		return module;
@@ -670,7 +985,7 @@ public class AC_Utility
 	
 	public static int promptUserExternalModuleChange(Module module)
 	{
-		String msg = "You have attempted to edit a Module that is defined externally. You cannot edit such a Module." + eol;
+		String msg = "You have attempted to edit an external entity. You cannot edit such a Module." + eol;
 		msg += "Would you like to save the Module as an internal definition?" + eol;
 		msg += "New Module: Save changes as a new Module." + eol;
 		msg += "Cancel: Do not save changes." + eol;
@@ -711,7 +1026,7 @@ public class AC_Utility
 					instances += "    " + iModule.getName() + eol;
 				}
 			}
-			String msg = "You have edited a Module that has multiple instantiations. Editing the current Module" + eol;
+			String msg = "You have attempted to edit a Module that has multiple instantiations. Editing the current Module" + eol;
 			msg += "will change the following instances:" + eol;
 			msg += instances + eol;
 			msg += "How would you like to save?" + eol;
@@ -764,6 +1079,30 @@ public class AC_Utility
 			return n;
 		}
 		return -1;
+	}
+	
+	public static int promptUserAddSubmodule(Module module)
+	{
+		String msg = "To add a Submodule, the current Module must be saved as a new Module." + eol;
+		Object[] options = {"New Module", "Cancel"};
+		int n = JOptionPane.showOptionDialog(null,
+			    msg,
+			    "Warning",
+			    JOptionPane.YES_NO_OPTION,
+			    JOptionPane.WARNING_MESSAGE,
+			    null,     //do not use a custom Icon
+			    options,  //the titles of buttons
+			    JOptionPane.NO_OPTION); //default button title
+		switch(n)
+		{
+			case JOptionPane.YES_OPTION:
+				System.out.println("The user chose to save as a New Module.");
+				break;
+			case JOptionPane.NO_OPTION:
+				System.out.print("The user chose not to save changes.");
+				break;
+		}
+		return n;
 	}
 	
 	public static boolean showVariableValidation(String refName)
@@ -1205,6 +1544,13 @@ public class AC_Utility
 		
 	}
 	
+	/*
+	public static boolean validateExternalFile(String externalSource, String md5)
+	{
+		
+	}
+	*/
+	
 	public static void printModuleTree()
 	{
 		Module root = AC_GUI.rootModule;
@@ -1255,6 +1601,7 @@ public class AC_Utility
 			msg.append("-");
 			msg.append(currentDefinition.getName());
 			msg.append(eol);
+			msg.append("External: " + currentDefinition.isExternal() + eol);
 			if (includeInstances)
 			{
 				getModuleInstances(currentDefinition, level+2, msg);
@@ -1495,6 +1842,7 @@ public class AC_Utility
 			displayErrorMessage("The module " + modDef.getName() + " was not completely removed.");
 		}
 		moduleNameList.remove(modDef.getName());
+		removeSubmoduleDefinition(modDef);
 		System.out.println("Number of Copasi data models: " + CopasiUtility.getNumberOfModels());
 	}
 	
@@ -1651,6 +1999,21 @@ public class AC_Utility
 			if (currentNode.getVisibleVariableDefinition().getRefName().equals(refName))
 			{
 				return currentNode;
+			}
+		}
+		return null;
+	}
+	
+	private static ConnectionNode getConnectionNode(Module parent, ConnectionDefinition definition)
+	{
+		ListIterator<ConnectionNode> connectionList = parent.getConnections().listIterator();
+		ConnectionNode node;
+		while (connectionList.hasNext())
+		{
+            node = connectionList.next();
+			if (node.getConnectionDefinition() == definition)
+			{
+				return node;
 			}
 		}
 		return null;
@@ -1886,7 +2249,7 @@ public class AC_Utility
 	{
 		//VisibleVariableDefinition newDefinition = (VisibleVariableDefinition)copyACComponentDefinition(oldDefinition, parent);
 		VisibleVariableDefinition newDefinition = new VisibleVariableDefinition(parent);
-		newDefinition.setName(new String(oldDefinition.getName()));
+		//newDefinition.setName(new String(oldDefinition.getName()));
 		newDefinition.setRefName(new String(oldDefinition.getRefName()));
 		newDefinition.setVariableType(oldDefinition.getVariableType());
 		
@@ -1897,7 +2260,7 @@ public class AC_Utility
 	{
 		//EquivalenceDefinition newDefinition = (EquivalenceDefinition)copyACComponentDefinition(oldDefinition, parent);
 		EquivalenceDefinition newDefinition = new EquivalenceDefinition(parent);
-		newDefinition.setName(new String(oldDefinition.getName()));
+		//newDefinition.setName(new String(oldDefinition.getName()));
 		newDefinition.setRefName(new String(oldDefinition.getRefName()));
 		newDefinition.setVariableType(oldDefinition.getVariableType());
 		

@@ -56,7 +56,7 @@ public class SubmoduleAddEditor extends JDialog implements ListSelectionListener
 	private JTextField textfield;
 	private JCheckBox checkBox;
 	private JButton addButton;
-	private JList<String> list;
+	private JList list;
     private DefaultListModel listModel;
 	private mxGraphComponent graphComponent;
 	private File file;
@@ -84,7 +84,7 @@ public class SubmoduleAddEditor extends JDialog implements ListSelectionListener
 		modules = new JPanel();
 		modules.setLayout(new BorderLayout());
 		
-		listModel = new DefaultListModel<String>();
+		listModel = new DefaultListModel();
 		populateSubmoduleList();
         //listModel.addElement("Synthesis1");
         //listModel.addElement("Synthesis2");
@@ -254,10 +254,17 @@ public class SubmoduleAddEditor extends JDialog implements ListSelectionListener
 
 	private void populateSubmoduleList()
 	{
+		String activeDefinitionName = AC_GUI.activeModule.getModuleDefinition().getName();
+		String name;
 		ListIterator<ModuleDefinition> list = AC_Utility.getSubmoduleList().listIterator();
 		while (list.hasNext())
 		{
-			listModel.addElement(list.next().getName());
+			name = list.next().getName();
+			if (name.equals(activeDefinitionName))
+			{
+				continue;
+			}
+			listModel.addElement(name);
 		}
 	}
 	
@@ -278,7 +285,7 @@ public class SubmoduleAddEditor extends JDialog implements ListSelectionListener
                 addButton.setEnabled(true);
                 checkBox.setSelected(true);
         		checkBox.setEnabled(false);
-                textfield.setText(list.getSelectedValue());
+                textfield.setText((String)list.getSelectedValue());
                 lastSelectionWasFromList = true;
             }
         }
@@ -391,7 +398,7 @@ public class SubmoduleAddEditor extends JDialog implements ListSelectionListener
 		{
 			if (lastSelectionWasFromList)
 			{
-				ModuleDefinition definition = AC_Utility.getSubmoduleDefinition(list.getSelectedValue());
+				ModuleDefinition definition = AC_Utility.getSubmoduleDefinition((String)list.getSelectedValue());
 				if (definition != null)
 				{
 					String newInstanceName = AC_Utility.promptUserForNewModuleName("Enter a Module name for the new instance.");

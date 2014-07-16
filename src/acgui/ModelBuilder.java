@@ -186,21 +186,24 @@ public class ModelBuilder
 		portsPanel.clear();
 		updateRefNameColumn();
 		
-		//add activeModule's Ports
-		ListIterator<ACComponentNode> portList = AC_GUI.activeModule.getPorts().listIterator();
-		while (portList.hasNext())
-		{
-			portsPanel.addPort((PortNode)portList.next());
-		}
-		
-		//add activeModule's Children's Ports
-		ListIterator<Module> children = AC_GUI.activeModule.getChildren().listIterator();
-		while(children.hasNext())
-		{
-			portList = children.next().getPorts().listIterator();
+		if (AC_GUI.activeModule != null)
+		{	
+			//add activeModule's Ports
+			ListIterator<ACComponentNode> portList = AC_GUI.activeModule.getPorts().listIterator();
 			while (portList.hasNext())
 			{
 				portsPanel.addPort((PortNode)portList.next());
+			}
+			
+			//add activeModule's Children's Ports
+			ListIterator<Module> children = AC_GUI.activeModule.getChildren().listIterator();
+			while(children.hasNext())
+			{
+				portList = children.next().getPorts().listIterator();
+				while (portList.hasNext())
+				{
+					portsPanel.addPort((PortNode)portList.next());
+				}
 			}
 		}
 	}

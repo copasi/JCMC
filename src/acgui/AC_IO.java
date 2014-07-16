@@ -75,10 +75,12 @@ public class AC_IO
 			if (mod != null)
 			{
 				// check to make sure all module names are valid
+				/*
 				if (parent != null)
 				{
 					parent.addChild(mod);
 				}
+				*/
 				System.out.println(mod.getModuleDefinition().getName() + " successfully loaded.");
 				
 				AC_Utility.addTreeNode(mod);
@@ -202,12 +204,27 @@ public class AC_IO
 		String name = (String)data.get("name");
 		byte[] msmbData = (byte[])data.get("msmbData");
 		String id = (String)data.get("id");
-		int isExternal = (int)data.get("external");
+		int isExternal = (Integer)data.get("external");
 		boolean external = (1 == isExternal);
 		String externalSource = (String)data.get("externalSource");
 		String externalModelRef = (String)data.get("externalModelRef");
 		String md5 = (String)data.get("md5");
+
+		/*
+		int isExternal;
+		boolean external = false;
+		String externalSource = "";
+		String externalModelRef = "";
+		String md5 = "";
+		*/
 		
+		/*
+		if (external)
+		{
+			boolean validExternalFile = AC_Utility.validateExternalFile(externalSource, md5);
+			
+		}
+		*/
 		
 		//ModuleDefinition definition = new ModuleDefinition(name, parent, msmbData);
 		name = validateModuleName(name);
@@ -338,8 +355,8 @@ public class AC_IO
 		String name = (String)data.get("name");
 		byte[] msmbData = (byte[])data.get("msmbData");
 		String id = (String)data.get("id");
-		int inputNumber = (int)data.get("inputNumber");
-		char operation = (char)data.get("operation");
+		int inputNumber = (Integer)data.get("inputNumber");
+		char operation = (Character)data.get("operation");
 		
 		Operation op = null;		
 		switch (operation)
@@ -421,8 +438,8 @@ public class AC_IO
 		unpackACComponentDefinition(data, definition);
 		PortType portType = null;
 		VariableType variableType = null;
-		char pType = (char)data.get("portType");
-		char vType = (char)data.get("variableType");
+		char pType = (Character)data.get("portType");
+		char vType = (Character)data.get("variableType");
 		
 		switch (pType)
 		{
@@ -489,7 +506,7 @@ public class AC_IO
 		VisibleVariableDefinition definition = new VisibleVariableDefinition(parent);
 		unpackACComponentDefinition(data, definition);
 		VariableType variableType = null;
-		char vType = (char)data.get("variableType");
+		char vType = (Character)data.get("variableType");
 		
 		switch (vType)
 		{
@@ -537,7 +554,7 @@ public class AC_IO
 		EquivalenceDefinition definition = new EquivalenceDefinition(parent);
 		unpackACComponentDefinition(data, definition);
 		VariableType variableType = null;
-		char vType = (char)data.get("variableType");
+		char vType = (Character)data.get("variableType");
 		
 		switch (vType)
 		{
@@ -610,8 +627,8 @@ public class AC_IO
 		String targetParent = (String)data.get("targetParent");
 		String sourceRefName = (String)data.get("sourceRefName");
 		String targetRefName = (String)data.get("targetRefName");
-		char sType = (char)data.get("sourceType");
-		char tType = (char)data.get("targetType");
+		char sType = (Character)data.get("sourceType");
+		char tType = (Character)data.get("targetType");
 		TerminalType sourceType = null;
 		TerminalType targetType = null;
 		
@@ -822,11 +839,15 @@ public class AC_IO
 			cellStyle = "Submodule_No_Show_Information";
 		}
 		
+		/*
 		Module module = new Module(name, definition, parent, moduleGeometry, submoduleGeometry, cellStyle);
 		module.setID(id);
-		AC_GUI.treeView.createNode(module);
-		AC_GUI.drawingBoard.createCell(module);
-		definition.addInstance(module);
+		//AC_GUI.treeView.createNode(module);
+		//AC_GUI.drawingBoard.createCell(module);
+		//definition.addInstance(module);
+		*/
+		Module module = AC_Utility.createInstance(name, definition, parent, moduleGeometry, submoduleGeometry, cellStyle);
+		module.setID(id);
 		
 		// unpack PortNodes
 		if (data.get("portNodes") != null)
@@ -844,11 +865,16 @@ public class AC_IO
 		if (data.get("children") != null)
 		{
 			System.out.println("Found submodules.");
+			Module child;
 			packedList = (ArrayList<Map<String, Object>>)data.get("children");
 			packedListIterator = packedList.listIterator();
 			while(packedListIterator.hasNext())
 			{
-				module.addChild(unpackModule(packedListIterator.next(), module, false));
+				child = unpackModule(packedListIterator.next(), module, false);
+				if (child == null)
+				{
+					return null;
+				}
 			}
 		}
 		
@@ -1022,8 +1048,8 @@ public class AC_IO
 		String sourceRefName = (String)data.get("sourceRefName");
 		String targetRefName = (String)data.get("targetRefName");
 		String drawingCellStyle = (String)data.get("drawingCellStyle");
-		char sType = (char)data.get("sourceType");
-		char tType = (char)data.get("targetType");
+		char sType = (Character)data.get("sourceType");
+		char tType = (Character)data.get("targetType");
 		TerminalType sourceType = null;
 		TerminalType targetType = null;
 		
@@ -1131,10 +1157,10 @@ public class AC_IO
 		mxGeometry geo = null;
 		if (data != null)
 		{
-			double x = (double)data.get("x");
-			double y = (double)data.get("y");
-			double width = (double)data.get("width");
-			double height = (double)data.get("height");
+			double x = (Double)data.get("x");
+			double y = (Double)data.get("y");
+			double width = (Double)data.get("width");
+			double height = (Double)data.get("height");
 			geo = new mxGeometry(x, y, width, height);
 		}
 		return geo;

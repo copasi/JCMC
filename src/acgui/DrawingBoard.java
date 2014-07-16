@@ -211,8 +211,8 @@ public class DrawingBoard extends JPanel
 			parentCell = mod.getParent().getDrawingCell();
 			if (!(mod.getModuleDefinition() instanceof MathematicalAggregatorDefinition))
 			{
-				width = DEFAULT_SUBMODULE_WIDTH;
-				height = DEFAULT_SUBMODULE_HEIGHT;
+				geo.setWidth(DEFAULT_SUBMODULE_WIDTH);
+				geo.setHeight(DEFAULT_SUBMODULE_HEIGHT);
 			}
 			// set default module dimensions
 			mod.setDrawingCellGeometryModule(new mxGeometry(defaultModuleX, defaultModuleY, defaultModuleWidth, defaultModuleHeight));
@@ -2681,10 +2681,13 @@ public class DrawingBoard extends JPanel
 				{
 					//System.out.println("Connected edge count: " + graph.getModel().getEdgeCount(((mxCell)cell).getSource()));
 					// get the connection object from the drawing cell
-					ConnectionNode edge = (ConnectionNode)((mxCell)cell).getValue();
-					// remove the connection from the module
-					AC_GUI.removeConnection(edge, true);
+					ConnectionNode cNode = (ConnectionNode)((mxCell)cell).getValue();
 					//System.out.println("Connected edge count: " + graph.getModel().getEdgeCount(((mxCell)cell).getSource()));
+					if (AC_GUI.canModuleBeModified(cNode.getParent()))
+					{
+						// remove the connection from the module
+						AC_GUI.removeConnection(cNode, true);
+					}
 				}
 			});
 			
@@ -2752,7 +2755,10 @@ public class DrawingBoard extends JPanel
 					public void actionPerformed(ActionEvent e)
 					{
 						//graphComponent.startEditingAtCell(cell);
-						AC_Utility.promptUserEditModuleName(AC_GUI.selectedModule.getName());
+						if (AC_GUI.canModuleBeModified(activeModule))
+						{
+							AC_Utility.promptUserEditModuleName(AC_GUI.selectedModule.getName());
+						}
 					}
 				});
 				
@@ -2766,10 +2772,13 @@ public class DrawingBoard extends JPanel
 	
 						public void actionPerformed(ActionEvent e)
 						{
-							PortAddEditor portAddEditor = new PortAddEditor((mxCell)cell, graphComponent);
-							portAddEditor.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-							portAddEditor.setModal(true);
-							portAddEditor.setVisible(true);
+							if (AC_GUI.canModuleBeModified(activeModule))
+							{
+								PortAddEditor portAddEditor = new PortAddEditor((mxCell)cell, graphComponent);
+								portAddEditor.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+								portAddEditor.setModal(true);
+								portAddEditor.setVisible(true);
+							}
 						}
 					});
 					
@@ -2781,10 +2790,13 @@ public class DrawingBoard extends JPanel
 	
 						public void actionPerformed(ActionEvent e)
 						{
-							VariableAddEditor varAddEditor = new VariableAddEditor(graphComponent);
-							varAddEditor.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-							varAddEditor.setModal(true);
-							varAddEditor.setVisible(true);
+							if (AC_GUI.canModuleBeModified(activeModule))
+							{
+								VariableAddEditor varAddEditor = new VariableAddEditor(graphComponent);
+								varAddEditor.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+								varAddEditor.setModal(true);
+								varAddEditor.setVisible(true);
+							}
 						}
 					});
 				}
@@ -2805,26 +2817,28 @@ public class DrawingBoard extends JPanel
 	
 						public void actionPerformed(ActionEvent e)
 						{
-							PortNode currentPort = (PortNode) ((mxCell) cell).getValue();
-	
-							Object[] possibleValues = { "Input", "Output", "Equivalence" };
-							Object selectedValue = JOptionPane.showInputDialog(null, "Select Type", "Change Port Type", JOptionPane.INFORMATION_MESSAGE, null, possibleValues, currentPort.getPortDefinition().getType().toString());
-	
-							if (selectedValue.toString().compareTo("Input") == 0)
+							PortNode pNode = (PortNode) ((mxCell) cell).getValue();
+							if (AC_GUI.canModuleBeModified(pNode.getParent()))
 							{
-								currentPort.getPortDefinition().setType(PortType.INPUT);
+								Object[] possibleValues = { "Input", "Output", "Equivalence" };
+								Object selectedValue = JOptionPane.showInputDialog(null, "Select Type", "Change Port Type", JOptionPane.INFORMATION_MESSAGE, null, possibleValues, pNode.getPortDefinition().getType().toString());
+		
+								if (selectedValue.toString().compareTo("Input") == 0)
+								{
+									pNode.getPortDefinition().setType(PortType.INPUT);
+								}
+								else if (selectedValue.toString().compareTo("Output") == 0)
+								{
+									pNode.getPortDefinition().setType(PortType.OUTPUT);
+								}
+								else if (selectedValue.toString().compareTo("Equivalence") == 0)
+								{
+									pNode.getPortDefinition().setType(PortType.EQUIVALENCE);
+								}
+		
+								mxGeometry geo = ((mxCell) cell).getGeometry();
+								graph.updatePortOrientation(cell, geo, false);
 							}
-							else if (selectedValue.toString().compareTo("Output") == 0)
-							{
-								currentPort.getPortDefinition().setType(PortType.OUTPUT);
-							}
-							else if (selectedValue.toString().compareTo("Equivalence") == 0)
-							{
-								currentPort.getPortDefinition().setType(PortType.EQUIVALENCE);
-							}
-	
-							mxGeometry geo = ((mxCell) cell).getGeometry();
-							graph.updatePortOrientation(cell, geo, false);
 						}
 					});
 	
@@ -2837,12 +2851,15 @@ public class DrawingBoard extends JPanel
 						public void actionPerformed(ActionEvent e)
 						{
 							// get the Port object from the drawing cell
-							PortNode currentPort = (PortNode) ((mxCell) cell).getValue();
-							String msg = "Number of edges connected to the port: ";
-							msg += graph.getModel().getEdgeCount(cell) + ".";
+							PortNode pNode = (PortNode) ((mxCell) cell).getValue();
+							//String msg = "Number of edges connected to the port: ";
+							//msg += graph.getModel().getEdgeCount(cell) + ".";
 							//System.out.println(msg);
-							// call AC_GUI to fully remove the port
-							AC_GUI.removePort(currentPort, true);
+							if (AC_GUI.canModuleBeModified(pNode.getParent()))
+							{
+								// call AC_GUI to fully remove the port
+								AC_GUI.removePort(pNode, true);
+							}
 						}
 					});
 	
@@ -2874,12 +2891,15 @@ public class DrawingBoard extends JPanel
 					public void actionPerformed(ActionEvent e)
 					{
 						// get the Visible Variable object from the drawing cell
-						VisibleVariableNode currentVar = (VisibleVariableNode) ((mxCell) cell).getValue();
-						String msg = "Number of edges connected to the variable: ";
-						msg += graph.getModel().getEdgeCount(cell) + ".";
+						VisibleVariableNode vNode = (VisibleVariableNode) ((mxCell) cell).getValue();
+						//String msg = "Number of edges connected to the variable: ";
+						//msg += graph.getModel().getEdgeCount(cell) + ".";
 						//System.out.println(msg);
-						// call AC_GUI to fully remove the variable
-						AC_GUI.removeVisibleVariable(currentVar, true);
+						if (AC_GUI.canModuleBeModified(vNode.getParent()))
+						{
+							// call AC_GUI to fully remove the variable
+							AC_GUI.removeVisibleVariable(vNode, true);
+						}						
 					}
 				});
 			}
@@ -2894,12 +2914,15 @@ public class DrawingBoard extends JPanel
 					public void actionPerformed(ActionEvent e)
 					{
 						// get the Equivalence Node object from the drawing cell
-						EquivalenceNode currentENode = (EquivalenceNode) ((mxCell) cell).getValue();
-						String msg = "Number of edges connected to the eNode: ";
-						msg += graph.getModel().getEdgeCount(cell) + ".";
+						EquivalenceNode eNode = (EquivalenceNode) ((mxCell) cell).getValue();
+						//String msg = "Number of edges connected to the eNode: ";
+						//msg += graph.getModel().getEdgeCount(cell) + ".";
 						//System.out.println(msg);
-						// call AC_GUI to fully remove the equivalence node
-						AC_GUI.removeEquivalenceNode(currentENode, true);
+						if (AC_GUI.canModuleBeModified(eNode.getParent()))
+						{
+							// call AC_GUI to fully remove the equivalence node
+							AC_GUI.removeEquivalenceNode(eNode, true);
+						}
 					}
 				});
 			}
@@ -3055,6 +3078,11 @@ public class DrawingBoard extends JPanel
 				TerminalType targetType;
 				
 				removeCell(cell);
+				
+				if (!AC_GUI.canModuleBeModified(activeModule))
+				{
+					return;
+				}
 				
 				if (sourceObject instanceof VisibleVariableNode)
 				{

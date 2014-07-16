@@ -1029,12 +1029,12 @@ public class SBMLParser {
 		String definitionName = "";
 		String sbmlID = "";
 		String modString = "";
-		boolean hasCompPackage = true;
-		boolean hasLayoutPackage = true;
+		boolean hasCompPackage = false;
+		boolean hasLayoutPackage = false;
 		CompModelPlugin modelCompPlugin = null;
 		LayoutModelPlugin lplugin = null;
 		GeneralGlyph glyph = null;
-		Model containerMod;;
+		Model containerMod;
 		
 		if (doc.getModel() == null)
 		{
@@ -1052,20 +1052,38 @@ public class SBMLParser {
 		definitionName = generateContainerModuleDefinitionName(moduleName);
 		sbmlID = containerMod.getId();
 		
-		SBasePlugin plugin;
-		
-		// check if the document uses the comp package
-		plugin = doc.getPlugin("comp");
-		if (plugin == null)
+		if (doc.getLevel() < 3)
 		{
 			hasCompPackage = false;
-		}
-		
-		// check if the document uses the layout package
-		plugin = doc.getPlugin("layout");
-		if (plugin == null)
-		{
 			hasLayoutPackage = false;
+		}
+		else
+		{
+			// check if the document uses the comp package
+			/*
+			SBasePlugin plugin;
+			plugin = doc.getPlugin("comp");
+			if (plugin == null)
+			{
+				hasCompPackage = false;
+			}
+			*/
+			if (doc.isPackageEnabled("comp"))
+			{
+				hasCompPackage = true;
+			}
+			// check if the document uses the layout package
+			/*
+			plugin = doc.getPlugin("layout");
+			if (plugin == null)
+			{
+				hasLayoutPackage = false;
+			}
+			*/
+			if (doc.isPackageEnabled("layout"))
+			{
+				hasLayoutPackage = true;
+			}
 		}
 		
 		if (hasCompPackage)
@@ -1077,6 +1095,7 @@ public class SBMLParser {
 		{
 			lplugin = (LayoutModelPlugin)containerMod.getPlugin("layout");
 			ListOfLayouts layouts = lplugin.getListOfLayouts();
+			System.out.println("Number of layouts: " + layouts.size());
 			Layout layout = layouts.get(0);
 			//glyph = layout.getGeneralGlyph(name + "_glyph");
 			glyph = layout.getGeneralGlyph(0);
@@ -1131,11 +1150,11 @@ public class SBMLParser {
 			definition = AC_Utility.createModuleDefinition(sbmlID, definitionName, modString, parent.getModuleDefinition());
 		}
 		definitionList.add(definition);
+		
 		if (!hasCompPackage && !hasLayoutPackage)
 		{
 			module = AC_Utility.createInstance(moduleName, parent, definition);
 		}
-		
 		
 		if (hasCompPackage && hasLayoutPackage)
 		{

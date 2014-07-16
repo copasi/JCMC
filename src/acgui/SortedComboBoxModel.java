@@ -17,7 +17,7 @@ import javax.swing.DefaultComboBoxModel;
  * @author T.C. Jones
  * @version Febraury 4, 2013
  */
-public class SortedComboBoxModel extends DefaultComboBoxModel<String>
+public class SortedComboBoxModel extends DefaultComboBoxModel
 {
 	/**
 	 * 
