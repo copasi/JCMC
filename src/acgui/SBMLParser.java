@@ -160,6 +160,7 @@ public class SBMLParser {
 		if (external)
 		{
 			mod.getModuleDefinition().setExternalSource(fileName);
+			//mod.getModuleDefinition().setExternalModelRef(mod.getModuleDefinition().getName());
 			String md5;
 			try
 			{
@@ -179,6 +180,36 @@ public class SBMLParser {
 	public static SBMLDocument SBMLValidation(String fileName)
 	{
 		return libsbml.readSBMLFromFile(fileName);
+	}
+	
+	public static ModuleDefinition importExternalDefinition(String fileName, String modelRef)
+	{
+		SBMLFileResolver fileResolver = new SBMLFileResolver();
+		SBMLDocument externalDoc = fileResolver.resolve(fileName);
+		if (externalDoc == null)
+		{
+			return null;
+		}
+		else
+		{
+			JOptionPane.showMessageDialog(null,
+				    "Time to import an external definition.",
+				    "Information",
+				    JOptionPane.INFORMATION_MESSAGE);
+			if (modelRef.isEmpty())
+			{
+				// return the containing model
+				
+			}
+			else
+			{
+				// find the correct Model to import
+				// search listOfModelDefinitions
+				// search listOfExternalModelDefinitions
+				
+			}
+		}
+		return null;
 	}
 	
 	private static SBMLDocument exportContainerDefinition(Module containerModule)
@@ -354,97 +385,128 @@ public class SBMLParser {
 		{
 			currentModule = submodules.next();
 			currentModuleDefinition = currentModule.getModuleDefinition();
-			if (docPlugin.getModelDefinition(currentModuleDefinition.getID()) != null)
+			if (currentModuleDefinition.isExternal())
 			{
-				// the definition has already been added
-				continue;
-			}
-			dataModel = CopasiUtility.getCopasiModelFromModelName(currentModuleDefinition.getName());
-			if (dataModel == null)
-			{
-				System.err.println(currentModuleDefinition.getName() + "'s dataModel is empty");
-				return false;
-			}
-			//hasPorts = (child.getPorts().size() != 0);
-			//System.out.println("hasPorts = " + hasPorts);
-			
-			try
-			{
-				modSBML = dataModel.exportSBMLToString(3, 1);
-				modSBML = removeCOPASIMetaID(modSBML);
-				//modSBML = removeRenderPackage(modSBML);
-				modSBML = ensureCompIsEnabled(modSBML);				
-			}
-			catch (Exception e)
-			{
-				System.err.println("Error SBMLParser.exportSubmodelDefinitions: Module Definition " + currentModuleDefinition.getName() + " try/catch statement exception.");
-				e.printStackTrace();
-				return false;
-			}
-			
-			if (modSBML == null)
-			{
-				System.err.println("Error SBMLParser.exportSubmodelDefinitions: Module Definition " + currentModuleDefinition.getName() +"'s modSBML string is null.");
-				return false;
-			}
-			
-			tempDoc = libsbml.readSBMLFromString(modSBML);
-			if (tempDoc.getNumErrors() > 0)
-			{
-				System.err.println("Encountered errors while reading SBML from string for Module Definition: " + currentModuleDefinition.getName() + ".");
-				System.err.println("Please correct the following errors and try again.");
-				tempDoc.printErrors();
-				//System.exit(2);
-				return false;
-			}
-			tempDoc.getModel().setId(currentModuleDefinition.getID());
-			/*
-			if (currentModuleDefinition.getInstances().size() == 1)
-			{
-				// prepend species, parameters, container, etc. names with the submodel name
-				prependNameToComponents(tempDoc, currentModule.getName());
-				prependName = currentModule.getName();
+				if (docPlugin.getExternalModelDefinition(currentModuleDefinition.getID()) != null)
+				{
+					// the external definition has already been added
+					continue;
+				}
+				if (!exportExternalSubmodelDefinition(docPlugin, currentModuleDefinition))
+				{
+					return false;
+				}
 			}
 			else
 			{
-				// prepend species, parameters, container, etc. names with the module definition name
-				prependNameToComponents(tempDoc, currentModuleDefinition.getName());
-				prependName = currentModuleDefinition.getName();
-			}
-			*/
-			moduleDefinition = new ModelDefinition(tempDoc.getModel());
-			
-			if (currentModuleDefinition.getPorts().size() > 0)
-			{
-				if (!exportPortDefinitions(moduleDefinition, currentModuleDefinition))
+				if (docPlugin.getModelDefinition(currentModuleDefinition.getID()) != null)
 				{
-					System.err.println("Error SBMLParser.exportSubmodelDefinitions: Module Definition " + currentModuleDefinition.getName() + " exportPortDefinitions failed.");
+					// the definition has already been added
+					continue;
+				}
+				dataModel = CopasiUtility.getCopasiModelFromModelName(currentModuleDefinition.getName());
+				if (dataModel == null)
+				{
+					System.err.println(currentModuleDefinition.getName() + "'s dataModel is empty");
 					return false;
 				}
-			}
-			
-			if (currentModuleDefinition.getChildren().size() > 0)
-			{
-				if (!exportSubmodelDefinitions(docPlugin, currentModule))
+				//hasPorts = (child.getPorts().size() != 0);
+				//System.out.println("hasPorts = " + hasPorts);
+				
+				try
 				{
-					System.err.println("Error SBMLParser.exportSubmodelDefinitions: Module Definition " + currentModuleDefinition.getName() + " exportSubmodelDefinitions failed.");
+					modSBML = dataModel.exportSBMLToString(3, 1);
+					modSBML = removeCOPASIMetaID(modSBML);
+					//modSBML = removeRenderPackage(modSBML);
+					modSBML = ensureCompIsEnabled(modSBML);				
+				}
+				catch (Exception e)
+				{
+					System.err.println("Error SBMLParser.exportSubmodelDefinitions: Module Definition " + currentModuleDefinition.getName() + " try/catch statement exception.");
+					e.printStackTrace();
 					return false;
 				}
 				
-				if (!exportSubmodelInformation(moduleDefinition, currentModule))
+				if (modSBML == null)
 				{
-					System.err.println("Error SBMLParser.exportSubmodelDefinitions: Module Definition " + currentModuleDefinition.getName() + " exportSubmodelInformation failed.");
+					System.err.println("Error SBMLParser.exportSubmodelDefinitions: Module Definition " + currentModuleDefinition.getName() +"'s modSBML string is null.");
 					return false;
 				}
+				
+				tempDoc = libsbml.readSBMLFromString(modSBML);
+				if (tempDoc.getNumErrors() > 0)
+				{
+					System.err.println("Encountered errors while reading SBML from string for Module Definition: " + currentModuleDefinition.getName() + ".");
+					System.err.println("Please correct the following errors and try again.");
+					tempDoc.printErrors();
+					//System.exit(2);
+					return false;
+				}
+				tempDoc.getModel().setId(currentModuleDefinition.getID());
+				/*
+				if (currentModuleDefinition.getInstances().size() == 1)
+				{
+					// prepend species, parameters, container, etc. names with the submodel name
+					prependNameToComponents(tempDoc, currentModule.getName());
+					prependName = currentModule.getName();
+				}
+				else
+				{
+					// prepend species, parameters, container, etc. names with the module definition name
+					prependNameToComponents(tempDoc, currentModuleDefinition.getName());
+					prependName = currentModuleDefinition.getName();
+				}
+				*/
+				moduleDefinition = new ModelDefinition(tempDoc.getModel());
+				
+				if (currentModuleDefinition.getPorts().size() > 0)
+				{
+					if (!exportPortDefinitions(moduleDefinition, currentModuleDefinition))
+					{
+						System.err.println("Error SBMLParser.exportSubmodelDefinitions: Module Definition " + currentModuleDefinition.getName() + " exportPortDefinitions failed.");
+						return false;
+					}
+				}
+				
+				if (currentModuleDefinition.getChildren().size() > 0)
+				{
+					if (!exportSubmodelDefinitions(docPlugin, currentModule))
+					{
+						System.err.println("Error SBMLParser.exportSubmodelDefinitions: Module Definition " + currentModuleDefinition.getName() + " exportSubmodelDefinitions failed.");
+						return false;
+					}
+					
+					if (!exportSubmodelInformation(moduleDefinition, currentModule))
+					{
+						System.err.println("Error SBMLParser.exportSubmodelDefinitions: Module Definition " + currentModuleDefinition.getName() + " exportSubmodelInformation failed.");
+						return false;
+					}
+				}
+				
+				if (!exportReplacements(docPlugin, moduleDefinition, currentModule))
+				{
+					System.err.println("Error SBMLParser.exportSubmodelDefinitions: Module Definition " + currentModuleDefinition.getName() + " exportReplacements failed.");
+					return false;
+				}
+				
+				docPlugin.addModelDefinition(moduleDefinition);
 			}
-			
-			if (!exportReplacements(docPlugin, moduleDefinition, currentModule))
-			{
-				System.err.println("Error SBMLParser.exportSubmodelDefinitions: Module Definition " + currentModuleDefinition.getName() + " exportReplacements failed.");
-				return false;
-			}
-			
-			docPlugin.addModelDefinition(moduleDefinition);
+		}
+		return true;
+	}
+	
+	private static boolean exportExternalSubmodelDefinition(CompSBMLDocumentPlugin docPlugin, ModuleDefinition moduleDefinition)
+	{
+		ExternalModelDefinition extDefinition = docPlugin.createExternalModelDefinition();
+		extDefinition.setId(moduleDefinition.getID());
+		extDefinition.setSource(moduleDefinition.getExternalSource());
+		if (moduleDefinition.getExternalModelRef() != null)
+		{
+			extDefinition.setModelRef(moduleDefinition.getExternalModelRef());
+		}
+		if (moduleDefinition.getmd5() != null)
+		{
+			extDefinition.setMd5(moduleDefinition.getmd5());
 		}
 		return true;
 	}
@@ -576,6 +638,7 @@ public class SBMLParser {
 		CompSBasePlugin compartmentPlugin;
 		long numberOfSubmoduleCompartments;
 		Compartment submoduleCompartment;
+		Model submodel;
 		//Compartment compartment = model.getCompartment(0);
 		//CompSBasePlugin compartmentPlugin = (CompSBasePlugin)compartment.getPlugin("comp");
 		ReplacedElement replacedElement;
@@ -589,14 +652,25 @@ public class SBMLParser {
 			//System.out.println("modelRef: " + modelRef);
 			if (docPlugin.getModelDefinition(modelRef) == null)
 			{
-				System.err.println("model definition is null");
-				return false;
+				if (docPlugin.getExternalModelDefinition(modelRef) == null)
+				{
+					System.err.println("model definition is null");
+					return false;
+				}
+				else
+				{
+					submodel = docPlugin.getExternalModelDefinition(modelRef).getReferencedModel();
+				}
 			}
-			numberOfSubmoduleCompartments = docPlugin.getModelDefinition(modelRef).getNumCompartments();
+			else
+			{
+				submodel = docPlugin.getModelDefinition(modelRef);
+			}
+			numberOfSubmoduleCompartments = submodel.getNumCompartments();
 			for (long i = 0; i < numberOfSubmoduleCompartments; i++)
 			{
 				moduleCompartment = null;
-				submoduleCompartment = docPlugin.getModelDefinition(modelRef).getCompartment(i);
+				submoduleCompartment = submodel.getCompartment(i);
 				if (submoduleCompartment == null)
 				{
 					System.err.println("model compartment is null");
@@ -1188,7 +1262,7 @@ public class SBMLParser {
 				CompSBMLDocumentPlugin docCompPlugin = (CompSBMLDocumentPlugin)doc.getPlugin("comp");
 				SBMLNamespaces nameSpaces = new SBMLNamespaces();
 				nameSpaces.addNamespaces(doc.getNamespaces());
-				importSubmodules(modelCompPlugin.getListOfSubmodels(), docCompPlugin.getListOfModelDefinitions(), nameSpaces, glyph, module);
+				importSubmodules(modelCompPlugin.getListOfSubmodels(), docCompPlugin, nameSpaces, glyph, module);
 			}
 			// add connections
 			if (containerMod.getNumSpecies() > 0)
@@ -1200,11 +1274,12 @@ public class SBMLParser {
 		return module;
 	}
 	
-	private static void importSubmodules(ListOfSubmodels submodules, ListOfModelDefinitions moduleDefinitions, SBMLNamespaces nameSpaces, GeneralGlyph parentGlyph, Module parent)
+	private static void importSubmodules(ListOfSubmodels submodules, CompSBMLDocumentPlugin docCompPlugin, SBMLNamespaces nameSpaces, GeneralGlyph parentGlyph, Module parent)
 	{
 		ListOfGraphicalObjects subGlyphs = parentGlyph.getListOfSubGlyphs();
 		//System.out.println("Number of subglyphs: " + subGlyphs.size());
-		
+		ListOfModelDefinitions internalModuleDefinitions = docCompPlugin.getListOfModelDefinitions();
+		ListOfExternalModelDefinitions externalModuleDefinitions = docCompPlugin.getListOfExternalModelDefinitions();
 		String name = "";
 		String sbmlID = "";
 		String modelRef = "";
@@ -1212,18 +1287,24 @@ public class SBMLParser {
 		Submodel submodule;
 		SBMLNamespaces ns;
 		SBMLDocument newDoc;
-		ModelDefinition moduleDefinition;
+		SBase genericDefinition;
+		ModelDefinition internalModuleDefinition;
+		ExternalModelDefinition externalModuleDefinition;
+		Model moduleDefinition = null;
 		ModuleDefinition definition;
 		Module module;
 		CompModelPlugin submodulePlugin;
 		GeneralGlyph glyph = null;
+		boolean externalDefinition;
 		for(long i = 0; i < submodules.size(); i++)
 		{
+			externalDefinition = false;
 			submodule = (Submodel)submodules.get(i);
 			name = submodule.getName();
 			sbmlID = submodule.getId();
 			modelRef = submodule.getModelRef();
-			moduleDefinition = moduleDefinitions.get(modelRef);
+			internalModuleDefinition = internalModuleDefinitions.get(modelRef);
+			externalModuleDefinition = externalModuleDefinitions.get(modelRef);
 			glyph = (GeneralGlyph)subGlyphs.get(sbmlID + "_glyph");
 			
 			/*
@@ -1239,8 +1320,31 @@ public class SBMLParser {
 			definition = getModuleDefinition(modelRef);
 			if (definition == null)
 			{
-				// the ModuleDefinition has not been created yet
-				definition = importModuleDefinition(moduleDefinition, parent.getModuleDefinition(), nameSpaces, glyph);
+				if ((internalModuleDefinition != null) && (externalModuleDefinition == null))
+				{
+					// module definition is internal
+					moduleDefinition = internalModuleDefinition;
+					definition = importModuleDefinition(moduleDefinition, parent.getModuleDefinition(), nameSpaces, glyph);
+				}
+				else if ((internalModuleDefinition == null) && (externalModuleDefinition != null))
+				{
+					// module definition is external
+					String externalSource = externalModuleDefinition.getSource();
+					String md5 = externalModuleDefinition.getMd5();
+					String externalModelRef = externalModuleDefinition.getModelRef();
+					boolean validExternalFile = AC_Utility.validateExternalFile(externalSource, md5);
+					if (validExternalFile)
+					{
+						definition = importExternalDefinition(externalSource, externalModelRef);
+						moduleDefinition = externalModuleDefinition.getReferencedModel();
+					}
+				}
+				else
+				{
+					// no definition
+					moduleDefinition = null;
+				}
+				
 				if (definition == null)
 				{
 					System.err.println("Error in SBMLParser.importSubmodules: module definition is null.");
@@ -1248,6 +1352,28 @@ public class SBMLParser {
 				}
 				definitionList.add(definition);
 			}
+			if ((internalModuleDefinition != null) && (externalModuleDefinition == null))
+			{
+				// module definition is internal
+				moduleDefinition = internalModuleDefinition;
+			}
+			else if ((internalModuleDefinition == null) && (externalModuleDefinition != null))
+			{
+				// module definition is external
+				moduleDefinition = externalModuleDefinition.getReferencedModel();
+			}
+			else
+			{
+				// no definition
+				moduleDefinition = null;
+			}
+			
+			if (moduleDefinition == null)
+			{
+				System.err.println("Error in SBMLParser.importSubmodules: module definition is null.");
+				return;
+			}
+			
 			name = validateModuleName(name);
 			if (name == null)
 			{
@@ -1281,7 +1407,7 @@ public class SBMLParser {
 			// add submodules
 			if(submodulePlugin.getNumSubmodels() > 0)
 			{
-				importSubmodules(submodulePlugin.getListOfSubmodels(), moduleDefinitions, nameSpaces, glyph, module);
+				importSubmodules(submodulePlugin.getListOfSubmodels(), docCompPlugin, nameSpaces, glyph, module);
 			}
 			// add connections
 			if (moduleDefinition.getNumSpecies() > 0)
@@ -1291,7 +1417,7 @@ public class SBMLParser {
 		}
 	}
 	
-	private static ModuleDefinition importModuleDefinition(ModelDefinition moduleDefinition, ModuleDefinition parent, SBMLNamespaces nameSpaces, GeneralGlyph glyph)
+	private static ModuleDefinition importModuleDefinition(Model moduleDefinition, ModuleDefinition parent, SBMLNamespaces nameSpaces, GeneralGlyph glyph)
 	{
 		String sbmlID = moduleDefinition.getId();
 		String name = moduleDefinition.getName();

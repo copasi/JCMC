@@ -218,13 +218,18 @@ public class AC_IO
 		String md5 = "";
 		*/
 		
-		/*
 		if (external)
 		{
 			boolean validExternalFile = AC_Utility.validateExternalFile(externalSource, md5);
-			
+			if (validExternalFile)
+			{
+				return SBMLParser.importExternalDefinition(externalSource, externalModelRef);
+			}
+			else
+			{
+				return null;
+			}
 		}
-		*/
 		
 		//ModuleDefinition definition = new ModuleDefinition(name, parent, msmbData);
 		name = validateModuleName(name);

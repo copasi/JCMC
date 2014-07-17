@@ -1544,12 +1544,27 @@ public class AC_Utility
 		
 	}
 	
-	/*
 	public static boolean validateExternalFile(String externalSource, String md5)
 	{
+		String newmd5;
 		
+		try
+		{
+			newmd5 = CheckSumGenerator.generate(externalSource);
+		}
+		catch (Exception e)
+		{
+			System.err.println("AC_Utility.validateExternalFile: CheckSumGenerator failed.");
+			return false;
+		}
+		
+		if (md5.equals(newmd5))
+		{
+			return true;
+		}
+		
+		return false;
 	}
-	*/
 	
 	public static void printModuleTree()
 	{
