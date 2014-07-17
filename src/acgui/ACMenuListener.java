@@ -103,47 +103,55 @@ public class ACMenuListener implements ActionListener
 			//return;
 			if (AC_GUI.isModuleOpen())
 			{
-				fileName = null;
-				fileChooser = new JFileChooser (new File ("."));
-				fileChooser.setFileFilter (new FileNameExtensionFilter("Model file (.ac)","ac"));
-				while (fileChooser.showSaveDialog(null) == JFileChooser.APPROVE_OPTION)
+				if (AC_GUI.lastLoadSave_file != null)
 				{
-					file = fileChooser.getSelectedFile();
-					fileName = file.getName();
-					try
+					AC_GUI.save(AC_GUI.rootModule, AC_GUI.lastLoadSave_file);
+					JOptionPane.showMessageDialog(null, "The module has been saved in " + AC_GUI.lastLoadSave_file);
+				}
+				else
+				{
+					fileName = null;
+					fileChooser = new JFileChooser (new File ("."));
+					fileChooser.setFileFilter (new FileNameExtensionFilter("Model file (.ac)","ac"));
+					while (fileChooser.showSaveDialog(null) == JFileChooser.APPROVE_OPTION)
 					{
-						if (file.exists())
+						file = fileChooser.getSelectedFile();
+						fileName = file.getName();
+						try
 						{
-							String msg = "A file named \"" + fileName + "\" already exists.  Do you want to replace it?";
-							int n = JOptionPane.showConfirmDialog(null, msg, "", JOptionPane.OK_CANCEL_OPTION);
-							if (n == JOptionPane.OK_OPTION)
+							if (file.exists())
+							{
+								String msg = "A file named \"" + fileName + "\" already exists.  Do you want to replace it?";
+								int n = JOptionPane.showConfirmDialog(null, msg, "", JOptionPane.OK_CANCEL_OPTION);
+								if (n == JOptionPane.OK_OPTION)
+								{
+									fileName = file.getAbsolutePath();
+									if (!fileName.endsWith(".ac"))
+									{
+										fileName += ".ac";
+									}
+									AC_GUI.save(AC_GUI.rootModule, fileName);
+									JOptionPane.showMessageDialog(null, "The module has been saved in " + fileName);
+									break;
+								}
+							}
+							else
 							{
 								fileName = file.getAbsolutePath();
 								if (!fileName.endsWith(".ac"))
 								{
 									fileName += ".ac";
 								}
-								AC_GUI.save(AC_GUI.activeModule, fileName);
+								AC_GUI.save(AC_GUI.rootModule, fileName);
 								JOptionPane.showMessageDialog(null, "The module has been saved in " + fileName);
 								break;
 							}
 						}
-						else
+						catch (Exception e)
 						{
-							fileName = file.getAbsolutePath();
-							if (!fileName.endsWith(".ac"))
-							{
-								fileName += ".ac";
-							}
-							AC_GUI.save(AC_GUI.activeModule, fileName);
-							JOptionPane.showMessageDialog(null, "The module has been saved in " + fileName);
-							break;
+							System.err.println("ACMenuListener: save failed.");
+							e.printStackTrace();
 						}
-					}
-					catch (Exception e)
-					{
-						System.err.println("ACMenuListener: save failed.");
-						e.printStackTrace();
 					}
 				}
 			}
@@ -192,7 +200,7 @@ public class ACMenuListener implements ActionListener
 								{
 									fileName += ".ac";
 								}
-								AC_GUI.save(AC_GUI.activeModule, fileName);
+								AC_GUI.save(AC_GUI.rootModule, fileName);
 								JOptionPane.showMessageDialog(null, "The module has been saved in " + fileName);
 								break;
 							}
@@ -204,7 +212,7 @@ public class ACMenuListener implements ActionListener
 							{
 								fileName += ".ac";
 							}
-							AC_GUI.save(AC_GUI.activeModule, fileName);
+							AC_GUI.save(AC_GUI.rootModule, fileName);
 							JOptionPane.showMessageDialog(null, "The module has been saved in " + fileName);
 							break;
 						}

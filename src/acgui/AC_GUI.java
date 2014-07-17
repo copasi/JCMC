@@ -5,17 +5,22 @@ import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.ListIterator;
 import java.util.Vector;
 
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
@@ -26,6 +31,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.KeyStroke;
 import javax.swing.UIManager;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.tree.DefaultMutableTreeNode;
 
 import msmb.gui.MainGui;
@@ -47,6 +53,7 @@ public class AC_GUI extends JFrame
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
+	private static String ac_version = "0.0";
 	protected static DrawingBoard drawingBoard;
 	protected static TreeView treeView;
 	protected static ModelBuilder modelBuilder;
@@ -54,8 +61,9 @@ public class AC_GUI extends JFrame
 	protected static Module activeModule;
 	protected static Module selectedModule;
 	protected static CopasiUtility copasiUtility;
-	protected static boolean isSavedInACDataStructure;
-	protected static boolean isSavedInACFile;
+	protected static boolean modelSavedInACDataStructure;
+	protected static boolean modelSavedInACFile;
+	protected static String lastLoadSave_file;
 	
 	private static JMenuBar menuBar;
 	private static JMenu fileMenu;
@@ -72,7 +80,7 @@ public class AC_GUI extends JFrame
 	 */
 	public AC_GUI()
 	{
-		super("Aggregation Connector");
+		super(Constants.TOOL_NAME_FULL);
 		copasiUtility = new CopasiUtility();
 		activeModule = null;
 		initializeComponents();
@@ -100,7 +108,7 @@ public class AC_GUI extends JFrame
 		}
 
 		final AC_GUI currentGUI = new AC_GUI();
-		currentGUI.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		//currentGUI.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		currentGUI.setSize(900, 800);
 		// make the frame full screen
 		// currentGUI.setExtendedState(JFrame.MAXIMIZED_BOTH);
@@ -132,6 +140,47 @@ public class AC_GUI extends JFrame
 		usrPathsField.set(null, newPaths);
 	}
 	
+	private String getVersionFromFile() 
+	{
+		BufferedReader fin;
+		String strLine;
+		String major = "";
+		String minor = "";
+		String commit = "";
+		
+		try 
+		{
+			InputStream is = getClass().getResourceAsStream("util/version.txt");
+			if(is == null)
+			{
+				 return "0.9.0";
+			}
+			fin = new BufferedReader(new InputStreamReader(is));
+			while ((strLine = fin.readLine()) != null)
+			{
+				if(strLine.toLowerCase().contains("major"))
+				{
+					major = strLine.substring(strLine.indexOf("=")+1).trim();
+				}
+				else if (strLine.toLowerCase().contains("minor"))
+				{
+					minor = strLine.substring(strLine.indexOf("=")+1).trim();
+				}
+				else if (strLine.toLowerCase().contains("commit"))
+				{
+					commit = strLine.substring(strLine.indexOf("=")+1).trim();
+				} 
+			 }
+			fin.close();
+			return major+"."+minor+"."+commit;	
+		}
+		catch (Exception e) 
+		{
+			e.printStackTrace();
+			return "0.9.0";
+		}
+	}
+	
 	public static void load(String fileName, boolean external)
 	{
 		Module mod = null;
@@ -150,7 +199,7 @@ public class AC_GUI extends JFrame
 			else if (ext.equals(".ac"))
 			{
 				mod = AC_IO.loadModule(fileName);
-				//setSavedInACFile(true);
+				setSavedInACFile(true);
 			}
 				//System.out.println("Number of models in the CCopasiRootContainer: " + CCopasiRootContainer.getDatamodelList().size());
 		}
@@ -174,6 +223,7 @@ public class AC_GUI extends JFrame
 		{
 			return;
 		}
+		lastLoadSave_file = fileName;
 		addRecentFile(fileName);
 		rootModule = mod;
 		AC_Utility.addSubmoduleDefinitionsToList(mod);
@@ -259,6 +309,7 @@ public class AC_GUI extends JFrame
 			drawingBoard.saveCurrentPositions();
 		}
 		AC_IO.saveModule(module, fileName);
+		lastLoadSave_file = fileName;
 		addRecentFile(fileName);
 		setSavedInACFile(true);
 		setSavedInACDataStructure(true);
@@ -651,6 +702,7 @@ public class AC_GUI extends JFrame
 		{
 			System.err.println("Error AC_GUI.addVisibleVariable(): VisibleVariableNodes were not successfully added to all Module instances.");
 		}
+		setSavedInACFile(false);
 		setSavedInACDataStructure(false);
 	}
 	
@@ -670,6 +722,7 @@ public class AC_GUI extends JFrame
 		{
 			System.err.println("Error AC_GUI.addVisibleVariable(): VisibleVariableNodes were not successfully added to all Module instances.");
 		}
+		setSavedInACFile(false);
 		setSavedInACDataStructure(false);
 	}
 	
@@ -702,6 +755,7 @@ public class AC_GUI extends JFrame
 			drawingBoard.removeCell(var.getDrawingCell());
 			//modelBuilder.removeSpecies(var.getVisibleVariableDefinition().getRefName());
 			AC_Utility.deleteVisibleVariable(var);
+			setSavedInACFile(false);
 			setSavedInACDataStructure(false);
 		}
 		else
@@ -710,6 +764,7 @@ public class AC_GUI extends JFrame
 			drawingBoard.removeCell(var.getDrawingCell());
 			//modelBuilder.removeSpecies(var.getVisibleVariableDefinition().getRefName());
 			AC_Utility.deleteVisibleVariable(var);
+			setSavedInACFile(false);
 			setSavedInACDataStructure(false);
 		}
 	}
@@ -746,6 +801,7 @@ public class AC_GUI extends JFrame
 		{
 			System.err.println("Error AC_GUI.addPort(): PortNodes were not successfully added to all Module instances.");
 		}
+		setSavedInACFile(false);
 		setSavedInACDataStructure(false);
 	}
 	
@@ -805,6 +861,7 @@ public class AC_GUI extends JFrame
 			modelBuilder.removePort(pNode);
 			// remove the port node
 			AC_Utility.deletePort(pNode);
+			setSavedInACFile(false);
 		}
 		else
 		{
@@ -816,6 +873,7 @@ public class AC_GUI extends JFrame
 			modelBuilder.removePort(pNode);
 			// remove the port node
 			AC_Utility.deletePort(pNode);
+			setSavedInACFile(false);
 		}
 	}
 	
@@ -875,6 +933,7 @@ public class AC_GUI extends JFrame
 		{
 			System.err.println("Error AC_GUI.addConnection(): ConnectionNodes were not successfully added to all Module instances.");
 		}
+		setSavedInACFile(false);
 	}
 	
 	public static void addConnection(Module parentMod, mxCell source, TerminalType sourceType, mxCell target, TerminalType targetType, String drawingCellStyle)
@@ -905,6 +964,7 @@ public class AC_GUI extends JFrame
 			drawingBoard.removeCell(edge.getDrawingCell());
 			AC_Utility.deleteConnection(edge);
 		}
+		setSavedInACFile(false);
 	}
 	
 	public static void updatePort(PortNode port, String value, int col)
@@ -924,6 +984,7 @@ public class AC_GUI extends JFrame
 		}
 		
 		drawingBoard.updatePort(port.getDrawingCell());
+		setSavedInACFile(false);
 	}
 	
 	public static void updatePortInstantiations(PortNode port, String value, int col)
@@ -955,7 +1016,7 @@ public class AC_GUI extends JFrame
 		selectedModule = mod;
 		treeView.setSelected(mod.getTreeNode());
 		drawingBoard.setSelected(mod.getDrawingCell());
-		System.out.println("Selected Module = " + mod.getName());
+		//System.out.println("Selected Module = " + mod.getName());
 	}
 	
 	/**
@@ -1108,6 +1169,7 @@ public class AC_GUI extends JFrame
 						System.err.println("AC_GUI.canModuleBeModified(): msmb data is NULL.");
 					}
 					activeModule.getModuleDefinition().setMSMBData(code);
+					setSavedInACFile(false);
 					break;
 				case JOptionPane.NO_OPTION:
 					// user chose to save the current module definition
@@ -1120,6 +1182,7 @@ public class AC_GUI extends JFrame
 						{
 							case  JOptionPane.YES_OPTION:
 								definition.setExternal(false);
+								setSavedInACFile(false);
 								break;
 							case  JOptionPane.NO_OPTION:
 								return false;
@@ -1153,6 +1216,7 @@ public class AC_GUI extends JFrame
 				{
 					case  JOptionPane.YES_OPTION:
 						definition.setExternal(false);
+						setSavedInACFile(false);
 						break;
 					case  JOptionPane.NO_OPTION:
 						return false;
@@ -1193,6 +1257,7 @@ public class AC_GUI extends JFrame
 						System.err.println("AC_GUI.canModuleBeModified(): msmb data is NULL.");
 					}
 					activeModule.getModuleDefinition().setMSMBData(code);
+					setSavedInACFile(false);
 					break;
 				case JOptionPane.NO_OPTION:
 					return false;
@@ -1209,6 +1274,7 @@ public class AC_GUI extends JFrame
 				{
 					case  JOptionPane.YES_OPTION:
 						definition.setExternal(false);
+						setSavedInACFile(false);
 						break;
 					case  JOptionPane.NO_OPTION:
 						return false;
@@ -1232,6 +1298,7 @@ public class AC_GUI extends JFrame
 			{
 				case  JOptionPane.YES_OPTION:
 					definition.setExternal(false);
+					setSavedInACFile(false);
 					break;
 				case  JOptionPane.NO_OPTION:
 					return false;
@@ -1388,6 +1455,84 @@ public class AC_GUI extends JFrame
 	
 	public static void close()
 	{
+		if (rootModule != null)
+		{
+			if (!modelSavedInACFile)
+			{
+				//Object[] options = {"Yes","No","Cancel"};
+				int userInput = JOptionPane.showOptionDialog(null,
+						"Model \""+ activeModule.getName() +"\" has been modified. Do you want to save the changes?",
+						"Question",
+						JOptionPane.YES_NO_CANCEL_OPTION,
+						JOptionPane.QUESTION_MESSAGE,
+						null, null, null);
+						//options,
+						//options[0]);
+				
+				switch (userInput)
+				{
+					case JOptionPane.YES_OPTION:
+						if (lastLoadSave_file != null)
+						{
+							AC_GUI.save(AC_GUI.activeModule, lastLoadSave_file);
+							JOptionPane.showMessageDialog(null, "The module has been saved in " + lastLoadSave_file);
+						}
+						else
+						{
+							String fileName = null;
+							File file;
+							JFileChooser fileChooser = new JFileChooser (new File ("."));
+							fileChooser.setFileFilter (new FileNameExtensionFilter("Model file (.ac)","ac"));
+							while (fileChooser.showSaveDialog(null) == JFileChooser.APPROVE_OPTION)
+							{
+								file = fileChooser.getSelectedFile();
+								fileName = file.getName();
+								try
+								{
+									if (file.exists())
+									{
+										String msg = "A file named \"" + fileName + "\" already exists.  Do you want to replace it?";
+										int n = JOptionPane.showConfirmDialog(null, msg, "", JOptionPane.OK_CANCEL_OPTION);
+										if (n == JOptionPane.OK_OPTION)
+										{
+											fileName = file.getAbsolutePath();
+											if (!fileName.endsWith(".ac"))
+											{
+												fileName += ".ac";
+											}
+											AC_GUI.save(AC_GUI.rootModule, fileName);
+											JOptionPane.showMessageDialog(null, "The module has been saved in " + fileName);
+											break;
+										}
+									}
+									else
+									{
+										fileName = file.getAbsolutePath();
+										if (!fileName.endsWith(".ac"))
+										{
+											fileName += ".ac";
+										}
+										AC_GUI.save(AC_GUI.rootModule, fileName);
+										JOptionPane.showMessageDialog(null, "The module has been saved in " + fileName);
+										break;
+									}
+								}
+								catch (Exception e)
+								{
+									System.err.println("AC_GUI.exit(): save failed.");
+									e.printStackTrace();
+								}
+							}
+						}
+						break;
+					case JOptionPane.NO_OPTION:
+						// do nothing
+						break;
+					case JOptionPane.CANCEL_OPTION:
+						return;
+				}
+			}
+		}
 		treeView.clear();
 		drawingBoard.clear();
 		modelBuilder.clear();
@@ -1396,13 +1541,93 @@ public class AC_GUI extends JFrame
 		rootModule = null;
 		activeModule = null;
 		selectedModule = null;
+		lastLoadSave_file = null;
 		setSavedInACDataStructure(false);
 		setSavedInACFile(false);
 	}
 	
 	public static void exit()
 	{
+		if (rootModule != null)
+		{
+			if (!modelSavedInACFile)
+			{
+				//Object[] options = {"Yes","No","Cancel"};
+				int userInput = JOptionPane.showOptionDialog(null,
+						"Model \""+ activeModule.getName() +"\" has been modified. Do you want to save the changes?",
+						"Question",
+						JOptionPane.YES_NO_CANCEL_OPTION,
+						JOptionPane.QUESTION_MESSAGE,
+						null, null, null);
+						//options,
+						//options[0]);
+				
+				switch (userInput)
+				{
+					case JOptionPane.YES_OPTION:
+						if (lastLoadSave_file != null)
+						{
+							AC_GUI.save(AC_GUI.activeModule, lastLoadSave_file);
+							JOptionPane.showMessageDialog(null, "The module has been saved in " + lastLoadSave_file);
+						}
+						else
+						{
+							String fileName = null;
+							File file;
+							JFileChooser fileChooser = new JFileChooser (new File ("."));
+							fileChooser.setFileFilter (new FileNameExtensionFilter("Model file (.ac)","ac"));
+							while (fileChooser.showSaveDialog(null) == JFileChooser.APPROVE_OPTION)
+							{
+								file = fileChooser.getSelectedFile();
+								fileName = file.getName();
+								try
+								{
+									if (file.exists())
+									{
+										String msg = "A file named \"" + fileName + "\" already exists.  Do you want to replace it?";
+										int n = JOptionPane.showConfirmDialog(null, msg, "", JOptionPane.OK_CANCEL_OPTION);
+										if (n == JOptionPane.OK_OPTION)
+										{
+											fileName = file.getAbsolutePath();
+											if (!fileName.endsWith(".ac"))
+											{
+												fileName += ".ac";
+											}
+											AC_GUI.save(AC_GUI.rootModule, fileName);
+											JOptionPane.showMessageDialog(null, "The module has been saved in " + fileName);
+											break;
+										}
+									}
+									else
+									{
+										fileName = file.getAbsolutePath();
+										if (!fileName.endsWith(".ac"))
+										{
+											fileName += ".ac";
+										}
+										AC_GUI.save(AC_GUI.rootModule, fileName);
+										JOptionPane.showMessageDialog(null, "The module has been saved in " + fileName);
+										break;
+									}
+								}
+								catch (Exception e)
+								{
+									System.err.println("AC_GUI.exit(): save failed.");
+									e.printStackTrace();
+								}
+							}
+						}
+						break;
+					case JOptionPane.NO_OPTION:
+						// do nothing
+						break;
+					case JOptionPane.CANCEL_OPTION:
+						return;
+				}
+			}
+		}
 		saveRecentFiles();
+		System.gc();
 		System.exit(0);
 	}
 	
@@ -1418,7 +1643,7 @@ public class AC_GUI extends JFrame
 		modelBuilderPanel.add(modelBuilder.getPanel(), BorderLayout.CENTER);
 		modelBuilder.setVisible(false);
 		//JScrollPane modelBuilderWindow = new JScrollPane(modelBuilderPanel);
-
+		
 		// The aggregation window
 		drawingBoard = new DrawingBoard();
 
@@ -1444,7 +1669,17 @@ public class AC_GUI extends JFrame
 		JScrollPane window = new JScrollPane(horizontalLine);
 		this.add(window);
 		//this.add(horizontalLine);
-
+		ac_version = getVersionFromFile();
+		this.setTitle(Constants.TOOL_NAME_FULL + " - version " + ac_version);
+		
+		addWindowListener(new WindowAdapter() {
+		    @Override
+		    public void windowClosing(WindowEvent evt) {
+		        exit();
+		    }
+		});
+		
+		setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 		this.pack();
 	}
 
@@ -1486,18 +1721,18 @@ public class AC_GUI extends JFrame
 		moduleMenu.add(makeMenuItem(MenuItem.ADD_SUMMATION_MODULE, menuListener, -1));
 		moduleMenu.add(makeMenuItem(MenuItem.ADD_PRODUCT_MODULE, menuListener, -1));
 		moduleMenu.addSeparator();
-		moduleMenu.add(makeMenuItem(MenuItem.SAVE_SUBMODULE_AS_TEMPLATE, menuListener, -1));
-		moduleMenu.addSeparator();
+		//moduleMenu.add(makeMenuItem(MenuItem.SAVE_SUBMODULE_AS_TEMPLATE, menuListener, -1));
+		//moduleMenu.addSeparator();
 		moduleMenu.add(makeMenuItem(MenuItem.REMOVE_SUBMODULE, menuListener, -1));
 
 		// Tools
 		toolsMenu = new JMenu("Tools");
 		toolsMenu.add(makeMenuItem(MenuItem.VALIDATE_MODEL, menuListener, -1));
 		toolsMenu.addSeparator();
-		toolsMenu.add(makeMenuItem(MenuItem.VIEW_MODEL, menuListener, -1));
-		toolsMenu.add(makeMenuItem(MenuItem.FLATTEN_MODEL, menuListener, -1));
-		toolsMenu.addSeparator();
-		toolsMenu.add(makeMenuItem(MenuItem.DECOMPOSE_INTO_MODULES, menuListener, -1));
+		//toolsMenu.add(makeMenuItem(MenuItem.VIEW_MODEL, menuListener, -1));
+		//toolsMenu.add(makeMenuItem(MenuItem.FLATTEN_MODEL, menuListener, -1));
+		//toolsMenu.addSeparator();
+		//toolsMenu.add(makeMenuItem(MenuItem.DECOMPOSE_INTO_MODULES, menuListener, -1));
 		
 		// Help
 		helpMenu = new JMenu("Help");
@@ -1789,11 +2024,11 @@ public class AC_GUI extends JFrame
 	
 	private static void setSavedInACDataStructure(boolean value)
 	{
-		isSavedInACDataStructure = value;
+		modelSavedInACDataStructure = value;
 	}
 	
-	private static void setSavedInACFile(boolean value)
+	public static void setSavedInACFile(boolean value)
 	{
-		isSavedInACFile = value;
+		modelSavedInACFile = value;
 	}
 }

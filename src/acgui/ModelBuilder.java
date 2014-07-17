@@ -743,6 +743,7 @@ public class ModelBuilder
 								System.err.println("ModelBuilder.installListeners(): something changed, msmb data is NULL.");
 							}
 							AC_GUI.activeModule.getModuleDefinition().setMSMBData(code);
+							AC_GUI.setSavedInACFile(false);
 						}
 						else
 						{

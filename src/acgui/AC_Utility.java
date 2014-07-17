@@ -1358,6 +1358,7 @@ public class AC_Utility
 			//changeActiveModule(activeModule);
 			AC_GUI.drawingBoard.changeModule(AC_GUI.activeModule);
 			AC_GUI.modelBuilder.updatePorts();
+			AC_GUI.setSavedInACFile(false);
 		}
 	}
 	
@@ -1377,6 +1378,7 @@ public class AC_Utility
 		}
 		moduleNameList.remove(oldName);
 		moduleNameList.add(newName);
+		AC_GUI.setSavedInACFile(false);
 	}
 	
 	public static void changeModuleDefinitionName(ModuleDefinition definition, String newName, boolean fromModelBuilder)
@@ -1398,6 +1400,7 @@ public class AC_Utility
 		}
 		moduleNameList.remove(oldName);
 		moduleNameList.add(newName);
+		AC_GUI.setSavedInACFile(false);
 	}
 	
 	/**
