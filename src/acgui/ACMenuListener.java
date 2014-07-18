@@ -81,7 +81,8 @@ public class ACMenuListener implements ActionListener
 	            	File file = fileChooser.getSelectedFile();
 	                //inputFile = file.getName().substring(0,file.getName().lastIndexOf("."));
 	            	String ext = file.getAbsolutePath().substring(file.getAbsolutePath().lastIndexOf("."));
-					AC_GUI.load(file.getAbsolutePath(), true);
+					//AC_GUI.load(file.getAbsolutePath(), true);
+	            	AC_GUI.load(file.getAbsolutePath(), false);
 	            	//AC_GUI.currentGUI.loadTest(file.getAbsolutePath());
 	            }
 			}
