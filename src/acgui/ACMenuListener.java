@@ -529,11 +529,13 @@ public class ACMenuListener implements ActionListener
 					"Needs further discussion and exploration (not yet implemented).");
 			break;
 		case HELP_CONTENTS:
-			//JOptionPane.showMessageDialog(null, "Will display some sort of help tool (not yet implemented).");
-			AC_Utility.printModuleTree();
+			JOptionPane.showMessageDialog(null, "The user manual is located in the \"doc\" folder.");
+			//AC_Utility.printModuleTree();
 			break;
 		case ABOUT_AGGREGATION_CONNECTOR:
-			JOptionPane.showMessageDialog(null, "Will give information about the tool (not yet implemented).");
+			String info = Constants.TOOL_NAME_FULL + AC_Utility.eol;
+			info += "version: " + AC_GUI.ac_version;
+			JOptionPane.showMessageDialog(null, info);
 			//System.out.println("Copasi data model number: " + CopasiUtility.getNumberOfModels());
 			//CopasiUtility.printDataModelList();
 			break;

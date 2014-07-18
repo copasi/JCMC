@@ -5,6 +5,7 @@ import java.util.ListIterator;
 import java.util.regex.Pattern;
 
 import javax.swing.JOptionPane;
+import javax.swing.JTextArea;
 
 import msmb.commonUtilities.ChangedElement;
 
@@ -1507,38 +1508,69 @@ public class AC_Utility
 	public static void validateAllModules()
 	{
 		ArrayList<String> definitionList = new ArrayList<String>();
+		String columns = "Module:\t\tIssues:" + eol;
+		String result = "";
+		String message;
 		
 		// save the active module MSMB data
 		byte[] currentMSMBData = AC_GUI.modelBuilder.saveModel();
 		AC_GUI.activeModule.getModuleDefinition().setMSMBData(currentMSMBData);
 		
 		// load and save new Module data
-		validateModule(AC_GUI.rootModule);
-		
+		result += validateModule(AC_GUI.rootModule);
+		message = columns + result;
+		System.out.println(message);
 		//reload the active module MSMB data
 		AC_GUI.modelBuilder.loadModel(currentMSMBData, AC_GUI.activeModule);
 		AC_GUI.modelBuilder.updatePorts();
 		
-		
+		JOptionPane.showMessageDialog(null,
+			    new JTextArea(message),
+			    "Module Validation",
+			    JOptionPane.INFORMATION_MESSAGE);
 	}
 	
-	public static void validateModule(Module module)
+	public static String validateModule(Module module)
 	{
 		String moduleName = module.getName();
 		String definitionName = module.getModuleDefinition().getName();
 		int validStatus = -1;
+		String status = "";
+		String modelInfo = "";
 		AC_GUI.modelBuilder.loadModel(module.getModuleDefinition().getMSMBData(), module);
 		validStatus = AC_GUI.modelBuilder.validateModel();
 		
 		String msg = "Module \"" + moduleName + "\", Definition \"" + definitionName + "\"";
 		msg += " valid status: " + validStatus;
 		
-		System.out.println(msg);
-		
-		ListIterator<Module> list = module.getChildren().listIterator();
-		while(list.hasNext())
+		switch (validStatus)
 		{
-			validateModule(list.next());
+			case 0:
+				status = "none";
+				break;
+			case 1:
+				status = "major";
+				break;
+			case 2:
+				status = "minor";
+				break;
+		}
+		
+		modelInfo += moduleName + "\t\t" + status + eol;
+		
+		System.out.println(msg);
+		if (module.getChildren().size() == 0)
+		{
+			return modelInfo;
+		}
+		else
+		{
+			ListIterator<Module> list = module.getChildren().listIterator();
+			while(list.hasNext())
+			{
+				modelInfo += validateModule(list.next());
+			}
+			return modelInfo;
 		}
 	}
 	

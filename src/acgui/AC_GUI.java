@@ -53,7 +53,7 @@ public class AC_GUI extends JFrame
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	private static String ac_version = "0.0";
+	protected static String ac_version = "0.0";
 	protected static DrawingBoard drawingBoard;
 	protected static TreeView treeView;
 	protected static ModelBuilder modelBuilder;
