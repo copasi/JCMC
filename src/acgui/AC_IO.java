@@ -23,6 +23,7 @@ import com.mxgraph.model.mxGeometry;
 public class AC_IO
 {
 
+	private static ArrayList<ModuleDefinition> definitionList = new ArrayList<ModuleDefinition>();
 	/**
 	 * 
 	 */
@@ -58,6 +59,8 @@ public class AC_IO
 		Map<String, Object> data = null;
 		Module mod = null;
 		
+		definitionList.clear();
+		
 		try
 		{	 
 			FileInputStream fin = new FileInputStream(fileName);
@@ -87,6 +90,7 @@ public class AC_IO
 			}
 		}
 		
+		definitionList.clear();
 		return mod;
 	}
 	
@@ -304,6 +308,7 @@ public class AC_IO
 			}
 		}
 		
+		definitionList.add(definition);
 		return definition;
 	}
 	
@@ -617,8 +622,10 @@ public class AC_IO
 				targetType = '0';
 		}
 		
-		data.put("sourceParent", definition.getSourceDefinition().getParent().getName());
-		data.put("targetParent", definition.getTargetDefinition().getParent().getName());
+		//data.put("sourceParent", definition.getSourceDefinition().getParent().getName());
+		//data.put("targetParent", definition.getTargetDefinition().getParent().getName());
+		data.put("sourceParent", definition.getSourceDefinition().getParent().getID());
+		data.put("targetParent", definition.getTargetDefinition().getParent().getID());
 		data.put("sourceRefName", definition.getSourceDefinition().getRefName());
 		data.put("targetRefName", definition.getTargetDefinition().getRefName());
 		data.put("sourceType", sourceType);
@@ -719,6 +726,7 @@ public class AC_IO
 			data.put("definition", packModuleDefinition(mod.getModuleDefinition()));
 		}
 		data.put("definitionName", mod.getModuleDefinition().getName());
+		data.put("definitionID", mod.getModuleDefinition().getID());
 		data.put("drawingCellGeometry_Module", packCellGeometry(mod.getDrawingCellGeometryModule()));
 		data.put("drawingCellGeometry_Submodule", packCellGeometry(mod.getDrawingCellGeometrySubmodule()));
 		data.put("drawingCellStyle", mod.getDrawingCellStyle());
@@ -810,6 +818,7 @@ public class AC_IO
 		*/
 		String name = (String)data.get("name");
 		String definitionName = (String)data.get("definitionName");
+		String definitionID = (String)data.get("definitionID");
 		mxGeometry moduleGeometry = unpackCellGeometry((Map<String, Object>)data.get("drawingCellGeometry_Module"));
 		mxGeometry submoduleGeometry = unpackCellGeometry((Map<String, Object>)data.get("drawingCellGeometry_Submodule"));
 		String cellStyle = (String)data.get("drawingCellStyle");
@@ -830,7 +839,8 @@ public class AC_IO
 		}
 		else
 		{
-			definition = getModuleDefinition(parent.getModuleDefinition().getChildren().listIterator(), definitionName);
+			//definition = getModuleDefinitionfromName(parent.getModuleDefinition().getChildren().listIterator(), definitionName);
+			definition = getModuleDefinitionfromID(parent.getModuleDefinition().getChildren().listIterator(), definitionID);
 		}
 		if (definition == null)
 		{
@@ -858,6 +868,11 @@ public class AC_IO
 		//AC_GUI.drawingBoard.createCell(module);
 		//definition.addInstance(module);
 		*/
+		name = validateModuleName(name);
+		if (name == null)
+		{
+			return null;
+		}
 		Module module = AC_Utility.createInstance(name, definition, parent, moduleGeometry, submoduleGeometry, cellStyle);
 		module.setID(id);
 		
@@ -1178,12 +1193,13 @@ public class AC_IO
 		return geo;
 	}
 	
-	private static ACComponentDefinition getTerminalDefinition(ModuleDefinition parent, String parentName, TerminalType type, String refName)
+	private static ACComponentDefinition getTerminalDefinition(ModuleDefinition parent, String parentID, TerminalType type, String refName)
 	{
 		ACComponentDefinition definition;
 		ModuleDefinition terminalParent;
 		ListIterator<ACComponentDefinition> list;
 		
+		/*
 		if (parent.getName().equals(parentName))
 		{
 			terminalParent = parent;
@@ -1198,7 +1214,21 @@ public class AC_IO
 				return null;
 			}
 		}
-		
+		*/
+		if (parent.getID().equals(parentID))
+		{
+			terminalParent = parent;
+		}
+		else
+		{
+			// the terminal must belong to a child of parent
+			terminalParent = getModuleDefinitionfromID(parent.getChildren().listIterator(), parentID);
+			if (terminalParent == null)
+			{
+				// there is an error
+				return null;
+			}
+		}
 		switch (type)
 		{
 			case EQUIVALENCE:
@@ -1256,13 +1286,47 @@ public class AC_IO
 		}
 	}
 	
-	private static ModuleDefinition getModuleDefinition(ListIterator<ModuleDefinition> list, String name)
+	private static ModuleDefinition getModuleDefinitionfromName(ListIterator<ModuleDefinition> list, String name)
 	{
 		ModuleDefinition currentDefinition;
 		while (list.hasNext())
 		{
 			currentDefinition = list.next();
 			if (currentDefinition.getName().equals(name))
+			{
+				return currentDefinition;
+			}
+		}
+		
+		ListIterator<ModuleDefinition> backupList = definitionList.listIterator();
+		while (backupList.hasNext())
+		{
+			currentDefinition = backupList.next();
+			if (currentDefinition.getName().equals(name))
+			{
+				return currentDefinition;
+			}
+		}
+		return null;
+	}
+	
+	private static ModuleDefinition getModuleDefinitionfromID(ListIterator<ModuleDefinition> list, String id)
+	{
+		ModuleDefinition currentDefinition;
+		while (list.hasNext())
+		{
+			currentDefinition = list.next();
+			if (currentDefinition.getID().equals(id))
+			{
+				return currentDefinition;
+			}
+		}
+		
+		ListIterator<ModuleDefinition> backupList = definitionList.listIterator();
+		while (backupList.hasNext())
+		{
+			currentDefinition = backupList.next();
+			if (currentDefinition.getID().equals(id))
 			{
 				return currentDefinition;
 			}

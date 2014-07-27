@@ -2231,7 +2231,7 @@ public class AC_Utility
 	private static ModuleDefinition copyModuleDefinition(Module module, String newName)
 	{
 		ModuleDefinition oldDefinition = module.getModuleDefinition();
-		ModuleDefinition newDefinition = new ModuleDefinition(newName);
+		ModuleDefinition newDefinition = new ModuleDefinition(newName, oldDefinition.getParent());
 		
 		oldDefinition.getParent().addChild(newDefinition);
 		

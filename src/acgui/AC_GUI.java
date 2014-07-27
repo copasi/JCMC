@@ -74,6 +74,7 @@ public class AC_GUI extends JFrame
 	
 	private static String file_RecentFiles = new String();
 	private static Vector<String> recentFiles = new Vector<String>();
+	private static ArrayList<String> savedDefinitions = new ArrayList<String>();
 	
 	/**
 	 * Construct the AC_GUI object.
@@ -1856,6 +1857,7 @@ public class AC_GUI extends JFrame
 	{
 		boolean successfulSave = true;
 		byte[] code;
+		savedDefinitions.clear();
 		
 		code = modelBuilder.saveModel();
 		if (code != null)
@@ -1880,39 +1882,43 @@ public class AC_GUI extends JFrame
 		
 		// load and save each of the activeModule's children
 		ListIterator<Module> children = activeModule.getChildren().listIterator();
-		ArrayList<String> savedDefinitions = new ArrayList<String>();
+		
 		Module currentModule;
 		String moduleName;
 		String definitionName;
 		while (children.hasNext())
 		{
-			currentModule = children.next();
-			moduleName = currentModule.getName();
-			definitionName = currentModule.getModuleDefinition().getName();
-			if (savedDefinitions.contains(definitionName))
+			if (!saveModule(children.next()))
 			{
-				// the current definition has already been saved
-				continue;
-			}
-			code = currentModule.getModuleDefinition().getMSMBData();
-			if (code != null)
-			{
-				modelBuilder.loadModel(currentModule, true, false, false);
-			}
-			else
-			{
-				System.err.println("Error loading " + moduleName + " msmb data.");
 				successfulSave = false;
-				break;
 			}
-			
-			if (!modelBuilder.saveToCopasi(definitionName))
-			{
-				System.err.println("Error saving " + moduleName + " copasi data.");
-				successfulSave = false;
-				break;
-			}
-			savedDefinitions.add(definitionName);
+//			currentModule = children.next();
+//			moduleName = currentModule.getName();
+//			definitionName = currentModule.getModuleDefinition().getName();
+//			if (savedDefinitions.contains(definitionName))
+//			{
+//				// the current definition has already been saved
+//				continue;
+//			}
+//			code = currentModule.getModuleDefinition().getMSMBData();
+//			if (code != null)
+//			{
+//				modelBuilder.loadModel(currentModule, true, false, false);
+//			}
+//			else
+//			{
+//				System.err.println("Error loading " + moduleName + " msmb data.");
+//				successfulSave = false;
+//				break;
+//			}
+//			
+//			if (!modelBuilder.saveToCopasi(definitionName))
+//			{
+//				System.err.println("Error saving " + moduleName + " copasi data.");
+//				successfulSave = false;
+//				break;
+//			}
+//			savedDefinitions.add(definitionName);
 		}
 		
 		// reload the original activeModule
@@ -1921,6 +1927,47 @@ public class AC_GUI extends JFrame
 		//modelBuilder.loadModel(data, false, true);
 		modelBuilder.loadModel(activeModule, true, false, true);
 		loadPortsIntoModelBuilder(activeModule);
+		return successfulSave;
+	}
+	
+	private static boolean saveModule(Module module)
+	{
+		String moduleName = module.getName();
+		String definitionName = module.getModuleDefinition().getName();
+		byte [] code = null;
+		boolean successfulSave = true;
+		
+		if (!savedDefinitions.contains(definitionName))
+		{
+			code = module.getModuleDefinition().getMSMBData();
+			if (code != null)
+			{
+				modelBuilder.loadModel(module, true, false, false);
+			}
+			else
+			{
+				System.err.println("Error loading " + moduleName + " msmb data.");
+				successfulSave = false;
+			}
+			
+			if (!modelBuilder.saveToCopasi(definitionName))
+			{
+				System.err.println("Error saving " + moduleName + " copasi data.");
+				successfulSave = false;
+			}
+			savedDefinitions.add(definitionName);
+		}
+		
+		
+		// load and save each of the module's children
+		ListIterator<Module> children = module.getChildren().listIterator();
+		while (children.hasNext())
+		{
+			if (!saveModule(children.next()))
+			{
+				successfulSave = false;
+			}
+		}
 		return successfulSave;
 	}
 	

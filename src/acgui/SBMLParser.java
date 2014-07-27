@@ -66,6 +66,9 @@ public class SBMLParser {
 		SBMLDocument document = exportContainerDefinition(rootModule);
 		//System.out.println("getContainerDefinition() end.");
 		
+		//System.out.println(libsbml.writeSBMLToString(document));
+		//libsbml.writeSBMLToFile(document, fName);
+		
 		document.setConsistencyChecks(libsbml.LIBSBML_CAT_UNITS_CONSISTENCY, false);
 		document.setConsistencyChecks(libsbml.LIBSBML_CAT_MATHML_CONSISTENCY, false);
 		document.setConsistencyChecks(libsbml.LIBSBML_CAT_MODELING_PRACTICE, false);
@@ -815,6 +818,7 @@ public class SBMLParser {
 		PortNode port;
 		String portRef;
 		String submodelRef;
+		Module parent;
 		
 		if (outgoingEdges.length != 0)
 		{
@@ -822,6 +826,12 @@ public class SBMLParser {
 			{
 				// <comp:replacedElement comp:portRef="S" comp:submodelRef="A"/>
 				port = (PortNode)((mxCell)outgoingEdges[i]).getTarget().getValue();
+				parent = port.getParent();
+				if ((parent == node.getParent()) && (variableName.equals(port.getPortDefinition().getRefName())))
+				{
+					// this species is already assigned to the port
+					continue;
+				}
 				portRef = port.getPortDefinition().getName();
 				//submodelRef = port.getPortDefinition().getParent().getID();
 				submodelRef = port.getParent().getID();
@@ -836,13 +846,20 @@ public class SBMLParser {
 		{
 			// <comp:replacedBy comp:portRef="D_port" comp:submodelRef="B"/>
 			port = (PortNode)((mxCell)incomingEdges[0]).getSource().getValue();
-			portRef = port.getPortDefinition().getName();
-			//submodelRef = port.getPortDefinition().getParent().getID();
-			submodelRef = port.getParent().getID();
-			replacedElement = new ReplacedElement();
-			replacedElement.setPortRef(portRef);
-			replacedElement.setSubmodelRef(submodelRef);
-			speciesPlugin.addReplacedElement(replacedElement);
+			parent = port.getParent();
+			if (!((parent == node.getParent()) && (variableName.equals(port.getPortDefinition().getRefName()))))
+			{
+				portRef = port.getPortDefinition().getName();
+				//submodelRef = port.getPortDefinition().getParent().getID();
+				submodelRef = port.getParent().getID();
+				replacedElement = new ReplacedElement();
+				replacedElement.setPortRef(portRef);
+				replacedElement.setSubmodelRef(submodelRef);
+				speciesPlugin.addReplacedElement(replacedElement);
+				//ReplacedBy replacedBy = speciesPlugin.createReplacedBy();
+				//replacedBy.setPortRef(portRef);
+				//replacedBy.setSubmodelRef(submodelRef);
+			}
 		}
 		
 		return true;
