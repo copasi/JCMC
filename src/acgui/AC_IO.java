@@ -841,7 +841,14 @@ public class AC_IO
 		}
 		if (parent != null)
 		{
-			cellStyle = "Submodule_No_Show_Information";
+			if (definition instanceof MathematicalAggregatorDefinition)
+			{
+				cellStyle = ((MathematicalAggregatorDefinition)definition).getOperation().toString();
+			}
+			else
+			{
+				cellStyle = "Submodule_No_Show_Information";
+			}
 		}
 		
 		/*

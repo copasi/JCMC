@@ -1284,6 +1284,7 @@ public class SBMLParser {
 		String sbmlID = "";
 		String modelRef = "";
 		String modString = "";
+		String cellStyle = "";
 		Submodel submodule;
 		SBMLNamespaces ns;
 		SBMLDocument newDoc;

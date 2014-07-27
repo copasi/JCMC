@@ -41,11 +41,21 @@ public class AC_Utility
 	
 	public static Module createInstance(String name, String modulesbmlID, Module parent, ModuleDefinition definition, GeneralGlyph glyph)
 	{
+		// called from SBMLParser
 		Module module = new Module(name, definition, parent);
+		String cellStyle;
 		module.setID(modulesbmlID);
 		definition.addInstance(module);
 		setMSMBData(module);
-		module.setDrawingCellStyle("Submodule_No_Show_Information");
+		if (definition instanceof MathematicalAggregatorDefinition)
+		{
+			cellStyle = ((MathematicalAggregatorDefinition)definition).getOperation().toString();
+		}
+		else
+		{
+			cellStyle = "Submodule_No_Show_Information";
+		}
+		module.setDrawingCellStyle(cellStyle);
 		//masterModuleList.add(mod);
 		AC_GUI.treeView.createNode(module);
 		AC_GUI.drawingBoard.createCell(module, glyph);

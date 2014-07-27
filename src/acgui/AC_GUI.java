@@ -1705,9 +1705,9 @@ public class AC_GUI extends JFrame
 		fileMenu.addSeparator();
 	
 		fileMenu.add(makeMenuItem(MenuItem.PREFERENCES, menuListener, -1));
-		recentFilesMenu = new JMenu("Recent Files");
-		fileMenu.add(recentFilesMenu);
-		loadRecentFiles();
+		//recentFilesMenu = new JMenu("Recent Files");
+		//fileMenu.add(recentFilesMenu);
+		//loadRecentFiles();
 		//recentFilesMenu.add(makeMenuItem(MenuItem.RECENT, menuListener, -1));
 		fileMenu.addSeparator();
 		
@@ -1728,7 +1728,7 @@ public class AC_GUI extends JFrame
 		// Tools
 		toolsMenu = new JMenu("Tools");
 		toolsMenu.add(makeMenuItem(MenuItem.VALIDATE_MODEL, menuListener, -1));
-		toolsMenu.addSeparator();
+		//toolsMenu.addSeparator();
 		//toolsMenu.add(makeMenuItem(MenuItem.VIEW_MODEL, menuListener, -1));
 		//toolsMenu.add(makeMenuItem(MenuItem.FLATTEN_MODEL, menuListener, -1));
 		//toolsMenu.addSeparator();
@@ -1811,13 +1811,13 @@ public class AC_GUI extends JFrame
 		if(index!= -1)
 		{
 			recentFiles.remove(index);
-			recentFilesMenu.remove(recentFilesMenu.getItemCount()-index-1);
+			//recentFilesMenu.remove(recentFilesMenu.getItemCount()-index-1);
 		}
 		
 		if(recentFiles.size() > 11)
 		{
 				recentFiles.remove(0);
-				recentFilesMenu.remove(0);
+				//recentFilesMenu.remove(0);
 		}
 		
 		
@@ -1826,8 +1826,8 @@ public class AC_GUI extends JFrame
 		JMenuItem item = new JMenuItem(file.getName());
 		//item.addActionListener(new RecentItemActionListener(f));
     
-		recentFilesMenu.add(item,0);
-		recentFilesMenu.validate();
+		//recentFilesMenu.add(item,0);
+		//recentFilesMenu.validate();
 	}
 	
 	private static void saveRecentFiles()
