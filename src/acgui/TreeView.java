@@ -7,6 +7,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
 import javax.swing.AbstractAction;
+import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
@@ -231,12 +232,17 @@ public class TreeView extends JPanel implements TreeSelectionListener
 		
 		if(AC_GUI.drawingBoard.getActiveModule() == AC_GUI.selectedModule)
 		{
+			/*
 			menu.add(new AbstractAction("Save Module") {
 				public void actionPerformed(ActionEvent e) {
 					JOptionPane.showMessageDialog(null,
 							"User can save a module (in internal datastructure) anytime when the module is still loaded for editing (not yet implemented).");
 					}
 			});
+			*/
+			JMenuItem item = new JMenuItem("Load Module");
+			item.setEnabled(false);
+			menu.add(item);
 		}
 		else
 		{

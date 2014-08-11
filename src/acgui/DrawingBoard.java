@@ -2415,14 +2415,35 @@ public class DrawingBoard extends JPanel
 		cell.put(mxConstants.STYLE_NOLABEL, "1");
 		cell.put(mxConstants.STYLE_MOVABLE, "0");
 		cell.put(mxConstants.STYLE_ENDARROW, "none");
+//		cell.put(mxConstants.STYLE_ENTRY_X, "0.5");
+//		cell.put(mxConstants.STYLE_ENTRY_Y, "0.0");
+//		cell.put(mxConstants.STYLE_EXIT_X, "0.0");
+//		cell.put(mxConstants.STYLE_EXIT_Y, "0.0");
 		
 		styleSheet.putCellStyle("ConnectionEdge", cell);
+		
+		/*
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		cell.put(mxConstants.STYLE_ENTRY_X, "0.5");
+		cell.put(mxConstants.STYLE_ENTRY_Y, "0.0");
+		cell.put(mxConstants.STYLE_EXIT_X, "0.0");
+		cell.put(mxConstants.STYLE_EXIT_Y, "0.0");
+		
+		styleSheet.putCellStyle("ConnectionEdge_North", cell);		
+		*/
 		
 		cell = new HashMap<String, Object>();
 		cell.put(mxConstants.STYLE_NOLABEL, "1");
 		cell.put(mxConstants.STYLE_MOVABLE, "0");
 		cell.put(mxConstants.STYLE_ENDARROW, "none");
 		cell.put(mxConstants.STYLE_DASHED, "1");
+//		cell.put(mxConstants.STYLE_ENTRY_X, "0.0");
+//		cell.put(mxConstants.STYLE_ENTRY_Y, "0.0");
+//		cell.put(mxConstants.STYLE_EXIT_X, "1.0");
+//		cell.put(mxConstants.STYLE_EXIT_Y, "0.5");
 		
 		styleSheet.putCellStyle("DashedConnectionEdge", cell);
 		
@@ -2809,10 +2830,9 @@ public class DrawingBoard extends JPanel
 			{
 				if (activeModule == ((PortNode)cellValue).getParent())
 				{
+					/*
 					menu.add(new AbstractAction("Change Type") {
-						/**
-						 * 
-						 */
+						
 						private static final long serialVersionUID = 1L;
 	
 						public void actionPerformed(ActionEvent e)
@@ -2841,7 +2861,7 @@ public class DrawingBoard extends JPanel
 							}
 						}
 					});
-	
+					*/
 					menu.add(new AbstractAction("Remove") {
 						/**
 						 * 

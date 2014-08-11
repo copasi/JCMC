@@ -1671,7 +1671,7 @@ public class AC_GUI extends JFrame
 		this.add(window);
 		//this.add(horizontalLine);
 		ac_version = getVersionFromFile();
-		this.setTitle(Constants.TOOL_NAME_FULL + " - version " + ac_version);
+		//this.setTitle(Constants.TOOL_NAME_FULL + " - version " + ac_version);
 		
 		addWindowListener(new WindowAdapter() {
 		    @Override

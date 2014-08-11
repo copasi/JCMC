@@ -149,6 +149,7 @@ public class ModelBuilder
 	 */
 	public Vector<String> getRefNames()
 	{
+		updateRefNames();
 		return portsPanel.getRefNames();
 	}
 	

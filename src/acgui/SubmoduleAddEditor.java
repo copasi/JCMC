@@ -8,6 +8,7 @@ import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.ListIterator;
 
 import javax.swing.BorderFactory;
@@ -30,6 +31,10 @@ import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.event.TreeSelectionEvent;
+import javax.swing.event.TreeSelectionListener;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.TreePath;
 
 import org.sbml.libsbml.SBMLDocument;
 
@@ -39,7 +44,7 @@ import com.mxgraph.swing.mxGraphComponent;
  * @author T.C. Jones
  *
  */
-public class SubmoduleAddEditor extends JDialog implements ListSelectionListener, ActionListener
+public class SubmoduleAddEditor extends JDialog implements TreeSelectionListener, ActionListener
 {
 
 	/**
@@ -47,7 +52,6 @@ public class SubmoduleAddEditor extends JDialog implements ListSelectionListener
 	 */
 	private static final long serialVersionUID = 1L;
 
-	private JPanel externalModule;
 	private JPanel modules;
 	private JPanel modulePanel;
 	private JPanel existingModulesPanel;
@@ -56,11 +60,10 @@ public class SubmoduleAddEditor extends JDialog implements ListSelectionListener
 	private JTextField textfield;
 	private JCheckBox checkBox;
 	private JButton addButton;
-	private JList list;
-    private DefaultListModel listModel;
 	private mxGraphComponent graphComponent;
 	private File file;
 	private boolean lastSelectionWasFromList;
+	private SubmoduleDefinitionPanel submoduleDefinitions;
 	
 	/**
 	 * 
@@ -83,23 +86,10 @@ public class SubmoduleAddEditor extends JDialog implements ListSelectionListener
 		
 		modules = new JPanel();
 		modules.setLayout(new BorderLayout());
-		
-		listModel = new DefaultListModel();
-		populateSubmoduleList();
-        //listModel.addElement("Synthesis1");
-        //listModel.addElement("Synthesis2");
-        //listModel.addElement("Synthesis_Template3");
-        //listModel.addElement("Degradation1");
-        //listModel.addElement("Degradation_Template2");
-        //listModel.addElement("Degradation_Template3");
- 
-        //Create the list and put it in a scroll pane.
-        list = new JList(listModel);
-        list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        list.setSelectedIndex(-1);
-        list.addListSelectionListener(this);
-        list.setVisibleRowCount(5);
-        JScrollPane listScrollPane = new JScrollPane(list);
+        
+        //Create the tree and put it in a scroll pane.
+        submoduleDefinitions = new SubmoduleDefinitionPanel(AC_GUI.rootModule, this);
+        JScrollPane listScrollPane = new JScrollPane(submoduleDefinitions);
         listScrollPane.setPreferredSize(new Dimension(170, 210));
         
         border = BorderFactory.createEmptyBorder(5, 5, 5, 5);
@@ -116,55 +106,7 @@ public class SubmoduleAddEditor extends JDialog implements ListSelectionListener
         modules.setBorder(border);
 		//modules.add(listScrollPane, BorderLayout.NORTH);
         modules.add(existingModulesPanel, BorderLayout.NORTH);
-        /*
-		externalTemplate = new JPanel();
-		externalTemplate.setLayout(new BorderLayout());
-		externalTemplate.setPreferredSize(new Dimension(200, 250));
-		textfield = new JTextField();
-		textfield.setEditable(false);
-		textfield.setColumns(20);
-		textfield.setBorder(BorderFactory.createLoweredBevelBorder());
-		validationPanel = new JPanel();
-		validationPanel.setLayout(new GridLayout(3, 1, 0, 0));
-		JButton browseButton = new JButton("Browse");
-		browseButton.setActionCommand("browse");
-		browseButton.addActionListener(this);
-		JPanel browseButtonPanel = new JPanel();
-		browseButtonPanel.add(browseButton);
-		checkBox = new JCheckBox("Save as a local template");
-		checkBox.setFont(new Font("Dialog", Font.PLAIN, 11));
-		checkBox.setSelected(true);
-		checkBox.setEnabled(false);
-		
-		paddingPanel = new JPanel();
-		//paddingPanel.setLayout(new BorderLayout());
-		paddingPanel.add(validationPanel);
-		
-		
-		externalTemplate.add(textfield, BorderLayout.NORTH);
-		externalTemplate.add(browseButtonPanel, BorderLayout.EAST);
-		externalTemplate.add(paddingPanel, BorderLayout.WEST);
-		externalTemplate.add(checkBox, BorderLayout.SOUTH);
-		
-		TitledBorder border2;
-		border2 = BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Import Template");
-		border2.setTitleJustification(TitledBorder.LEFT);
-		externalTemplate.setBorder(border2);
-		
-		
-		JRadioButton localButton = new JRadioButton("Existing Template");
-	    localButton.setActionCommand("local");
 
-	    JRadioButton externalButton = new JRadioButton("External Template");
-	    externalButton.setActionCommand("external");
-	    
-	    ButtonGroup buttonGroup = new ButtonGroup();
-	    buttonGroup.add(localButton);
-	    buttonGroup.add(externalButton);
-	    
-	    localButton.addActionListener(this);
-	    externalButton.addActionListener(this);
-	    */
 	    JPanel labelPanel = new JPanel();
 	    labelPanel.setLayout(new GridLayout(2, 1));
 	    JLabel label = new JLabel("Please select the source of the submodule:");
@@ -173,9 +115,6 @@ public class SubmoduleAddEditor extends JDialog implements ListSelectionListener
 		labelPanel.add(label);
 		labelPanel.add(new JPanel());
 		upperPanel.add(labelPanel, BorderLayout.NORTH);
-        
-		//upperPanel.add(localButton, BorderLayout.WEST);
-        //upperPanel.add(externalButton, BorderLayout.EAST);
         
         //upperPanel.setBorder(BorderFactory.createEtchedBorder(EtchedBorder.LOWERED));
         
@@ -252,76 +191,12 @@ public class SubmoduleAddEditor extends JDialog implements ListSelectionListener
 		setLocationRelativeTo(graphComponent);
 	}
 
-	private void populateSubmoduleList()
-	{
-		String activeDefinitionName = AC_GUI.activeModule.getModuleDefinition().getName();
-		String name;
-		ListIterator<ModuleDefinition> list = AC_Utility.getSubmoduleList().listIterator();
-		while (list.hasNext())
-		{
-			name = list.next().getName();
-			if (name.equals(activeDefinitionName))
-			{
-				continue;
-			}
-			listModel.addElement(name);
-		}
-	}
-	
-	@Override
-	public void valueChanged(ListSelectionEvent lse)
-	{
-		if (lse.getValueIsAdjusting() == false) {
-			 
-            if (list.getSelectedIndex() == -1) {
-            //No selection, disable fire button.
-                addButton.setEnabled(false);
-                checkBox.setSelected(true);
-        		checkBox.setEnabled(false);
- 
-            } else {
-            //Selection, enable the fire button.
-            	file = null;
-                addButton.setEnabled(true);
-                checkBox.setSelected(true);
-        		checkBox.setEnabled(false);
-                textfield.setText((String)list.getSelectedValue());
-                lastSelectionWasFromList = true;
-            }
-        }
-	}
-
 	@Override
 	public void actionPerformed(ActionEvent ae)
 	{
-		if (ae.getActionCommand().equalsIgnoreCase("local"))
+		if (ae.getActionCommand().equalsIgnoreCase("browse"))
 		{
-			list.clearSelection();
-			//list.repaint();
-			addButton.setEnabled(false);
-			modulePanel.removeAll();
-			modulePanel.add(modules);
-			modulePanel.revalidate();
-			modulePanel.repaint();
-			validationPanel.removeAll();
-			validationPanel.revalidate();
-    		validationPanel.repaint();
-			pack();
-		}else if (ae.getActionCommand().equalsIgnoreCase("external"))
-		{
-			addButton.setEnabled(false);
-			modulePanel.removeAll();
-			modulePanel.add(externalModule);
-			modulePanel.revalidate();
-			modulePanel.repaint();
-			textfield.setText("");
-			validationPanel.removeAll();
-			validationPanel.revalidate();
-    		validationPanel.repaint();
-			pack();
-		}else if (ae.getActionCommand().equalsIgnoreCase("browse"))
-		{
-			list.clearSelection();
+			submoduleDefinitions.clearSelection();
 			JFileChooser fileChooser = new JFileChooser(".");
 			if (fileChooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) 
             {
@@ -398,7 +273,8 @@ public class SubmoduleAddEditor extends JDialog implements ListSelectionListener
 		{
 			if (lastSelectionWasFromList)
 			{
-				ModuleDefinition definition = AC_Utility.getSubmoduleDefinition((String)list.getSelectedValue());
+				//ModuleDefinition definition = AC_Utility.getSubmoduleDefinition((String)list.getSelectedValue());
+				ModuleDefinition definition = (ModuleDefinition)submoduleDefinitions.getSelected().getUserObject();
 				if (definition != null)
 				{
 					String newInstanceName = AC_Utility.promptUserForNewModuleName("Enter a Module name for the new instance.");
@@ -419,5 +295,28 @@ public class SubmoduleAddEditor extends JDialog implements ListSelectionListener
 		{
 			dispose();
 		}
+	}
+
+	@Override
+	public void valueChanged(TreeSelectionEvent e) {
+		TreePath path = e.getPath();
+		if (path != null)
+		{
+			DefaultMutableTreeNode node = (DefaultMutableTreeNode)path.getLastPathComponent();
+			if (node != null)
+			{
+				ModuleDefinition definition = (ModuleDefinition)node.getUserObject();
+				file = null;
+                addButton.setEnabled(true);
+                checkBox.setSelected(true);
+        		checkBox.setEnabled(false);
+                textfield.setText(definition.getName());
+                lastSelectionWasFromList = true;
+			}
+		}
+		validationPanel.removeAll();
+		validationPanel.revalidate();
+		validationPanel.repaint();
+		pack();
 	}
 }
