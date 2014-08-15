@@ -208,7 +208,7 @@ public class SubmoduleAddEditor extends JDialog implements TreeSelectionListener
             	String msg1 = "";
             	String msg2 = "";
             	
-            	if (ext.equals(".xml"))
+            	if ((ext.equals(".xml")) || (ext.equals(".sbml")))
             	{
 	            	SBMLDocument sDoc = SBMLParser.SBMLValidation(file.getAbsolutePath());
 	            	long errorNumber = sDoc.getNumErrors();
@@ -226,7 +226,14 @@ public class SubmoduleAddEditor extends JDialog implements TreeSelectionListener
 	            		{
 	            			msg2 += "error found.";
 	            		}
-	            	}else
+	            	}
+	            	else if (sDoc.getLevel() < 3)
+	            	{
+	            		addButton.setEnabled(false);
+	            		msg1 = "SBML level " + sDoc.getLevel();
+	            		msg2 = "not supported.";
+	            	}
+	            	else
 	            	{
 	            		addButton.setEnabled(true);
 	            		checkBox.setSelected(true);
@@ -241,9 +248,9 @@ public class SubmoduleAddEditor extends JDialog implements TreeSelectionListener
             		addButton.setEnabled(true);
             		checkBox.setSelected(true);
             		checkBox.setEnabled(false);
-            	}else if (ext.equalsIgnoreCase(".ac"))
+            	}else if (ext.equalsIgnoreCase(".jcmc"))
             	{
-            		msg1 = "Aggregation Connector";
+            		msg1 = "JigCell";
             		msg2 = "file selected.";
             		addButton.setEnabled(true);
             		checkBox.setSelected(true);

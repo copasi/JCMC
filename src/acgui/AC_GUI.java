@@ -10,6 +10,7 @@ import java.awt.event.WindowEvent;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.InputStream;
@@ -151,7 +152,8 @@ public class AC_GUI extends JFrame
 		
 		try 
 		{
-			InputStream is = getClass().getResourceAsStream("util/version.txt");
+			//InputStream is = getClass().getResourceAsStream("util/version.txt");
+			InputStream is = new FileInputStream("util/version.txt");
 			if(is == null)
 			{
 				 return "0.9.0";
@@ -189,18 +191,33 @@ public class AC_GUI extends JFrame
     	
 		try
 		{
-			if (ext.equals(".xml"))
+			if ((ext.equals(".xml")) || (ext.equals(".sbml")))
 			{
 				mod = SBMLParser.importSBML(fileName, external);
 			}
 			else if (ext.equals(".cps"))
 			{
 				mod = CopasiUtility.importCopasiFile(fileName);
+				if (mod == null)
+				{
+					JOptionPane.showMessageDialog(null,
+						    "There was a probem loading the file.",
+						    "Import Error",
+						    JOptionPane.ERROR_MESSAGE);
+				}
 			}
-			else if (ext.equals(".ac"))
+			else if (ext.equals(".jcmc"))
 			{
 				mod = AC_IO.loadModule(fileName);
+				if (mod == null)
+				{
+					JOptionPane.showMessageDialog(null,
+						    "There was a probem loading the file.",
+						    "Import Error",
+						    JOptionPane.ERROR_MESSAGE);
+				}
 				setSavedInACFile(true);
+				lastLoadSave_file = fileName;
 			}
 				//System.out.println("Number of models in the CCopasiRootContainer: " + CCopasiRootContainer.getDatamodelList().size());
 		}
@@ -224,7 +241,7 @@ public class AC_GUI extends JFrame
 		{
 			return;
 		}
-		lastLoadSave_file = fileName;
+		//lastLoadSave_file = fileName;
 		addRecentFile(fileName);
 		rootModule = mod;
 		AC_Utility.addSubmoduleDefinitionsToList(mod);
@@ -239,7 +256,7 @@ public class AC_GUI extends JFrame
     	
 		try
 		{
-			if (ext.equals(".xml"))
+			if ((ext.equals(".xml")) || (ext.equals(".sbml")))
 			{
 				mod = SBMLParser.importSBML(fileName, parent, external);
 			}
@@ -248,7 +265,7 @@ public class AC_GUI extends JFrame
 				mod = CopasiUtility.importCopasiFile(fileName, parent);
 				mod.getModuleDefinition().setExternal(false);
 			}
-			else if (ext.equals(".ac"))
+			else if (ext.equals(".jcmc"))
 			{
 				mod = AC_IO.loadModule(fileName, parent);
 			}
@@ -1705,12 +1722,12 @@ public class AC_GUI extends JFrame
 		fileMenu.add(makeMenuItem(MenuItem.CLOSE, menuListener, -1));
 		fileMenu.addSeparator();
 	
-		fileMenu.add(makeMenuItem(MenuItem.PREFERENCES, menuListener, -1));
+		//fileMenu.add(makeMenuItem(MenuItem.PREFERENCES, menuListener, -1));
 		//recentFilesMenu = new JMenu("Recent Files");
 		//fileMenu.add(recentFilesMenu);
 		//loadRecentFiles();
 		//recentFilesMenu.add(makeMenuItem(MenuItem.RECENT, menuListener, -1));
-		fileMenu.addSeparator();
+		//fileMenu.addSeparator();
 		
 		fileMenu.add(makeMenuItem(MenuItem.EXIT, menuListener, -1));
 
@@ -1738,7 +1755,7 @@ public class AC_GUI extends JFrame
 		// Help
 		helpMenu = new JMenu("Help");
 		helpMenu.add(makeMenuItem(MenuItem.HELP_CONTENTS, menuListener, -1));
-		helpMenu.add(makeMenuItem(MenuItem.ABOUT_AGGREGATION_CONNECTOR, menuListener, -1));
+		helpMenu.add(makeMenuItem(MenuItem.ABOUT_JIGCELL_MODEL_CONNECTOR, menuListener, -1));
 
 		// Add items to the menu bar
 		menuBar = new JMenuBar();

@@ -1,9 +1,11 @@
 package acgui;
 
+import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 
+import javax.swing.ImageIcon;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
@@ -85,6 +87,10 @@ public class ACMenuListener implements ActionListener
 	            	AC_GUI.load(file.getAbsolutePath(), false);
 	            	//AC_GUI.currentGUI.loadTest(file.getAbsolutePath());
 	            }
+	            else
+	            {
+	            	
+	            }
 			}
 			break;
 		case RECENT:
@@ -113,7 +119,7 @@ public class ACMenuListener implements ActionListener
 				{
 					fileName = null;
 					fileChooser = new JFileChooser (new File ("."));
-					fileChooser.setFileFilter (new FileNameExtensionFilter("Model file (.ac)","ac"));
+					fileChooser.setFileFilter (new FileNameExtensionFilter("Model file (.jcmc)","jcmc"));
 					while (fileChooser.showSaveDialog(null) == JFileChooser.APPROVE_OPTION)
 					{
 						file = fileChooser.getSelectedFile();
@@ -127,9 +133,15 @@ public class ACMenuListener implements ActionListener
 								if (n == JOptionPane.OK_OPTION)
 								{
 									fileName = file.getAbsolutePath();
+									/*
 									if (!fileName.endsWith(".ac"))
 									{
 										fileName += ".ac";
+									}
+									*/
+									if (!fileName.endsWith(".jcmc"))
+									{
+										fileName += ".jcmc";
 									}
 									AC_GUI.save(AC_GUI.rootModule, fileName);
 									JOptionPane.showMessageDialog(null, "The module has been saved in " + fileName);
@@ -139,9 +151,15 @@ public class ACMenuListener implements ActionListener
 							else
 							{
 								fileName = file.getAbsolutePath();
+								/*
 								if (!fileName.endsWith(".ac"))
 								{
 									fileName += ".ac";
+								}
+								*/
+								if (!fileName.endsWith(".jcmc"))
+								{
+									fileName += ".jcmc";
 								}
 								AC_GUI.save(AC_GUI.rootModule, fileName);
 								JOptionPane.showMessageDialog(null, "The module has been saved in " + fileName);
@@ -183,7 +201,7 @@ public class ACMenuListener implements ActionListener
 			{
 				fileName = null;
 				fileChooser = new JFileChooser (new File ("."));
-				fileChooser.setFileFilter (new FileNameExtensionFilter("Model file (.ac)","ac"));
+				fileChooser.setFileFilter (new FileNameExtensionFilter("Model file (.jcmc)","jcmc"));
 				while (fileChooser.showSaveDialog(null) == JFileChooser.APPROVE_OPTION)
 				{
 					file = fileChooser.getSelectedFile();
@@ -197,9 +215,15 @@ public class ACMenuListener implements ActionListener
 							if (n == JOptionPane.OK_OPTION)
 							{
 								fileName = file.getAbsolutePath();
+								/*
 								if (!fileName.endsWith(".ac"))
 								{
 									fileName += ".ac";
+								}
+								*/
+								if (!fileName.endsWith(".jcmc"))
+								{
+									fileName += ".jcmc";
 								}
 								AC_GUI.save(AC_GUI.rootModule, fileName);
 								JOptionPane.showMessageDialog(null, "The module has been saved in " + fileName);
@@ -209,9 +233,15 @@ public class ACMenuListener implements ActionListener
 						else
 						{
 							fileName = file.getAbsolutePath();
+							/*
 							if (!fileName.endsWith(".ac"))
 							{
 								fileName += ".ac";
+							}
+							*/
+							if (!fileName.endsWith(".jcmc"))
+							{
+								fileName += ".jcmc";
 							}
 							AC_GUI.save(AC_GUI.rootModule, fileName);
 							JOptionPane.showMessageDialog(null, "The module has been saved in " + fileName);
@@ -533,10 +563,20 @@ public class ACMenuListener implements ActionListener
 			JOptionPane.showMessageDialog(null, "The user manual is located in the \"doc\" folder.");
 			//AC_Utility.printModuleTree();
 			break;
-		case ABOUT_AGGREGATION_CONNECTOR:
+		case ABOUT_JIGCELL_MODEL_CONNECTOR:
 			String info = Constants.TOOL_NAME_FULL + AC_Utility.eol;
-			info += "version: " + AC_GUI.ac_version;
-			JOptionPane.showMessageDialog(null, info);
+			info += "Version: " + AC_GUI.ac_version;
+			ImageIcon icon = new ImageIcon("util/logo.png");
+			Image image = icon.getImage();
+			Image scaledImage = image.getScaledInstance(100, 100, Image.SCALE_SMOOTH);
+			icon = new ImageIcon(scaledImage);
+			System.out.println(icon.getIconHeight() + "  x " + icon.getIconWidth());
+			JOptionPane.showMessageDialog(null,
+				    info,
+				    "About",
+				    JOptionPane.INFORMATION_MESSAGE,
+				    icon);
+			//JOptionPane.showMessageDialog(null, info);
 			//System.out.println("Copasi data model number: " + CopasiUtility.getNumberOfModels());
 			//CopasiUtility.printDataModelList();
 			break;

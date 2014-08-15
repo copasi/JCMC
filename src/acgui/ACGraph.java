@@ -5,6 +5,7 @@ import java.util.Map;
 import com.mxgraph.model.mxCell;
 import com.mxgraph.model.mxGeometry;
 import com.mxgraph.model.mxGraphModel;
+import com.mxgraph.model.mxICell;
 import com.mxgraph.model.mxIGraphModel;
 import com.mxgraph.util.mxConstants;
 import com.mxgraph.util.mxUtils;
@@ -137,7 +138,7 @@ public class ACGraph extends mxGraph
 				if (cellParent == getDefaultParent() || cellParent == getCurrentRoot())
 				{
 					System.err.println("Problem: Parent cell is defaultParent or currentRoot.");
-					System.exit(0);
+					return;
 				}
 				else if (cellParent != null)
 				{
@@ -218,18 +219,18 @@ public class ACGraph extends mxGraph
 						geo.setY(newY);
 
 						// update the port orientation
-						updatePortOrientation(cell, geo, false);
+						//updatePortOrientation(cell, geo, false);
 					}
 					else
 					{
 						System.out.println("Problem: Parent geometry is null.");
-						System.exit(0);
+						return;
 					}
 				}
 				else
 				{
 					System.out.println("Problem: Parent cell is null.");
-					System.exit(0);
+					return;
 				}
 			}
 
@@ -241,6 +242,12 @@ public class ACGraph extends mxGraph
 			finally
 			{
 				model.endUpdate();
+			}
+			
+			if (value instanceof acgui.PortNode)
+			{
+				// update the port orientation
+				updatePortOrientation(cell, geo, false);
 			}
 		}
 	}
@@ -386,8 +393,6 @@ public class ACGraph extends mxGraph
 
 	public void updatePortOrientation(Object cell, mxGeometry geo, boolean isMini)
 	{
-		
-		//mxGeometry geo = ((mxCell) cell).getGeometry();
 		double xCoord = geo.getX();
 		double yCoord = geo.getY();
 		String newStyle = "";
@@ -441,7 +446,7 @@ public class ACGraph extends mxGraph
 
 		if (isMini)
 		{
-			newStyle += "_Mini";
+			newStyle += "_" + Constants.MINI;
 		}
 		
 		model.beginUpdate();
@@ -454,6 +459,162 @@ public class ACGraph extends mxGraph
 			model.endUpdate();
 		}
 		port.setDrawingCellStyle(newStyle);
+		
+		Object outgoingEdges [] = mxGraphModel.getOutgoingEdges(this.getModel(), cell);
+		Object incomingEdges [] = mxGraphModel.getIncomingEdges(this.getModel(), cell);
+		
+		if (outgoingEdges.length > 0 )
+		{
+			for (int i = 0; i < outgoingEdges.length; i++)
+			{
+				updateConnectionOrientation(outgoingEdges[i], isMini);
+			}
+		}
+		
+		if (incomingEdges.length > 0)
+		{
+			for (int i = 0; i < incomingEdges.length; i++)
+			{
+				updateConnectionOrientation(incomingEdges[i], isMini);
+			}
+		}
+	}
+	
+	public void updateConnectionOrientation(Object cell, boolean isMini)
+	{
+		ConnectionNode connection = null;
+		ConnectionDefinition definition;
+		try
+		{
+			connection = (ConnectionNode)((mxCell)cell).getValue();
+		}
+		catch (Exception e)
+		{
+			return;
+		}
+		definition = connection.getConnectionDefinition();
+		String sourceStyle;
+		String targetStyle;
+		
+		sourceStyle = "source" + getConnectionEndOrientation(connection.getParent(), connection.getDrawingCell().getSource(), definition.getSourceType());
+		targetStyle = "target" + getConnectionEndOrientation(connection.getParent(), connection.getDrawingCell().getTarget(), definition.getTargetType());
+		
+		if (isDashedLine(definition.getTargetType(), definition.getTargetDefinition()))
+		{
+			targetStyle += "_" + Constants.DASHED_EDGE;
+		}
+		else
+		{
+			targetStyle += "_" + Constants.SOLID_EDGE;
+		}
+		
+		String connectionStyle = sourceStyle + "_" + targetStyle;
+		
+		if (isMini)
+		{
+			connectionStyle += "_" + Constants.MINI;
+		}
+		model.beginUpdate();
+		try
+		{
+			model.setStyle(connection.getDrawingCell(), connectionStyle);
+		}
+		finally
+		{
+			model.endUpdate();
+		}
+		connection.setDrawingCellStyle(connectionStyle);
+	}
+	
+	public String getConnectionEndOrientation(Module connectionParent, mxICell terminalDrawingCell, TerminalType terminalType)
+	{
+		String style = new String();
+		ACComponentNode terminal = (ACComponentNode)terminalDrawingCell.getValue();
+		String terminalStyle = terminal.getDrawingCellStyle();
+		double xCoord =terminalDrawingCell.getGeometry().getX();
+		double yCoord = terminalDrawingCell.getGeometry().getY();
+		PortType portType;
+		
+		switch (terminalType)
+		{
+			case EQUIVALENCE:
+				style += "_standard";
+				break;
+			case VISIBLEVARIABLE:
+				style += "_standard";
+				break;
+			case PORT:
+				portType = ((PortNode)terminal).getPortDefinition().getType();
+				switch (portType)
+				{
+				case INPUT:
+					
+					break;
+				case OUTPUT:
+					
+					break;
+				case EQUIVALENCE:
+					
+					break;
+				}
+				
+				if (xCoord == 0.0)
+				{
+					style += "_west";
+				}
+				else if (xCoord == 1.0)
+				{
+					style += "_east";
+				}
+				else if (yCoord == 0.0)
+				{
+					style += "_north";
+				}
+				else if (yCoord == 1.0)
+				{
+					style += "_south";
+				}
+				//style += terminalStyle.substring(terminalStyle.indexOf("_")).toLowerCase();
+				
+				if (connectionParent == terminal.getParent())
+				{
+					// the terminal port is on the module
+					style += "_module";
+				}
+				else
+				{
+					// the terminal port is on a submodule
+					style += "_submodule";
+				}
+				break;
+			default:
+				
+		}
+		
+		return style;
+	}
+	
+	public boolean isDashedLine(TerminalType terminalType, ACComponentDefinition terminalDefinition)
+	{
+		switch (terminalType)
+		{
+		case EQUIVALENCE:
+			return true;
+		case VISIBLEVARIABLE:
+			return true;
+		case PORT:
+			PortType portType = ((PortDefinition)terminalDefinition).getType();
+			switch (portType)
+			{
+			case INPUT:
+				return false;
+			case OUTPUT:
+				return false;
+			case EQUIVALENCE:
+				return true;
+			}
+		}
+		return false;
 	}
 	
 	/**
@@ -596,11 +757,14 @@ public class ACGraph extends mxGraph
 			{
 				// the source is an equivalence node
 				// the target is a visible variable
+				/*
 				if (mxGraphModel.getDirectedEdgeCount(model, target, false, edge) != 0)
 				{
 					return "A variable cannot have more than one incoming connection.";
 				}
 				return null;
+				*/
+				return "An equivalence node cannot connect to a variable.";
 			}
 			else if (targetObject instanceof PortNode)
 			{

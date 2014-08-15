@@ -1116,7 +1116,7 @@ public class DrawingBoard extends JPanel
 			if (hasMiniComponents(submoduleView))
 			{		
 				Object submoduleComponents [] = graph.getChildCells(submoduleCell);
-				String cellStyleMatch = "Mini";
+				String cellStyleMatch = Constants.MINI;
 				for (int i = 0; i < submoduleComponents.length; i++)
 				{
 					if (graph.getModel().getStyle(submoduleComponents[i]).endsWith(cellStyleMatch))
@@ -1664,7 +1664,8 @@ public class DrawingBoard extends JPanel
 				}
 				*/
 				graph.getModel().add(parentCell, connectionCell, 0);
-				graph.getModel().setStyle(connectionCell, currentConnection.getDrawingCellStyle());
+				graph.updateConnectionOrientation(connectionCell, false);
+				//graph.getModel().setStyle(connectionCell, currentConnection.getDrawingCellStyle());
 			}
 			finally
 			{
@@ -1754,7 +1755,7 @@ public class DrawingBoard extends JPanel
 				geo_mini.setRelative(true);
 				((mxCell)childCell).setGeometry(geo_mini);
 				graph.getModel().add(parentCell, childCell, 0);
-				graph.getModel().setStyle(childCell, "Submodule_Mini");
+				graph.getModel().setStyle(childCell, "Submodule_" + Constants.MINI);
 			}
 			finally
 			{
@@ -1901,7 +1902,7 @@ public class DrawingBoard extends JPanel
 				geo_mini.setRelative(true);
 				varCell.setConnectable(false);
 				graph.getModel().add(cell, varCell, 0);
-				graph.getModel().setStyle(varCell, "VisibleVariable_Mini");
+				graph.getModel().setStyle(varCell, "VisibleVariable_" + Constants.MINI);
 				graph.getModel().setGeometry(varCell, geo_mini);
 			}
 			finally
@@ -1972,7 +1973,7 @@ public class DrawingBoard extends JPanel
 				geo_mini.setRelative(true);
 				eNodeCell.setConnectable(false);
 				graph.getModel().add(cell, eNodeCell, 0);
-				graph.getModel().setStyle(eNodeCell, "EquivalenceNode_Mini");
+				graph.getModel().setStyle(eNodeCell, "EquivalenceNode_" + Constants.MINI);
 				graph.getModel().setGeometry(eNodeCell, geo_mini);
 			}
 			finally
@@ -2010,7 +2011,9 @@ public class DrawingBoard extends JPanel
 				}
 				*/
 				graph.getModel().add(parentCell, connectionCell, 0);
-				graph.getModel().setStyle(connectionCell, currentConnection.getDrawingCellStyle() + "_Mini");
+				//graph.getModel().setStyle(connectionCell, currentConnection.getDrawingCellStyle() + "_Mini");
+				//graph.getModel().setStyle(connectionCell, currentConnection.getDrawingCellStyle());
+				graph.updateConnectionOrientation(connectionCell, true);
 			}
 			finally
 			{
@@ -2178,6 +2181,7 @@ public class DrawingBoard extends JPanel
 		cell.put(mxConstants.STYLE_STROKECOLOR, "blue");
 		cell.put(mxConstants.STYLE_FILLCOLOR, "white");
 		cell.put(mxConstants.STYLE_STROKEWIDTH, "3.0");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
 		cell.put(mxConstants.STYLE_ALIGN, mxConstants.ALIGN_CENTER);
 		cell.put(mxConstants.STYLE_VERTICAL_ALIGN, mxConstants.ALIGN_TOP);
 		cell.put(mxConstants.STYLE_VERTICAL_LABEL_POSITION, mxConstants.ALIGN_MIDDLE);
@@ -2415,37 +2419,385 @@ public class DrawingBoard extends JPanel
 		cell.put(mxConstants.STYLE_NOLABEL, "1");
 		cell.put(mxConstants.STYLE_MOVABLE, "0");
 		cell.put(mxConstants.STYLE_ENDARROW, "none");
-//		cell.put(mxConstants.STYLE_ENTRY_X, "0.5");
-//		cell.put(mxConstants.STYLE_ENTRY_Y, "0.0");
-//		cell.put(mxConstants.STYLE_EXIT_X, "0.0");
-//		cell.put(mxConstants.STYLE_EXIT_Y, "0.0");
 		
 		styleSheet.putCellStyle("ConnectionEdge", cell);
-		
-		/*
-		cell = new HashMap<String, Object>();
-		cell.put(mxConstants.STYLE_NOLABEL, "1");
-		cell.put(mxConstants.STYLE_MOVABLE, "0");
-		cell.put(mxConstants.STYLE_ENDARROW, "none");
-		cell.put(mxConstants.STYLE_ENTRY_X, "0.5");
-		cell.put(mxConstants.STYLE_ENTRY_Y, "0.0");
-		cell.put(mxConstants.STYLE_EXIT_X, "0.0");
-		cell.put(mxConstants.STYLE_EXIT_Y, "0.0");
-		
-		styleSheet.putCellStyle("ConnectionEdge_North", cell);		
-		*/
 		
 		cell = new HashMap<String, Object>();
 		cell.put(mxConstants.STYLE_NOLABEL, "1");
 		cell.put(mxConstants.STYLE_MOVABLE, "0");
 		cell.put(mxConstants.STYLE_ENDARROW, "none");
 		cell.put(mxConstants.STYLE_DASHED, "1");
-//		cell.put(mxConstants.STYLE_ENTRY_X, "0.0");
-//		cell.put(mxConstants.STYLE_ENTRY_Y, "0.0");
-//		cell.put(mxConstants.STYLE_EXIT_X, "1.0");
-//		cell.put(mxConstants.STYLE_EXIT_Y, "0.5");
 		
 		styleSheet.putCellStyle("DashedConnectionEdge", cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		//cell.put(mxConstants.STYLE_ENTRY_X, "0.5");
+		//cell.put(mxConstants.STYLE_ENTRY_Y, "1.0");
+		cell.put(mxConstants.STYLE_EXIT_X, "0.5");
+		cell.put(mxConstants.STYLE_EXIT_Y, "1.0");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_NORTH_MODULE_TARGET_STANDARD_SOLID_EDGE, cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		//cell.put(mxConstants.STYLE_ENTRY_X, "0.5");
+		//cell.put(mxConstants.STYLE_ENTRY_Y, "0.0");
+		cell.put(mxConstants.STYLE_EXIT_X, "0.5");
+		cell.put(mxConstants.STYLE_EXIT_Y, "0.0");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_SOUTH_MODULE_TARGET_STANDARD_SOLID_EDGE, cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		//cell.put(mxConstants.STYLE_ENTRY_X, "0.0");
+		//cell.put(mxConstants.STYLE_ENTRY_Y, "0.5");
+		cell.put(mxConstants.STYLE_EXIT_X, "0.0");
+		cell.put(mxConstants.STYLE_EXIT_Y, "0.5");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_EAST_MODULE_TARGET_STANDARD_SOLID_EDGE, cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		//cell.put(mxConstants.STYLE_ENTRY_X, "1.0");
+		//cell.put(mxConstants.STYLE_ENTRY_Y, "0.5");
+		cell.put(mxConstants.STYLE_EXIT_X, "1.0");
+		cell.put(mxConstants.STYLE_EXIT_Y, "0.5");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_WEST_MODULE_TARGET_STANDARD_SOLID_EDGE, cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		cell.put(mxConstants.STYLE_ENTRY_X, "0.5");
+		cell.put(mxConstants.STYLE_ENTRY_Y, "1.0");
+		//cell.put(mxConstants.STYLE_EXIT_X, "0.0");
+		//cell.put(mxConstants.STYLE_EXIT_Y, "0.5");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_STANDARD_TARGET_NORTH_MODULE_SOLID_EDGE, cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		cell.put(mxConstants.STYLE_ENTRY_X, "0.5");
+		cell.put(mxConstants.STYLE_ENTRY_Y, "0.0");
+		//cell.put(mxConstants.STYLE_EXIT_X, "0.0");
+		//cell.put(mxConstants.STYLE_EXIT_Y, "0.5");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_STANDARD_TARGET_SOUTH_MODULE_SOLID_EDGE, cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		cell.put(mxConstants.STYLE_ENTRY_X, "0.0");
+		cell.put(mxConstants.STYLE_ENTRY_Y, "0.5");
+		//cell.put(mxConstants.STYLE_EXIT_X, "0.0");
+		//cell.put(mxConstants.STYLE_EXIT_Y, "0.5");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_STANDARD_TARGET_EAST_MODULE_SOLID_EDGE, cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		cell.put(mxConstants.STYLE_ENTRY_X, "1.0");
+		cell.put(mxConstants.STYLE_ENTRY_Y, "0.5");
+		//cell.put(mxConstants.STYLE_EXIT_X, "0.0");
+		//cell.put(mxConstants.STYLE_EXIT_Y, "0.5");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_STANDARD_TARGET_WEST_MODULE_SOLID_EDGE, cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		//cell.put(mxConstants.STYLE_ENTRY_X, "1.0");
+		//cell.put(mxConstants.STYLE_ENTRY_Y, "0.5");
+		cell.put(mxConstants.STYLE_EXIT_X, "0.5");
+		cell.put(mxConstants.STYLE_EXIT_Y, "0.0");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_NORTH_SUBMODULE_TARGET_STANDARD_SOLID_EDGE, cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		//cell.put(mxConstants.STYLE_ENTRY_X, "1.0");
+		//cell.put(mxConstants.STYLE_ENTRY_Y, "0.5");
+		cell.put(mxConstants.STYLE_EXIT_X, "0.5");
+		cell.put(mxConstants.STYLE_EXIT_Y, "1.0");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_SOUTH_SUBMODULE_TARGET_STANDARD_SOLID_EDGE, cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		//cell.put(mxConstants.STYLE_ENTRY_X, "1.0");
+		//cell.put(mxConstants.STYLE_ENTRY_Y, "0.5");
+		cell.put(mxConstants.STYLE_EXIT_X, "1.0");
+		cell.put(mxConstants.STYLE_EXIT_Y, "0.5");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_EAST_SUBMODULE_TARGET_STANDARD_SOLID_EDGE, cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		//cell.put(mxConstants.STYLE_ENTRY_X, "1.0");
+		//cell.put(mxConstants.STYLE_ENTRY_Y, "0.5");
+		cell.put(mxConstants.STYLE_EXIT_X, "0.0");
+		cell.put(mxConstants.STYLE_EXIT_Y, "0.5");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_WEST_SUBMODULE_TARGET_STANDARD_SOLID_EDGE, cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		cell.put(mxConstants.STYLE_ENTRY_X, "0.5");
+		cell.put(mxConstants.STYLE_ENTRY_Y, "0.0");
+		//cell.put(mxConstants.STYLE_EXIT_X, "0.0");
+		//cell.put(mxConstants.STYLE_EXIT_Y, "0.5");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_STANDARD_TARGET_NORTH_SUBMODULE_SOLID_EDGE, cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		cell.put(mxConstants.STYLE_ENTRY_X, "0.5");
+		cell.put(mxConstants.STYLE_ENTRY_Y, "1.0");
+		//cell.put(mxConstants.STYLE_EXIT_X, "0.0");
+		//cell.put(mxConstants.STYLE_EXIT_Y, "0.5");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_STANDARD_TARGET_SOUTH_SUBMODULE_SOLID_EDGE, cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		cell.put(mxConstants.STYLE_ENTRY_X, "1.0");
+		cell.put(mxConstants.STYLE_ENTRY_Y, "0.5");
+		//cell.put(mxConstants.STYLE_EXIT_X, "0.0");
+		//cell.put(mxConstants.STYLE_EXIT_Y, "0.5");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_STANDARD_TARGET_EAST_SUBMODULE_SOLID_EDGE, cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		cell.put(mxConstants.STYLE_ENTRY_X, "0.0");
+		cell.put(mxConstants.STYLE_ENTRY_Y, "0.5");
+		//cell.put(mxConstants.STYLE_EXIT_X, "0.0");
+		//cell.put(mxConstants.STYLE_EXIT_Y, "0.5");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_STANDARD_TARGET_WEST_SUBMODULE_SOLID_EDGE, cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		cell.put(mxConstants.STYLE_DASHED, "1");
+		//cell.put(mxConstants.STYLE_ENTRY_X, "0.5");
+		//cell.put(mxConstants.STYLE_ENTRY_Y, "1.0");
+		cell.put(mxConstants.STYLE_EXIT_X, "0.5");
+		cell.put(mxConstants.STYLE_EXIT_Y, "1.0");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_NORTH_MODULE_TARGET_STANDARD_DASHED_EDGE, cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		cell.put(mxConstants.STYLE_DASHED, "1");
+		//cell.put(mxConstants.STYLE_ENTRY_X, "0.5");
+		//cell.put(mxConstants.STYLE_ENTRY_Y, "0.0");
+		cell.put(mxConstants.STYLE_EXIT_X, "0.5");
+		cell.put(mxConstants.STYLE_EXIT_Y, "0.0");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_SOUTH_MODULE_TARGET_STANDARD_DASHED_EDGE, cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		cell.put(mxConstants.STYLE_DASHED, "1");
+		//cell.put(mxConstants.STYLE_ENTRY_X, "0.0");
+		//cell.put(mxConstants.STYLE_ENTRY_Y, "0.5");
+		cell.put(mxConstants.STYLE_EXIT_X, "0.0");
+		cell.put(mxConstants.STYLE_EXIT_Y, "0.5");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_EAST_MODULE_TARGET_STANDARD_DASHED_EDGE, cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		cell.put(mxConstants.STYLE_DASHED, "1");
+		//cell.put(mxConstants.STYLE_ENTRY_X, "1.0");
+		//cell.put(mxConstants.STYLE_ENTRY_Y, "0.5");
+		cell.put(mxConstants.STYLE_EXIT_X, "1.0");
+		cell.put(mxConstants.STYLE_EXIT_Y, "0.5");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_WEST_MODULE_TARGET_STANDARD_DASHED_EDGE, cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		cell.put(mxConstants.STYLE_DASHED, "1");
+		cell.put(mxConstants.STYLE_ENTRY_X, "0.5");
+		cell.put(mxConstants.STYLE_ENTRY_Y, "1.0");
+		//cell.put(mxConstants.STYLE_EXIT_X, "0.0");
+		//cell.put(mxConstants.STYLE_EXIT_Y, "0.5");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_STANDARD_TARGET_NORTH_MODULE_DASHED_EDGE, cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		cell.put(mxConstants.STYLE_DASHED, "1");
+		cell.put(mxConstants.STYLE_ENTRY_X, "0.5");
+		cell.put(mxConstants.STYLE_ENTRY_Y, "0.0");
+		//cell.put(mxConstants.STYLE_EXIT_X, "0.0");
+		//cell.put(mxConstants.STYLE_EXIT_Y, "0.5");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_STANDARD_TARGET_SOUTH_MODULE_DASHED_EDGE, cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		cell.put(mxConstants.STYLE_DASHED, "1");
+		cell.put(mxConstants.STYLE_ENTRY_X, "0.0");
+		cell.put(mxConstants.STYLE_ENTRY_Y, "0.5");
+		//cell.put(mxConstants.STYLE_EXIT_X, "0.0");
+		//cell.put(mxConstants.STYLE_EXIT_Y, "0.5");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_STANDARD_TARGET_EAST_MODULE_DASHED_EDGE, cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		cell.put(mxConstants.STYLE_DASHED, "1");
+		cell.put(mxConstants.STYLE_ENTRY_X, "1.0");
+		cell.put(mxConstants.STYLE_ENTRY_Y, "0.5");
+		//cell.put(mxConstants.STYLE_EXIT_X, "0.0");
+		//cell.put(mxConstants.STYLE_EXIT_Y, "0.5");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_STANDARD_TARGET_WEST_MODULE_DASHED_EDGE, cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		cell.put(mxConstants.STYLE_DASHED, "1");
+		//cell.put(mxConstants.STYLE_ENTRY_X, "1.0");
+		//cell.put(mxConstants.STYLE_ENTRY_Y, "0.5");
+		cell.put(mxConstants.STYLE_EXIT_X, "0.5");
+		cell.put(mxConstants.STYLE_EXIT_Y, "0.0");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_NORTH_SUBMODULE_TARGET_STANDARD_DASHED_EDGE, cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		cell.put(mxConstants.STYLE_DASHED, "1");
+		//cell.put(mxConstants.STYLE_ENTRY_X, "1.0");
+		//cell.put(mxConstants.STYLE_ENTRY_Y, "0.5");
+		cell.put(mxConstants.STYLE_EXIT_X, "0.5");
+		cell.put(mxConstants.STYLE_EXIT_Y, "1.0");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_SOUTH_SUBMODULE_TARGET_STANDARD_DASHED_EDGE, cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		cell.put(mxConstants.STYLE_DASHED, "1");
+		//cell.put(mxConstants.STYLE_ENTRY_X, "1.0");
+		//cell.put(mxConstants.STYLE_ENTRY_Y, "0.5");
+		cell.put(mxConstants.STYLE_EXIT_X, "1.0");
+		cell.put(mxConstants.STYLE_EXIT_Y, "0.5");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_EAST_SUBMODULE_TARGET_STANDARD_DASHED_EDGE, cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		cell.put(mxConstants.STYLE_DASHED, "1");
+		//cell.put(mxConstants.STYLE_ENTRY_X, "1.0");
+		//cell.put(mxConstants.STYLE_ENTRY_Y, "0.5");
+		cell.put(mxConstants.STYLE_EXIT_X, "0.0");
+		cell.put(mxConstants.STYLE_EXIT_Y, "0.5");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_WEST_SUBMODULE_TARGET_STANDARD_DASHED_EDGE, cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		cell.put(mxConstants.STYLE_DASHED, "1");
+		cell.put(mxConstants.STYLE_ENTRY_X, "0.5");
+		cell.put(mxConstants.STYLE_ENTRY_Y, "0.0");
+		//cell.put(mxConstants.STYLE_EXIT_X, "0.0");
+		//cell.put(mxConstants.STYLE_EXIT_Y, "0.5");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_STANDARD_TARGET_NORTH_SUBMODULE_DASHED_EDGE, cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		cell.put(mxConstants.STYLE_DASHED, "1");
+		cell.put(mxConstants.STYLE_ENTRY_X, "0.5");
+		cell.put(mxConstants.STYLE_ENTRY_Y, "1.0");
+		//cell.put(mxConstants.STYLE_EXIT_X, "0.0");
+		//cell.put(mxConstants.STYLE_EXIT_Y, "0.5");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_STANDARD_TARGET_SOUTH_SUBMODULE_DASHED_EDGE, cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		cell.put(mxConstants.STYLE_DASHED, "1");
+		cell.put(mxConstants.STYLE_ENTRY_X, "1.0");
+		cell.put(mxConstants.STYLE_ENTRY_Y, "0.5");
+		//cell.put(mxConstants.STYLE_EXIT_X, "0.0");
+		//cell.put(mxConstants.STYLE_EXIT_Y, "0.5");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_STANDARD_TARGET_EAST_SUBMODULE_DASHED_EDGE, cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		cell.put(mxConstants.STYLE_DASHED, "1");
+		cell.put(mxConstants.STYLE_ENTRY_X, "0.0");
+		cell.put(mxConstants.STYLE_ENTRY_Y, "0.5");
+		//cell.put(mxConstants.STYLE_EXIT_X, "0.0");
+		//cell.put(mxConstants.STYLE_EXIT_Y, "0.5");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_STANDARD_TARGET_WEST_SUBMODULE_DASHED_EDGE, cell);
+		
 		
 		cell = new HashMap<String, Object>();
 		//cell.put(mxConstants.STYLE_STROKECOLOR, "white");
@@ -2519,7 +2871,7 @@ public class DrawingBoard extends JPanel
 		cell.put(mxConstants.STYLE_MOVABLE, "0");
 		cell.put(mxConstants.STYLE_NOLABEL, "1");
 		
-		styleSheet.putCellStyle("Submodule_Mini", cell);
+		styleSheet.putCellStyle("Submodule_" + Constants.MINI, cell);
 		
 		cell = new HashMap<String, Object>();
 		cell.put(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_TRIANGLE);
@@ -2529,7 +2881,7 @@ public class DrawingBoard extends JPanel
 		cell.put(mxConstants.STYLE_MOVABLE, "0");
 		cell.put(mxConstants.STYLE_NOLABEL, "1");
 
-		styleSheet.putCellStyle("InputPort_North_Mini", cell);
+		styleSheet.putCellStyle("InputPort_North_" + Constants.MINI, cell);
 
 		cell = new HashMap<String, Object>();
 		cell.put(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_TRIANGLE);
@@ -2539,7 +2891,7 @@ public class DrawingBoard extends JPanel
 		cell.put(mxConstants.STYLE_MOVABLE, "0");
 		cell.put(mxConstants.STYLE_NOLABEL, "1");
 
-		styleSheet.putCellStyle("InputPort_South_Mini", cell);
+		styleSheet.putCellStyle("InputPort_South_" + Constants.MINI, cell);
 
 		cell = new HashMap<String, Object>();
 		cell.put(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_TRIANGLE);
@@ -2549,7 +2901,7 @@ public class DrawingBoard extends JPanel
 		cell.put(mxConstants.STYLE_MOVABLE, "0");
 		cell.put(mxConstants.STYLE_NOLABEL, "1");
 		
-		styleSheet.putCellStyle("InputPort_East_Mini", cell);
+		styleSheet.putCellStyle("InputPort_East_" + Constants.MINI, cell);
 
 		cell = new HashMap<String, Object>();
 		cell.put(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_TRIANGLE);
@@ -2559,7 +2911,7 @@ public class DrawingBoard extends JPanel
 		cell.put(mxConstants.STYLE_MOVABLE, "0");
 		cell.put(mxConstants.STYLE_NOLABEL, "1");
 		
-		styleSheet.putCellStyle("InputPort_West_Mini", cell);
+		styleSheet.putCellStyle("InputPort_West_" + Constants.MINI, cell);
 
 		cell = new HashMap<String, Object>();
 		cell.put(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_TRIANGLE);
@@ -2569,7 +2921,7 @@ public class DrawingBoard extends JPanel
 		cell.put(mxConstants.STYLE_MOVABLE, "0");
 		cell.put(mxConstants.STYLE_NOLABEL, "1");
 		
-		styleSheet.putCellStyle("OutputPort_North_Mini", cell);
+		styleSheet.putCellStyle("OutputPort_North_" + Constants.MINI, cell);
 
 		cell = new HashMap<String, Object>();
 		cell.put(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_TRIANGLE);
@@ -2579,7 +2931,7 @@ public class DrawingBoard extends JPanel
 		cell.put(mxConstants.STYLE_MOVABLE, "0");
 		cell.put(mxConstants.STYLE_NOLABEL, "1");
 		
-		styleSheet.putCellStyle("OutputPort_South_Mini", cell);
+		styleSheet.putCellStyle("OutputPort_South_" + Constants.MINI, cell);
 
 		cell = new HashMap<String, Object>();
 		cell.put(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_TRIANGLE);
@@ -2589,7 +2941,7 @@ public class DrawingBoard extends JPanel
 		cell.put(mxConstants.STYLE_MOVABLE, "0");
 		cell.put(mxConstants.STYLE_NOLABEL, "1");
 		
-		styleSheet.putCellStyle("OutputPort_East_Mini", cell);
+		styleSheet.putCellStyle("OutputPort_East_" + Constants.MINI, cell);
 
 		cell = new HashMap<String, Object>();
 		cell.put(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_TRIANGLE);
@@ -2599,7 +2951,7 @@ public class DrawingBoard extends JPanel
 		cell.put(mxConstants.STYLE_MOVABLE, "0");
 		cell.put(mxConstants.STYLE_NOLABEL, "1");
 		
-		styleSheet.putCellStyle("OutputPort_West_Mini", cell);
+		styleSheet.putCellStyle("OutputPort_West_" + Constants.MINI, cell);
 
 		cell = new HashMap<String, Object>();
 		cell.put(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_RHOMBUS);
@@ -2609,7 +2961,7 @@ public class DrawingBoard extends JPanel
 		cell.put(mxConstants.STYLE_MOVABLE, "0");
 		cell.put(mxConstants.STYLE_NOLABEL, "1");
 		
-		styleSheet.putCellStyle("EquivalencePort_North_Mini", cell);
+		styleSheet.putCellStyle("EquivalencePort_North_" + Constants.MINI, cell);
 
 		cell = new HashMap<String, Object>();
 		cell.put(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_RHOMBUS);
@@ -2619,7 +2971,7 @@ public class DrawingBoard extends JPanel
 		cell.put(mxConstants.STYLE_MOVABLE, "0");
 		cell.put(mxConstants.STYLE_NOLABEL, "1");
 		
-		styleSheet.putCellStyle("EquivalencePort_South_Mini", cell);
+		styleSheet.putCellStyle("EquivalencePort_South_" + Constants.MINI, cell);
 
 		cell = new HashMap<String, Object>();
 		cell.put(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_RHOMBUS);
@@ -2629,7 +2981,7 @@ public class DrawingBoard extends JPanel
 		cell.put(mxConstants.STYLE_MOVABLE, "0");
 		cell.put(mxConstants.STYLE_NOLABEL, "1");
 		
-		styleSheet.putCellStyle("EquivalencePort_East_Mini", cell);
+		styleSheet.putCellStyle("EquivalencePort_East_" + Constants.MINI, cell);
 
 		cell = new HashMap<String, Object>();
 		cell.put(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_RHOMBUS);
@@ -2639,7 +2991,7 @@ public class DrawingBoard extends JPanel
 		cell.put(mxConstants.STYLE_MOVABLE, "0");
 		cell.put(mxConstants.STYLE_NOLABEL, "1");
 		
-		styleSheet.putCellStyle("EquivalencePort_West_Mini", cell);
+		styleSheet.putCellStyle("EquivalencePort_West_" + Constants.MINI, cell);
 		
 		cell = new HashMap<String, Object>();
 		cell.put(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_ELLIPSE);
@@ -2650,7 +3002,7 @@ public class DrawingBoard extends JPanel
 		cell.put(mxConstants.STYLE_MOVABLE, "0");
 		cell.put(mxConstants.STYLE_NOLABEL, "1");
 
-		styleSheet.putCellStyle("VisibleVariable_Mini", cell);
+		styleSheet.putCellStyle("VisibleVariable_" + Constants.MINI, cell);
 		
 		cell = new HashMap<String, Object>();
 		cell.put(mxConstants.STYLE_SHAPE, mxConstants.SHAPE_RHOMBUS);
@@ -2659,14 +3011,14 @@ public class DrawingBoard extends JPanel
 		cell.put(mxConstants.STYLE_MOVABLE, "0");
 		cell.put(mxConstants.STYLE_NOLABEL, "1");
 
-		styleSheet.putCellStyle("EquivalenceNode_Mini", cell);
+		styleSheet.putCellStyle("EquivalenceNode_" + Constants.MINI, cell);
 		
 		cell = new HashMap<String, Object>();
 		cell.put(mxConstants.STYLE_NOLABEL, "1");
 		cell.put(mxConstants.STYLE_MOVABLE, "0");
 		cell.put(mxConstants.STYLE_ENDARROW, "none");
 		
-		styleSheet.putCellStyle("ConnectionEdge_Mini", cell);
+		styleSheet.putCellStyle("ConnectionEdge_" + Constants.MINI, cell);
 		
 		cell = new HashMap<String, Object>();
 		cell.put(mxConstants.STYLE_NOLABEL, "1");
@@ -2674,7 +3026,376 @@ public class DrawingBoard extends JPanel
 		cell.put(mxConstants.STYLE_ENDARROW, "none");
 		cell.put(mxConstants.STYLE_DASHED, "1");
 		
-		styleSheet.putCellStyle("DashedConnectionEdge_Mini", cell);
+		styleSheet.putCellStyle("DashedConnectionEdge_" + Constants.MINI, cell);
+
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		//cell.put(mxConstants.STYLE_ENTRY_X, "0.5");
+		//cell.put(mxConstants.STYLE_ENTRY_Y, "1.0");
+		cell.put(mxConstants.STYLE_EXIT_X, "0.5");
+		cell.put(mxConstants.STYLE_EXIT_Y, "1.0");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_NORTH_MODULE_TARGET_STANDARD_SOLID_EDGE_MINI, cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		//cell.put(mxConstants.STYLE_ENTRY_X, "0.5");
+		//cell.put(mxConstants.STYLE_ENTRY_Y, "0.0");
+		cell.put(mxConstants.STYLE_EXIT_X, "0.5");
+		cell.put(mxConstants.STYLE_EXIT_Y, "0.0");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_SOUTH_MODULE_TARGET_STANDARD_SOLID_EDGE_MINI, cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		//cell.put(mxConstants.STYLE_ENTRY_X, "0.0");
+		//cell.put(mxConstants.STYLE_ENTRY_Y, "0.5");
+		cell.put(mxConstants.STYLE_EXIT_X, "0.0");
+		cell.put(mxConstants.STYLE_EXIT_Y, "0.5");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_EAST_MODULE_TARGET_STANDARD_SOLID_EDGE_MINI, cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		//cell.put(mxConstants.STYLE_ENTRY_X, "1.0");
+		//cell.put(mxConstants.STYLE_ENTRY_Y, "0.5");
+		cell.put(mxConstants.STYLE_EXIT_X, "1.0");
+		cell.put(mxConstants.STYLE_EXIT_Y, "0.5");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_WEST_MODULE_TARGET_STANDARD_SOLID_EDGE_MINI, cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		cell.put(mxConstants.STYLE_ENTRY_X, "0.5");
+		cell.put(mxConstants.STYLE_ENTRY_Y, "1.0");
+		//cell.put(mxConstants.STYLE_EXIT_X, "0.0");
+		//cell.put(mxConstants.STYLE_EXIT_Y, "0.5");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_STANDARD_TARGET_NORTH_MODULE_SOLID_EDGE_MINI, cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		cell.put(mxConstants.STYLE_ENTRY_X, "0.5");
+		cell.put(mxConstants.STYLE_ENTRY_Y, "0.0");
+		//cell.put(mxConstants.STYLE_EXIT_X, "0.0");
+		//cell.put(mxConstants.STYLE_EXIT_Y, "0.5");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_STANDARD_TARGET_SOUTH_MODULE_SOLID_EDGE_MINI, cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		cell.put(mxConstants.STYLE_ENTRY_X, "0.0");
+		cell.put(mxConstants.STYLE_ENTRY_Y, "0.5");
+		//cell.put(mxConstants.STYLE_EXIT_X, "0.0");
+		//cell.put(mxConstants.STYLE_EXIT_Y, "0.5");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_STANDARD_TARGET_EAST_MODULE_SOLID_EDGE_MINI, cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		cell.put(mxConstants.STYLE_ENTRY_X, "1.0");
+		cell.put(mxConstants.STYLE_ENTRY_Y, "0.5");
+		//cell.put(mxConstants.STYLE_EXIT_X, "0.0");
+		//cell.put(mxConstants.STYLE_EXIT_Y, "0.5");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_STANDARD_TARGET_WEST_MODULE_SOLID_EDGE_MINI, cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		//cell.put(mxConstants.STYLE_ENTRY_X, "1.0");
+		//cell.put(mxConstants.STYLE_ENTRY_Y, "0.5");
+		cell.put(mxConstants.STYLE_EXIT_X, "0.5");
+		cell.put(mxConstants.STYLE_EXIT_Y, "0.0");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_NORTH_SUBMODULE_TARGET_STANDARD_SOLID_EDGE_MINI, cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		//cell.put(mxConstants.STYLE_ENTRY_X, "1.0");
+		//cell.put(mxConstants.STYLE_ENTRY_Y, "0.5");
+		cell.put(mxConstants.STYLE_EXIT_X, "0.5");
+		cell.put(mxConstants.STYLE_EXIT_Y, "1.0");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_SOUTH_SUBMODULE_TARGET_STANDARD_SOLID_EDGE_MINI, cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		//cell.put(mxConstants.STYLE_ENTRY_X, "1.0");
+		//cell.put(mxConstants.STYLE_ENTRY_Y, "0.5");
+		cell.put(mxConstants.STYLE_EXIT_X, "1.0");
+		cell.put(mxConstants.STYLE_EXIT_Y, "0.5");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_EAST_SUBMODULE_TARGET_STANDARD_SOLID_EDGE_MINI, cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		//cell.put(mxConstants.STYLE_ENTRY_X, "1.0");
+		//cell.put(mxConstants.STYLE_ENTRY_Y, "0.5");
+		cell.put(mxConstants.STYLE_EXIT_X, "0.0");
+		cell.put(mxConstants.STYLE_EXIT_Y, "0.5");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_WEST_SUBMODULE_TARGET_STANDARD_SOLID_EDGE_MINI, cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		cell.put(mxConstants.STYLE_ENTRY_X, "0.5");
+		cell.put(mxConstants.STYLE_ENTRY_Y, "0.0");
+		//cell.put(mxConstants.STYLE_EXIT_X, "0.0");
+		//cell.put(mxConstants.STYLE_EXIT_Y, "0.5");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_STANDARD_TARGET_NORTH_SUBMODULE_SOLID_EDGE_MINI, cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		cell.put(mxConstants.STYLE_ENTRY_X, "0.5");
+		cell.put(mxConstants.STYLE_ENTRY_Y, "1.0");
+		//cell.put(mxConstants.STYLE_EXIT_X, "0.0");
+		//cell.put(mxConstants.STYLE_EXIT_Y, "0.5");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_STANDARD_TARGET_SOUTH_SUBMODULE_SOLID_EDGE_MINI, cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		cell.put(mxConstants.STYLE_ENTRY_X, "1.0");
+		cell.put(mxConstants.STYLE_ENTRY_Y, "0.5");
+		//cell.put(mxConstants.STYLE_EXIT_X, "0.0");
+		//cell.put(mxConstants.STYLE_EXIT_Y, "0.5");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_STANDARD_TARGET_EAST_SUBMODULE_SOLID_EDGE_MINI, cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		cell.put(mxConstants.STYLE_ENTRY_X, "0.0");
+		cell.put(mxConstants.STYLE_ENTRY_Y, "0.5");
+		//cell.put(mxConstants.STYLE_EXIT_X, "0.0");
+		//cell.put(mxConstants.STYLE_EXIT_Y, "0.5");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_STANDARD_TARGET_WEST_SUBMODULE_SOLID_EDGE_MINI, cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		cell.put(mxConstants.STYLE_DASHED, "1");
+		//cell.put(mxConstants.STYLE_ENTRY_X, "0.5");
+		//cell.put(mxConstants.STYLE_ENTRY_Y, "1.0");
+		cell.put(mxConstants.STYLE_EXIT_X, "0.5");
+		cell.put(mxConstants.STYLE_EXIT_Y, "1.0");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_NORTH_MODULE_TARGET_STANDARD_DASHED_EDGE_MINI, cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		cell.put(mxConstants.STYLE_DASHED, "1");
+		//cell.put(mxConstants.STYLE_ENTRY_X, "0.5");
+		//cell.put(mxConstants.STYLE_ENTRY_Y, "0.0");
+		cell.put(mxConstants.STYLE_EXIT_X, "0.5");
+		cell.put(mxConstants.STYLE_EXIT_Y, "0.0");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_SOUTH_MODULE_TARGET_STANDARD_DASHED_EDGE_MINI, cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		cell.put(mxConstants.STYLE_DASHED, "1");
+		//cell.put(mxConstants.STYLE_ENTRY_X, "0.0");
+		//cell.put(mxConstants.STYLE_ENTRY_Y, "0.5");
+		cell.put(mxConstants.STYLE_EXIT_X, "0.0");
+		cell.put(mxConstants.STYLE_EXIT_Y, "0.5");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_EAST_MODULE_TARGET_STANDARD_DASHED_EDGE_MINI, cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		cell.put(mxConstants.STYLE_DASHED, "1");
+		//cell.put(mxConstants.STYLE_ENTRY_X, "1.0");
+		//cell.put(mxConstants.STYLE_ENTRY_Y, "0.5");
+		cell.put(mxConstants.STYLE_EXIT_X, "1.0");
+		cell.put(mxConstants.STYLE_EXIT_Y, "0.5");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_WEST_MODULE_TARGET_STANDARD_DASHED_EDGE_MINI, cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		cell.put(mxConstants.STYLE_DASHED, "1");
+		cell.put(mxConstants.STYLE_ENTRY_X, "0.5");
+		cell.put(mxConstants.STYLE_ENTRY_Y, "1.0");
+		//cell.put(mxConstants.STYLE_EXIT_X, "0.0");
+		//cell.put(mxConstants.STYLE_EXIT_Y, "0.5");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_STANDARD_TARGET_NORTH_MODULE_DASHED_EDGE_MINI, cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		cell.put(mxConstants.STYLE_DASHED, "1");
+		cell.put(mxConstants.STYLE_ENTRY_X, "0.5");
+		cell.put(mxConstants.STYLE_ENTRY_Y, "0.0");
+		//cell.put(mxConstants.STYLE_EXIT_X, "0.0");
+		//cell.put(mxConstants.STYLE_EXIT_Y, "0.5");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_STANDARD_TARGET_SOUTH_MODULE_DASHED_EDGE_MINI, cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		cell.put(mxConstants.STYLE_DASHED, "1");
+		cell.put(mxConstants.STYLE_ENTRY_X, "0.0");
+		cell.put(mxConstants.STYLE_ENTRY_Y, "0.5");
+		//cell.put(mxConstants.STYLE_EXIT_X, "0.0");
+		//cell.put(mxConstants.STYLE_EXIT_Y, "0.5");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_STANDARD_TARGET_EAST_MODULE_DASHED_EDGE_MINI, cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		cell.put(mxConstants.STYLE_DASHED, "1");
+		cell.put(mxConstants.STYLE_ENTRY_X, "1.0");
+		cell.put(mxConstants.STYLE_ENTRY_Y, "0.5");
+		//cell.put(mxConstants.STYLE_EXIT_X, "0.0");
+		//cell.put(mxConstants.STYLE_EXIT_Y, "0.5");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_STANDARD_TARGET_WEST_MODULE_DASHED_EDGE_MINI, cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		cell.put(mxConstants.STYLE_DASHED, "1");
+		//cell.put(mxConstants.STYLE_ENTRY_X, "1.0");
+		//cell.put(mxConstants.STYLE_ENTRY_Y, "0.5");
+		cell.put(mxConstants.STYLE_EXIT_X, "0.5");
+		cell.put(mxConstants.STYLE_EXIT_Y, "0.0");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_NORTH_SUBMODULE_TARGET_STANDARD_DASHED_EDGE_MINI, cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		cell.put(mxConstants.STYLE_DASHED, "1");
+		//cell.put(mxConstants.STYLE_ENTRY_X, "1.0");
+		//cell.put(mxConstants.STYLE_ENTRY_Y, "0.5");
+		cell.put(mxConstants.STYLE_EXIT_X, "0.5");
+		cell.put(mxConstants.STYLE_EXIT_Y, "1.0");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_SOUTH_SUBMODULE_TARGET_STANDARD_DASHED_EDGE_MINI, cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		cell.put(mxConstants.STYLE_DASHED, "1");
+		//cell.put(mxConstants.STYLE_ENTRY_X, "1.0");
+		//cell.put(mxConstants.STYLE_ENTRY_Y, "0.5");
+		cell.put(mxConstants.STYLE_EXIT_X, "1.0");
+		cell.put(mxConstants.STYLE_EXIT_Y, "0.5");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_EAST_SUBMODULE_TARGET_STANDARD_DASHED_EDGE_MINI, cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		cell.put(mxConstants.STYLE_DASHED, "1");
+		//cell.put(mxConstants.STYLE_ENTRY_X, "1.0");
+		//cell.put(mxConstants.STYLE_ENTRY_Y, "0.5");
+		cell.put(mxConstants.STYLE_EXIT_X, "0.0");
+		cell.put(mxConstants.STYLE_EXIT_Y, "0.5");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_WEST_SUBMODULE_TARGET_STANDARD_DASHED_EDGE_MINI, cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		cell.put(mxConstants.STYLE_DASHED, "1");
+		cell.put(mxConstants.STYLE_ENTRY_X, "0.5");
+		cell.put(mxConstants.STYLE_ENTRY_Y, "0.0");
+		//cell.put(mxConstants.STYLE_EXIT_X, "0.0");
+		//cell.put(mxConstants.STYLE_EXIT_Y, "0.5");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_STANDARD_TARGET_NORTH_SUBMODULE_DASHED_EDGE_MINI, cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		cell.put(mxConstants.STYLE_DASHED, "1");
+		cell.put(mxConstants.STYLE_ENTRY_X, "0.5");
+		cell.put(mxConstants.STYLE_ENTRY_Y, "1.0");
+		//cell.put(mxConstants.STYLE_EXIT_X, "0.0");
+		//cell.put(mxConstants.STYLE_EXIT_Y, "0.5");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_STANDARD_TARGET_SOUTH_SUBMODULE_DASHED_EDGE_MINI, cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		cell.put(mxConstants.STYLE_DASHED, "1");
+		cell.put(mxConstants.STYLE_ENTRY_X, "1.0");
+		cell.put(mxConstants.STYLE_ENTRY_Y, "0.5");
+		//cell.put(mxConstants.STYLE_EXIT_X, "0.0");
+		//cell.put(mxConstants.STYLE_EXIT_Y, "0.5");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_STANDARD_TARGET_EAST_SUBMODULE_DASHED_EDGE_MINI, cell);
+		
+		cell = new HashMap<String, Object>();
+		cell.put(mxConstants.STYLE_NOLABEL, "1");
+		cell.put(mxConstants.STYLE_MOVABLE, "0");
+		cell.put(mxConstants.STYLE_ENDARROW, "none");
+		cell.put(mxConstants.STYLE_DASHED, "1");
+		cell.put(mxConstants.STYLE_ENTRY_X, "0.0");
+		cell.put(mxConstants.STYLE_ENTRY_Y, "0.5");
+		//cell.put(mxConstants.STYLE_EXIT_X, "0.0");
+		//cell.put(mxConstants.STYLE_EXIT_Y, "0.5");
+		
+		styleSheet.putCellStyle(Constants.SOURCE_STANDARD_TARGET_WEST_SUBMODULE_DASHED_EDGE_MINI, cell);
+		
 	}
 
 	/**
@@ -2692,99 +3413,111 @@ public class DrawingBoard extends JPanel
 
 		if (((mxCell)cell).isEdge())
 		{
-			menu.add(new AbstractAction("Remove Connection") {
-				/**
-				 * 
-				 */
-				private static final long serialVersionUID = 1L;
-				
-				public void actionPerformed(ActionEvent e)
-				{
-					//System.out.println("Connected edge count: " + graph.getModel().getEdgeCount(((mxCell)cell).getSource()));
-					// get the connection object from the drawing cell
-					ConnectionNode cNode = (ConnectionNode)((mxCell)cell).getValue();
-					//System.out.println("Connected edge count: " + graph.getModel().getEdgeCount(((mxCell)cell).getSource()));
-					if (AC_GUI.canModuleBeModified(cNode.getParent()))
-					{
-						// remove the connection from the module
-						AC_GUI.removeConnection(cNode, true);
-					}
-				}
-			});
-			
-			menu.add(new AbstractAction("Properties") {
-				/**
-				 * 
-				 */
-				private static final long serialVersionUID = 1L;
-
-				public void actionPerformed(ActionEvent e)
-				{
-					Object sourceValue;
-					Object targetValue;
-					String source = "";
-					String target = "";
-					
-					sourceValue = ((mxCell)cell).getSource().getValue();
-					targetValue = ((mxCell)cell).getTarget().getValue();
-					
-					if (sourceValue instanceof PortNode)
-					{
-						source = "Port ";
-						source += ((PortNode)sourceValue).getParent().getModuleDefinition().getName();
-						source += "." + ((PortNode)sourceValue).getPortDefinition().getName();
-					} else if (sourceValue instanceof VisibleVariableNode)
-					{
-						source = "Variable ";
-						source += ((VisibleVariableNode)sourceValue).getVisibleVariableDefinition().getRefName();
-					} else if (sourceValue instanceof EquivalenceNode)
-					{
-						source = "Equivalence Node ";
-						source += ((EquivalenceNode)sourceValue).getEquivalenceDefinition().getRefName();
-					}
-					
-					if (targetValue instanceof PortNode)
-					{
-						target = "Port ";
-						target += ((PortNode)targetValue).getParent().getModuleDefinition().getName();
-						target += "." + ((PortNode)targetValue).getPortDefinition().getName();
-					} else if (targetValue instanceof VisibleVariableNode)
-					{
-						target = "Variable ";
-						target += ((VisibleVariableNode)targetValue).getVisibleVariableDefinition().getRefName();
-					} else if (targetValue instanceof EquivalenceNode)
-					{
-						target = "Equivalence Node ";
-						target += ((EquivalenceNode)targetValue).getEquivalenceDefinition().getRefName();
-					}
-					
-					String msg = "Source = " + source + "\nDestination = " + target;
-					JOptionPane.showMessageDialog(null, msg);
-				}
-			});
-		}
-		else
-		{
-			if (cellValue instanceof Module)
+			if (activeModule == ((ConnectionNode)cellValue).getParent())
 			{
-				menu.add(new AbstractAction("Edit Name") {
+				menu.add(new AbstractAction("Remove Connection") {
 					/**
 					 * 
 					 */
 					private static final long serialVersionUID = 1L;
-
+					
 					public void actionPerformed(ActionEvent e)
 					{
-						//graphComponent.startEditingAtCell(cell);
-						if (AC_GUI.canModuleBeModified(activeModule))
+						//System.out.println("Connected edge count: " + graph.getModel().getEdgeCount(((mxCell)cell).getSource()));
+						// get the connection object from the drawing cell
+						ConnectionNode cNode = (ConnectionNode)((mxCell)cell).getValue();
+						//System.out.println("Connected edge count: " + graph.getModel().getEdgeCount(((mxCell)cell).getSource()));
+						if (AC_GUI.canModuleBeModified(cNode.getParent()))
 						{
-							AC_Utility.promptUserEditModuleName(AC_GUI.selectedModule.getName());
+							// remove the connection from the module
+							AC_GUI.removeConnection(cNode, true);
 						}
 					}
 				});
 				
+				menu.add(new AbstractAction("Properties") {
+					/**
+					 * 
+					 */
+					private static final long serialVersionUID = 1L;
+	
+					public void actionPerformed(ActionEvent e)
+					{
+						Object sourceValue;
+						Object targetValue;
+						String source = "";
+						String target = "";
+						ConnectionNode cNode = (ConnectionNode)((mxCell)cell).getValue();
+						
+						sourceValue = ((mxCell)cell).getSource().getValue();
+						targetValue = ((mxCell)cell).getTarget().getValue();
+						
+						if (sourceValue instanceof PortNode)
+						{
+							source = "Port ";
+							source += ((PortNode)sourceValue).getParent().getModuleDefinition().getName();
+							source += "." + ((PortNode)sourceValue).getPortDefinition().getName();
+						} else if (sourceValue instanceof VisibleVariableNode)
+						{
+							source = "Variable ";
+							source += ((VisibleVariableNode)sourceValue).getVisibleVariableDefinition().getRefName();
+						} else if (sourceValue instanceof EquivalenceNode)
+						{
+							source = "Equivalence Node ";
+							source += ((EquivalenceNode)sourceValue).getEquivalenceDefinition().getRefName();
+						}
+						
+						if (targetValue instanceof PortNode)
+						{
+							target = "Port ";
+							target += ((PortNode)targetValue).getParent().getModuleDefinition().getName();
+							target += "." + ((PortNode)targetValue).getPortDefinition().getName();
+						} else if (targetValue instanceof VisibleVariableNode)
+						{
+							target = "Variable ";
+							target += ((VisibleVariableNode)targetValue).getVisibleVariableDefinition().getRefName();
+						} else if (targetValue instanceof EquivalenceNode)
+						{
+							target = "Equivalence Node ";
+							target += ((EquivalenceNode)targetValue).getEquivalenceDefinition().getRefName();
+						}
+						
+						String msg = "Source = " + source;
+						msg += AC_Utility.eol;
+						msg += "Destination = " + target;
+						msg += AC_Utility.eol;
+						msg += "CellStyle: " + cNode.getDrawingCellStyle();
+						JOptionPane.showMessageDialog(null, msg);
+					}
+				});
+			}
+			else
+			{
+				// the connection node belongs to a submodule
+			}
+		}
+		else
+		{
+			if (cellValue instanceof Module)
+			{	
 				if (activeModule == (Module)cellValue)
 				{
+					menu.add(new AbstractAction("Edit Name") {
+						/**
+						 * 
+						 */
+						private static final long serialVersionUID = 1L;
+
+						public void actionPerformed(ActionEvent e)
+						{
+							//graphComponent.startEditingAtCell(cell);
+							if (AC_GUI.canModuleBeModified(activeModule))
+							{
+								AC_Utility.promptUserEditModuleName(AC_GUI.selectedModule.getName());
+							}
+						}
+					});
+					
 					menu.add(new AbstractAction("Add Port") {
 						/**
 						 * 
@@ -2821,9 +3554,28 @@ public class DrawingBoard extends JPanel
 						}
 					});
 				}
-				else
+				else if (activeModule == ((Module)cellValue).getParent())
 				{
 					// the module selected is a submodule
+					menu.add(new AbstractAction("Edit Name") {
+						/**
+						 * 
+						 */
+						private static final long serialVersionUID = 1L;
+
+						public void actionPerformed(ActionEvent e)
+						{
+							//graphComponent.startEditingAtCell(cell);
+							if (AC_GUI.canModuleBeModified(activeModule))
+							{
+								AC_Utility.promptUserEditModuleName(AC_GUI.selectedModule.getName());
+							}
+						}
+					});
+				}
+				else
+				{
+					// the module selected belongs to a submodule
 				}
 			} 
 			else if (cellValue instanceof PortNode)
@@ -2902,49 +3654,63 @@ public class DrawingBoard extends JPanel
 			}
 			else if (cellValue instanceof VisibleVariableNode)
 			{
-				menu.add(new AbstractAction("Remove") {
-					/**
-					 * 
-					 */
-					private static final long serialVersionUID = 1L;
-
-					public void actionPerformed(ActionEvent e)
-					{
-						// get the Visible Variable object from the drawing cell
-						VisibleVariableNode vNode = (VisibleVariableNode) ((mxCell) cell).getValue();
-						//String msg = "Number of edges connected to the variable: ";
-						//msg += graph.getModel().getEdgeCount(cell) + ".";
-						//System.out.println(msg);
-						if (AC_GUI.canModuleBeModified(vNode.getParent()))
+				if (activeModule == ((VisibleVariableNode)cellValue).getParent())
+				{
+					menu.add(new AbstractAction("Remove") {
+						/**
+						 * 
+						 */
+						private static final long serialVersionUID = 1L;
+	
+						public void actionPerformed(ActionEvent e)
 						{
-							// call AC_GUI to fully remove the variable
-							AC_GUI.removeVisibleVariable(vNode, true);
-						}						
-					}
-				});
+							// get the Visible Variable object from the drawing cell
+							VisibleVariableNode vNode = (VisibleVariableNode) ((mxCell) cell).getValue();
+							//String msg = "Number of edges connected to the variable: ";
+							//msg += graph.getModel().getEdgeCount(cell) + ".";
+							//System.out.println(msg);
+							if (AC_GUI.canModuleBeModified(vNode.getParent()))
+							{
+								// call AC_GUI to fully remove the variable
+								AC_GUI.removeVisibleVariable(vNode, true);
+							}						
+						}
+					});
+				}
+				else
+				{
+					// the visible variable node belongs to a submodule
+				}
 			}
 			else if (cellValue instanceof EquivalenceNode)
 			{
-				menu.add(new AbstractAction("Remove") {
-					/**
-					 * 
-					 */
-					private static final long serialVersionUID = 1L;
-
-					public void actionPerformed(ActionEvent e)
-					{
-						// get the Equivalence Node object from the drawing cell
-						EquivalenceNode eNode = (EquivalenceNode) ((mxCell) cell).getValue();
-						//String msg = "Number of edges connected to the eNode: ";
-						//msg += graph.getModel().getEdgeCount(cell) + ".";
-						//System.out.println(msg);
-						if (AC_GUI.canModuleBeModified(eNode.getParent()))
+				if (activeModule == ((EquivalenceNode)cellValue).getParent())
+				{
+					menu.add(new AbstractAction("Remove") {
+						/**
+						 * 
+						 */
+						private static final long serialVersionUID = 1L;
+	
+						public void actionPerformed(ActionEvent e)
 						{
-							// call AC_GUI to fully remove the equivalence node
-							AC_GUI.removeEquivalenceNode(eNode, true);
+							// get the Equivalence Node object from the drawing cell
+							EquivalenceNode eNode = (EquivalenceNode) ((mxCell) cell).getValue();
+							//String msg = "Number of edges connected to the eNode: ";
+							//msg += graph.getModel().getEdgeCount(cell) + ".";
+							//System.out.println(msg);
+							if (AC_GUI.canModuleBeModified(eNode.getParent()))
+							{
+								// call AC_GUI to fully remove the equivalence node
+								AC_GUI.removeEquivalenceNode(eNode, true);
+							}
 						}
-					}
-				});
+					});
+				}
+				else
+				{
+					// the equivalence node belongs to a submodule
+				}
 			}
 		}
 
@@ -3042,7 +3808,7 @@ public class DrawingBoard extends JPanel
 					
 					if (graph.getModel().getStyle(cell).equalsIgnoreCase("InactiveButton"))
 					{
-						System.out.println("A button was clicked.");
+						//System.out.println("A button was clicked.");
 						AC_GUI.setSelectedModule(parentMod);
 						if (submoduleView != null)
 						{
@@ -3055,7 +3821,7 @@ public class DrawingBoard extends JPanel
 					}
 					else if (graph.getModel().getStyle(cell).equalsIgnoreCase("ActiveButton"))
 					{
-						System.out.println("A button was clicked.");
+						//System.out.println("A button was clicked.");
 						AC_GUI.setSelectedModule(parentMod);
 						AC_GUI.removeSubmoduleInfoView(cell, true);
 					}

@@ -29,7 +29,7 @@ public enum MenuItem
 	DECOMPOSE_INTO_MODULES("Decompose into Modules"),
 	// -------------------------------------------------------------------------------------
 	HELP_CONTENTS("Help Contents"),
-	ABOUT_AGGREGATION_CONNECTOR("About Aggregation Connector");
+	ABOUT_JIGCELL_MODEL_CONNECTOR("About JigCell Model Connector");
 	
 	private final String name;
 	

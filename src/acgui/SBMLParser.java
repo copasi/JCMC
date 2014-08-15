@@ -145,9 +145,25 @@ public class SBMLParser {
 			//System.out.println("Document Version: " + sdoc.getVersion());
 
 			if (document.getNumErrors() > 0) {
+				String msg = "This SBML file contains errors. Please try to open a valid SBML file.";
+				JOptionPane.showMessageDialog(null,
+					    msg,
+					    "Import Error",
+					    JOptionPane.ERROR_MESSAGE);
+				/*
 				System.err.println("Encountered errors while reading the file. ");
 				System.err.println("Please correct the following errors and try again.");
 				document.printErrors();
+				*/
+				return null;
+			}
+			if (document.getLevel() < 3)
+			{
+				String msg = "SBML level " + document.getLevel() + " is not currently supported.";
+				JOptionPane.showMessageDialog(null,
+					    msg,
+					    "Import Error",
+					    JOptionPane.ERROR_MESSAGE);
 				return null;
 			}
 		}	
@@ -798,6 +814,7 @@ public class SBMLParser {
 	{
 		Object outgoingEdges [] = mxGraphModel.getOutgoingEdges(AC_GUI.drawingBoard.getGraph().getModel(), node.getDrawingCell());
 		Object incomingEdges [] = mxGraphModel.getIncomingEdges(AC_GUI.drawingBoard.getGraph().getModel(), node.getDrawingCell());
+		CompSBasePlugin plugin = null;
 		String variableName;
 		
 		if ((outgoingEdges.length == 0) && (incomingEdges.length == 0))
@@ -808,12 +825,25 @@ public class SBMLParser {
 		
 		//Species species = getSpecies(model.getListOfSpecies(), node.getVisibleVariableDefinition().getRefName());
 		Species species = getSpecies(model.getListOfSpecies(), variableName);
-		if (species == null)
+		Parameter parameter = getParameter(model.getListOfParameters(), variableName);
+		if ((species == null) && (parameter == null))
 		{
-			System.err.println("Error SBMLParser.addVisibleVariableReplacements(): Species " + node.getVisibleVariableDefinition().getRefName() + " not found.");
+			// the variable was not found
+			System.err.println("Error SBMLParser.addVisibleVariableReplacements(): Variable " + variableName + " not found.");
 			return false;
 		}
-		CompSBasePlugin speciesPlugin = (CompSBasePlugin)species.getPlugin("comp");
+		
+		if (species != null)
+		{
+			// the variable is a species
+			plugin = (CompSBasePlugin)species.getPlugin("comp");
+		}
+		else
+		{
+			// the variable is a parameter
+			plugin = (CompSBasePlugin)parameter.getPlugin("comp");
+		}
+		
 		ReplacedElement replacedElement;
 		PortNode port;
 		String portRef;
@@ -829,7 +859,7 @@ public class SBMLParser {
 				parent = port.getParent();
 				if ((parent == node.getParent()) && (variableName.equals(port.getPortDefinition().getRefName())))
 				{
-					// this species is already assigned to the port
+					// this variable is already assigned to the port
 					continue;
 				}
 				portRef = port.getPortDefinition().getName();
@@ -838,7 +868,7 @@ public class SBMLParser {
 				replacedElement = new ReplacedElement();
 				replacedElement.setPortRef(portRef);
 				replacedElement.setSubmodelRef(submodelRef);
-				speciesPlugin.addReplacedElement(replacedElement);
+				plugin.addReplacedElement(replacedElement);
 			}
 		}
 		
@@ -855,7 +885,7 @@ public class SBMLParser {
 				replacedElement = new ReplacedElement();
 				replacedElement.setPortRef(portRef);
 				replacedElement.setSubmodelRef(submodelRef);
-				speciesPlugin.addReplacedElement(replacedElement);
+				plugin.addReplacedElement(replacedElement);
 				//ReplacedBy replacedBy = speciesPlugin.createReplacedBy();
 				//replacedBy.setPortRef(portRef);
 				//replacedBy.setSubmodelRef(submodelRef);
@@ -2060,6 +2090,20 @@ public class SBMLParser {
 			if (name.equalsIgnoreCase(currentSpecies.getName()))
 			{
 				return currentSpecies;
+			}
+		}
+		return null;
+	}
+	
+	private static Parameter getParameter(ListOfParameters parameterList, String name)
+	{
+		Parameter currentParameter;
+		for (long i = 0; i < parameterList.size(); i++)
+		{
+			currentParameter = parameterList.get(i);
+			if (name.equalsIgnoreCase(currentParameter.getName()))
+			{
+				return currentParameter;
 			}
 		}
 		return null;
