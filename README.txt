@@ -1,4 +1,4 @@
-Aggregation Connector (AC)
+JigCell Model Connector (JCMC)
 ==
 Aggregation connector tool for hierarchical reaction network models
 
