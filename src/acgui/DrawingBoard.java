@@ -1408,6 +1408,7 @@ public class DrawingBoard extends JPanel
 				}
 				graph.getModel().setStyle(childCell, child.getDrawingCellStyle());
 				graph.getModel().setGeometry(childCell, geo);
+				
 			}
 			finally
 			{

@@ -85,8 +85,9 @@ public class TreeView extends JPanel implements TreeSelectionListener
 	
 	public void refreshTree()
 	{
-		//treeModel.reload();
+		treeModel.reload();
 		tree.repaint();
+		setSelected(AC_GUI.activeModule.getTreeNode());
 	}
 	
 	public void createNode(Module mod)

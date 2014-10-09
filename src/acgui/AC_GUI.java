@@ -84,6 +84,7 @@ public class AC_GUI extends JFrame
 	{
 		super(Constants.TOOL_NAME_FULL);
 		copasiUtility = new CopasiUtility();
+		rootModule = null;
 		activeModule = null;
 		initializeComponents();
 		this.setVisible(true);
@@ -473,7 +474,7 @@ public class AC_GUI extends JFrame
 		Module parent = mod.getParent();
 		if (directDeletion)
 		{
-			if (canModuleBeModified(mod))
+			if (canModuleBeModified(parent))
 			{
 				setSelectedModule(mod.getParent());
 				

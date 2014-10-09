@@ -103,7 +103,7 @@ public class VariableAddEditor extends JDialog implements ActionListener
 		{
 			String msg;
 			
-			if (((String)comboBox1.getSelectedItem()).equals(""))
+			if ((comboBox1.getSelectedItem() == null) || ((String)comboBox1.getSelectedItem()).equals(""))
 			{
 				JOptionPane.showMessageDialog(null, "Please select a Ref Name.");
 			}

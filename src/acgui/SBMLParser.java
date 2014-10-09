@@ -2443,7 +2443,7 @@ public class SBMLParser {
 	private static String generateContainerModuleDefinitionName(String moduleName)
 	{
 		int index = 0;
-		String base = moduleName + "Definition";
+		String base = moduleName + "Template";
 		String candidate = base;
 		while (!AC_Utility.moduleNameValidation(candidate, false))
 		{

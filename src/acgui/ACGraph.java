@@ -53,6 +53,41 @@ public class ACGraph extends mxGraph
 		super(arg0, arg1);
 	}
 
+	/**
+	 * Returns the textual representation for the given cell.
+	 * 
+	 * @param cell Cell to be converted to a string.
+	 * @return Returns the textual representation of the cell.
+	 */
+	public String convertValueToString(Object cell)
+	{
+		String label = null;
+		Object result = model.getValue(cell);
+
+		if ((result instanceof Module) && (AC_GUI.activeModule != null))
+		{
+			Module module = (Module)result;
+			ModuleDefinition definition = module.getModuleDefinition();
+			if ((module != AC_GUI.activeModule) && !(definition instanceof MathematicalAggregatorDefinition))
+			{
+				label = module.getModuleDefinition().getName();
+				label += AC_Utility.eol;
+				label += "\"" + module.getName() + "\"";
+			}
+		}
+		
+		if (label == null)
+		{
+			label = "";
+			if (result != null)
+			{
+				label = result.toString();
+			}
+		}
+		//return (result != null) ? result.toString() : "";
+		return label;
+	}
+	
 	// Ports are not used as terminals for edges, they are
 	// only used to compute the graphical connection point
 	/*
