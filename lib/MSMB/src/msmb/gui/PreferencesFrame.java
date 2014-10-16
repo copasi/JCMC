@@ -7,6 +7,7 @@ import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.GridLayout;
+import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
@@ -213,7 +214,9 @@ public class PreferencesFrame extends JDialog {
 
 		this.gui = gui;
 		initComponents();
-
+		Rectangle screen = gui.getGraphicsConfiguration().getBounds();
+		setLocation( screen.x + (screen.width - getWidth()) / 2, screen.y + (screen.height - getHeight()) / 2 );
+	
 		btnNewButton.doClick();
 		GraphicalProperties.resetFonts(this);
 	}
@@ -569,9 +572,7 @@ public class PreferencesFrame extends JDialog {
 
 			public void updateDefault() {
 				new String(defaultSpeciesInitialValue.getText());
-				MainGui.species_defaultInitialValue = defaultSpeciesInitialValue.getText
-
-						();
+				MainGui.species_defaultInitialValue = defaultSpeciesInitialValue.getText();
 				MainGui.updateDefaultValue(Constants.TitlesTabs.SPECIES.getDescription(), 
 
 						Constants.SpeciesColumns.INITIAL_QUANTITY.index, MainGui.species_defaultInitialValue);
@@ -592,9 +593,7 @@ public class PreferencesFrame extends JDialog {
 			}
 
 			public void updateDefault() {
-				MainGui.compartment_defaultInitialValue = 
-
-						defaultCompartmentInitialValue.getText();
+				MainGui.compartment_defaultInitialValue = defaultCompartmentInitialValue.getText();
 				MainGui.updateDefaultValue(Constants.TitlesTabs.COMPARTMENTS.getDescription(), 
 
 						Constants.CompartmentsColumns.INITIAL_SIZE.index, MainGui.compartment_defaultInitialValue);
@@ -1037,7 +1036,7 @@ public class PreferencesFrame extends JDialog {
 		}
 		this.setModal(true);
 		this.pack();
-		this.setLocationRelativeTo(null);
+		
 	}
 	
 

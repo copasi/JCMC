@@ -21,6 +21,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
@@ -36,6 +37,10 @@ public class SingleSimulationAddParameterListFrame extends JDialog {
 	private SortedListModel listIn_model;
 	private JList jListIn;
 	private JList jListNotIn;
+
+	private SimulationsDB simDB;
+
+	private MutantsDB mutDB;
 	
 	/**
 	 * Launch the application.
@@ -44,7 +49,7 @@ public class SingleSimulationAddParameterListFrame extends JDialog {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
-					SingleSimulationAddParameterListFrame frame = new SingleSimulationAddParameterListFrame();
+					SingleSimulationAddParameterListFrame frame = new SingleSimulationAddParameterListFrame(null,null);
 					frame.setVisible(true);
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -70,16 +75,14 @@ public class SingleSimulationAddParameterListFrame extends JDialog {
 		}
 		
 		GraphicalProperties.resetFonts(this);
-		setLocationRelativeTo(null);
 		
-		
+	
 		
 		setVisible(true);
 	
 		Vector<Mutant> ret = new Vector<Mutant>();
 		//once the window is closed
 		if(exitOption != ExitOption.CANCEL) {
-				System.out.println("MUTANTS FOR SIMULATION " +listIn_model);
 				it = listIn_model.iterator();
 				while(it.hasNext()) {
 					ret.add(it.next());
@@ -92,7 +95,9 @@ public class SingleSimulationAddParameterListFrame extends JDialog {
 	}
 	
 	
-	public SingleSimulationAddParameterListFrame() {
+	public SingleSimulationAddParameterListFrame(SimulationsDB sDB, MutantsDB mDB) {
+		simDB = sDB;
+		this.mutDB = mDB;
 		setModal(true);
 		setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
 		setBounds(100, 100, 450, 300);
@@ -113,11 +118,7 @@ public class SingleSimulationAddParameterListFrame extends JDialog {
 		panel_4.add(scrollPane, BorderLayout.CENTER);
 		
 		listNotIn_model = new SortedListModel();
-		listNotIn_model.add(new Mutant("A"));
-		listNotIn_model.add(new Mutant("b"));
-		listNotIn_model.add(new Mutant("c"));
-		listNotIn_model.add(new Mutant("d"));
-		listNotIn_model.add(new Mutant("e"));
+
 		
 		 jListNotIn = new JList(listNotIn_model);
 		scrollPane.setViewportView(jListNotIn);
@@ -127,6 +128,8 @@ public class SingleSimulationAddParameterListFrame extends JDialog {
 		
 		JPanel panel_1 = new JPanel();
 		panel.add(panel_1);
+		panel_1.setBorder(new EmptyBorder(9, 9, 9, 9));
+		panel_1.setLayout(new GridLayout(5, 1,9,9));
 		
 		JButton btnAddSelected = new JButton("Add selected ->");
 		btnAddSelected.addActionListener(new ActionListener() {
@@ -143,14 +146,22 @@ public class SingleSimulationAddParameterListFrame extends JDialog {
 		});
 		panel_1.add(btnAddSelected);
 		
-		JButton btnNewButton = new JButton("Add (with descendants) ->");
+		JButton btnNewButton = new JButton("Add (recursive) ->");
+		
 		btnNewButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				Object[] sel = jListNotIn.getSelectedValues();
 				if(sel==null) return;
-				listIn_model.addAll(sel);
 				for(int i = 0; i < sel.length; ++i) {
-					listNotIn_model.removeElement(sel[i]);
+					String current = sel[i].toString();
+					listIn_model.add(current);
+					listNotIn_model.removeElement(current);
+					Vector<Mutant> desc = mutDB.collectDescendants(new Mutant(current));
+					for(int j = 0; j < desc.size(); ++j) {
+						String s = desc.get(j).getName();
+						listIn_model.add(s);
+						listNotIn_model.removeElement(s);
+					}
 				}
 				jListIn.clearSelection();
 				jListNotIn.clearSelection();
@@ -255,7 +266,14 @@ class SortedListModel extends AbstractListModel {
 	  SortedSet model;
 
 	  public SortedListModel() {
-	    model = new TreeSet();
+		  Comparator c =  new Comparator<Object>() {
+		        public int compare(Object o1, Object o2) {
+		            String s1 = o1.toString();
+		            String s2 = o2.toString();
+		            return s1.compareToIgnoreCase(s2);
+		        }
+		    };
+	    model = new TreeSet(c);
 	  }
 
 	  public int getSize() {    return model.size();	  }
@@ -263,9 +281,9 @@ class SortedListModel extends AbstractListModel {
 	  public Object getElementAt(int index) {	    return model.toArray()[index];	  }
 
   public void add(Object element) {
-	    if (model.add(element)) {
+	    model.add(element);
 	      fireContentsChanged(this, 0, getSize());
-	    }
+	    
 	  }
 
 	  public void addAll(Object elements[]) {
@@ -302,6 +320,9 @@ class SortedListModel extends AbstractListModel {
 	    }
 	    return removed;   
 	  }
+	  
+	
+
 	}
 
 

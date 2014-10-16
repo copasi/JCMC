@@ -1,7 +1,9 @@
 package msmb.runManager;
 
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Rectangle;
 
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
@@ -18,6 +20,7 @@ import java.util.Vector;
 
 import javax.swing.JComboBox;
 import msmb.runManager.RunManager.NotesLabels;
+import msmb.utility.GraphicalProperties;
 
 import org.apache.commons.lang3.tuple.MutablePair;
 
@@ -33,9 +36,13 @@ public class LocalChangeFrame extends JDialog {
 	private JRadioButton radioButtonPickValueFromParent;
 	private JRadioButton radioButtonNewExpression;
 	private JTextField expressionTextPane;
+	private JComboBox expressionComboBox;
 	private String newValue ;
 	private ExitOption exitOption;
 	private JRadioButton radioButtonBaseSet;
+	private JPanel panel;
+	private boolean withComboBox = false;
+	private JDialog parentDialog;
 
 	/**
 	 * Launch the application.
@@ -48,6 +55,18 @@ public class LocalChangeFrame extends JDialog {
 			e.printStackTrace();
 		}
 	}
+	
+	public MutablePair<Integer, String> initializeAndShowWithComboBox(Vector<String> parents, String currentValue, String changesFrom_noteLabel, Vector<String> elementsForCombo) {
+			panel.add(expressionComboBox, BorderLayout.CENTER);
+			expressionComboBox.removeAllItems();
+			for(int i = 0; i < elementsForCombo.size(); ++i) {
+				expressionComboBox.addItem(elementsForCombo.get(i));
+			}
+			
+			withComboBox  = true;
+			return initializeAndShow(parents, currentValue, changesFrom_noteLabel);
+	}
+	
 	
 	public MutablePair<Integer, String> initializeAndShow(Vector<String> parents, String currentValue, String changesFrom_noteLabel) {
 		comboBoxParents.removeAllItems();
@@ -76,19 +95,29 @@ public class LocalChangeFrame extends JDialog {
 		case LOCAL:
 			radioButtonNewExpression.setSelected(true);
 			expressionTextPane.setText(currentValue);
+			if(withComboBox) {expressionComboBox.setSelectedItem(currentValue);}
+			break;
+		case CONFLICT: 
+			expressionTextPane.setText("");
+			radioButtonNewExpression.setSelected(true);
+			break;
 		default:
 			break;
 		}
 		
 		return showDialog();
 	}
-
 	
 	
 	private MutablePair<Integer, String> showDialog() {
 		newValue  = new String();
+		GraphicalProperties.resetFonts(this);
 		pack();
-		setLocationRelativeTo(null);
+		Rectangle screen = parentDialog.getGraphicsConfiguration().getBounds();
+	    setLocation(
+	        screen.x + (screen.width - getWidth()) / 2,
+	        screen.y + (screen.height - getHeight()) / 2 ); 
+		
 		setVisible(true);
 		
 	    MutablePair<Integer, String> ret = new MutablePair<Integer, String>();
@@ -98,7 +127,11 @@ public class LocalChangeFrame extends JDialog {
 			ret.right = comboBoxParents.getSelectedItem().toString();;
 		} else if(exitOption == ExitOption.LOCAL) {
 			ret.left = ExitOption.LOCAL.code;
-			ret.right = expressionTextPane.getText().trim();
+			if(withComboBox) {
+				ret.right = expressionComboBox.getSelectedItem().toString().trim();
+			} else {
+				ret.right = expressionTextPane.getText().trim();
+			}
 		} else {
 			ret.left = ExitOption.FROM_BASESET.code;
 			ret.right = "";
@@ -111,29 +144,21 @@ public class LocalChangeFrame extends JDialog {
 	 */
 	public LocalChangeFrame(JDialog parent) {
 		super(parent);
+		parentDialog = parent;
 		setTitle("Changing: ");
 		setModal(true);
 		setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-		setBounds(100, 100, 450, 300);
 		getContentPane().setLayout(new BorderLayout());
 		contentPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
 		getContentPane().add(contentPanel, BorderLayout.CENTER);
-		contentPanel.setLayout(new BorderLayout(0, 0));
+		contentPanel.setLayout(new GridLayout(3, 1));
 		expressionTextPane = new JTextField();
+		expressionComboBox = new JComboBox();
 		
-		{
-			JPanel valueFromBaseSetPanel = new JPanel();
-			contentPanel.add(valueFromBaseSetPanel, BorderLayout.SOUTH);
-			valueFromBaseSetPanel.setLayout(new BorderLayout());
-			{
-				radioButtonBaseSet = new JRadioButton("Pick value from base set");
-				valueFromBaseSetPanel.add(radioButtonBaseSet);
-				expressionTextPane.setText("");
-			}
-		}
+	
 		{
 			JPanel valueFromParentPanel = new JPanel();
-			contentPanel.add(valueFromParentPanel, BorderLayout.NORTH);
+			contentPanel.add(valueFromParentPanel);
 			valueFromParentPanel.setLayout(new GridLayout(0, 2, 0, 0));
 			{
 				radioButtonPickValueFromParent = new JRadioButton("Pick value from ancestor:");
@@ -153,12 +178,12 @@ public class LocalChangeFrame extends JDialog {
 			}
 		}
 		{
-			JPanel panel = new JPanel();
-			contentPanel.add(panel, BorderLayout.CENTER);
+			panel = new JPanel();
+			contentPanel.add(panel);
 			panel.setLayout(new BorderLayout(0, 0));
 			{
 				radioButtonNewExpression = new JRadioButton("New expression");
-				panel.add(radioButtonNewExpression, BorderLayout.NORTH);
+				panel.add(radioButtonNewExpression, BorderLayout.WEST);
 			}
 			{
 				expressionTextPane.getDocument().addDocumentListener(new DocumentListener() {
@@ -176,7 +201,29 @@ public class LocalChangeFrame extends JDialog {
 						  radioButtonNewExpression.setSelected(true);
 					   }
 					});
+				expressionTextPane.setPreferredSize(new Dimension(100, 20));
 				panel.add(expressionTextPane, BorderLayout.CENTER);
+			}
+			{
+				JPanel valueFromBaseSetPanel = new JPanel();
+				contentPanel.add(valueFromBaseSetPanel);
+				valueFromBaseSetPanel.setLayout(new BorderLayout());
+				{
+					radioButtonBaseSet = new JRadioButton("Pick value from base set");
+					valueFromBaseSetPanel.add(radioButtonBaseSet);
+					expressionTextPane.setText("");
+				}
+			}
+			{
+				expressionComboBox.addItemListener(new ItemListener() {
+					
+					@Override
+					public void itemStateChanged(ItemEvent e) {
+						 radioButtonNewExpression.setSelected(true);
+					}
+				});
+								
+				
 			}
 			
 		}

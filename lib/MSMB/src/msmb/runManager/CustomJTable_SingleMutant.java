@@ -16,6 +16,7 @@ import java.util.Vector;
 import javax.swing.BorderFactory;
 import javax.swing.RowFilter;
 import javax.swing.border.Border;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
@@ -25,6 +26,8 @@ import org.apache.commons.lang3.tuple.MutablePair;
 import msmb.commonUtilities.tables.CustomJTable;
 import msmb.commonUtilities.tables.CustomTableModel;
 import msmb.commonUtilities.tables.EditableCellRenderer;
+import msmb.commonUtilities.tables.ScientificFormatCellRenderer;
+import msmb.gui.MainGui;
 import msmb.utility.Constants;
 import msmb.utility.GraphicalProperties;
 
@@ -98,7 +101,11 @@ public class CustomJTable_SingleMutant extends CustomJTable {
 	
 	@Override
 	public Component prepareRenderer(TableCellRenderer renderer, int rowIndex,	int vColIndex) {
+		
+		
 		Component c = super.prepareRenderer(renderer, rowIndex, vColIndex);
+		updateDisabledCell_RM(convertRowIndexToModel(rowIndex), vColIndex);
+		
 		Color original = c.getBackground();
 		if(!isCellSelected(rowIndex, vColIndex)) {
 			if(localRedefinition.contains(new Integer(convertRowIndexToModel(rowIndex)))) {
@@ -111,7 +118,7 @@ public class CustomJTable_SingleMutant extends CustomJTable {
 				c.setBackground(original);
 			}
 		}
-		if(isCellWithError(rowIndex,vColIndex)) {
+		if(isCellWithError(convertRowIndexToModel(rowIndex),vColIndex)) {
 			Border compound = null;
 			Border redline = BorderFactory.createLineBorder(GraphicalProperties.color_cell_with_errors,3);
 			compound = BorderFactory.createCompoundBorder(redline, compound);
@@ -128,9 +135,72 @@ public class CustomJTable_SingleMutant extends CustomJTable {
 				}
 		} 
 		
-		
+		if(this.model.disabledCell.contains(convertRowIndexToModel(rowIndex)+"_"+vColIndex)) {
+			c.setBackground(Color.LIGHT_GRAY);
+			
+			if(this.model.getTableName().compareTo(Constants.TitlesTabs.REACTIONS.getDescription())==0 && vColIndex==Constants.ReactionsColumns.KINETIC_LAW.index) c.setForeground(Color.BLACK);
+			else if(this.model.getTableName().compareTo(Constants.TitlesTabs.SPECIES.getDescription())==0)  c.setForeground(c.getBackground());
+			else if(this.model.getTableName().compareTo(Constants.TitlesTabs.SPECIES.getDescription())==0 && vColIndex==Constants.SpeciesColumns.INITIAL_QUANTITY.index) c.setForeground(c.getBackground());
+			else {
+				if(this.isRowSelected(rowIndex)) {
+					c.setBackground(GraphicalProperties.color_cell_to_highlight);
+					c.setForeground(GraphicalProperties.color_cell_to_highlight);
+				}
+				else  c.setForeground(c.getBackground());
+			}
+		} else {
+			c.setForeground(getForeground());
+		}
 		
 		return c;
+	}
+	
+	private void updateDisabledCell_RM(int row, int col) {
+		CustomTableModel model = (CustomTableModel) this.model;
+		if(model.getTableName().compareTo(Constants.TitlesTabs.GLOBALQ.getDescription())==0) {
+				if(model.getValueAt(row, Constants.GlobalQColumns.TYPE.index).toString().compareTo(Constants.GlobalQType.ASSIGNMENT.getDescription())==0) {
+					model.enableCell(row, Constants.GlobalQColumns.EXPRESSION.index);
+						model.disableCell(row, Constants.GlobalQColumns.VALUE.index);	
+			} else {
+				model.enableCell(row, Constants.GlobalQColumns.VALUE.index);
+				if(model.getValueAt(row, Constants.GlobalQColumns.TYPE.index).toString().compareTo(Constants.GlobalQType.FIXED.getDescription())==0) {
+		 			model.disableCell(row, Constants.GlobalQColumns.EXPRESSION.index);
+		 		}
+	 		}
+		}
+		
+		else	if(model.getTableName().compareTo(Constants.TitlesTabs.SPECIES.getDescription())==0) {
+			String typeS = model.getValueAt(row, Constants.SpeciesColumns.TYPE.index).toString();
+			if(typeS.compareTo(Constants.SpeciesType.ASSIGNMENT.getDescription())==0) {
+				model.enableCell(row, Constants.SpeciesColumns.EXPRESSION.index);
+				model.disableCell(row, Constants.SpeciesColumns.INITIAL_QUANTITY.index);
+			} else 	if(typeS.compareTo(Constants.SpeciesType.MULTISTATE.getDescription())==0 || typeS.compareTo(Constants.SpeciesType.COMPLEX.getDescription())==0) {
+				model.disableCell(row, Constants.SpeciesColumns.EXPRESSION.index);
+				model.disableCell(row, Constants.SpeciesColumns.INITIAL_QUANTITY.index);
+			}else if(typeS.compareTo(Constants.SpeciesType.ODE.getDescription())==0) {
+				model.enableCell(row, Constants.SpeciesColumns.INITIAL_QUANTITY.index);
+				model.enableCell(row, Constants.SpeciesColumns.EXPRESSION.index); //because ode needs it
+			}	else if(typeS.compareTo(Constants.SpeciesType.FIXED.getDescription())==0) {
+				model.disableCell(row, Constants.SpeciesColumns.EXPRESSION.index);
+				model.enableCell(row, Constants.SpeciesColumns.INITIAL_QUANTITY.index);
+	 		}
+			else if(typeS.compareTo(Constants.SpeciesType.REACTIONS.getDescription())==0) {
+				model.disableCell(row, Constants.SpeciesColumns.EXPRESSION.index);
+				model.enableCell(row, Constants.SpeciesColumns.INITIAL_QUANTITY.index);
+		}
+		
+		} 
+		else if(model.getTableName().compareTo(Constants.TitlesTabs.COMPARTMENTS.getDescription())==0) {
+			if(model.getValueAt(row, Constants.CompartmentsColumns.TYPE.index).toString().compareTo(Constants.CompartmentsType.ASSIGNMENT.getDescription())==0) {
+				model.disableCell(row, Constants.CompartmentsColumns.INITIAL_SIZE.index);	
+			} else {
+					model.enableCell(row, Constants.CompartmentsColumns.INITIAL_SIZE.index);
+					model.enableCell(row, Constants.CompartmentsColumns.EXPRESSION.index); //because ode needs it
+				if(model.getValueAt(row, Constants.CompartmentsColumns.TYPE.index).toString().compareTo(Constants.CompartmentsType.FIXED.getDescription())==0) {
+					model.disableCell(row, Constants.CompartmentsColumns.EXPRESSION.index);
+				}
+			}
+		}
 	}
 
 	public void removeLocalCumulativeRedefinition(int row) {

@@ -165,7 +165,7 @@ public class CustomTableModel_MSMB extends CustomTableModel{
 		  public void setValueAt_withoutUpdate(Object value, int row, int col) {
 			  setValueAt_withoutUpdate(value, row, col, true);
 		  }
-		  
+		   
 		  public void setValueAt_withoutUpdate(Object value, int row, int col, boolean undoable) {
 		        if(this.tableName.compareTo(MainGui.cellTableEdited) != 0 || 
 			    		row != MainGui.cellSelectedRow || col != MainGui.cellSelectedCol) {
@@ -726,14 +726,14 @@ class CustomJTable_MSMB extends CustomJTable  {
 				if(this.model.getTableName().compareTo(Constants.TitlesTabs.BUILTINFUNCTIONS.getDescription())==0) c.setForeground(Color.GRAY);
 				else if(this.model.getTableName().compareTo(Constants.TitlesTabs.REACTIONS.getDescription())==0 && vColIndex==Constants.ReactionsColumns.KINETIC_LAW.index) c.setForeground(Color.BLACK);
 				else if(this.model.getTableName().compareTo(Constants.MultistateBuilder_QUANTITIES_description)==0) c.setForeground(Color.BLACK);
-				else if(this.model.getTableName().compareTo(Constants.TitlesTabs.SPECIES.getDescription())==0) c.setForeground(Color.DARK_GRAY);
+				else if(this.model.getTableName().compareTo(Constants.TitlesTabs.SPECIES.getDescription())==0)  c.setForeground(c.getBackground());
 				else if(this.model.getTableName().compareTo(Constants.TitlesTabs.SPECIES.getDescription())==0 && vColIndex==Constants.SpeciesColumns.INITIAL_QUANTITY.index) c.setForeground(c.getBackground());
 				else if(!((CustomTableModel_MSMB)model).isViewEditable(rowIndex, vColIndex)) c.setForeground(Color.BLACK);
 				else {
 					if(this.isRowSelected(rowIndex)) {
 						c.setForeground(GraphicalProperties.color_cell_to_highlight);
 					}
-					else c.setForeground(Color.GRAY);
+					else  c.setForeground(c.getBackground());
 				}
 			} else {
 				c.setForeground(getForeground());
@@ -770,7 +770,7 @@ class CustomJTable_MSMB extends CustomJTable  {
 			if(this.model.disabledCell.contains(rowIndex+"_"+vColIndex)){
 				if(isRowSelected(rowIndex)){
 						c.setBackground(GraphicalProperties.color_cell_to_highlight);
-						c.setForeground(Color.GRAY);
+						 c.setForeground(c.getBackground());
 						Border compound = null;
 						Border redline = BorderFactory.createLineBorder(Color.LIGHT_GRAY,3);
 						compound = BorderFactory.createCompoundBorder(redline, compound);

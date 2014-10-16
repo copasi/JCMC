@@ -48,7 +48,7 @@ public class MR_Expression_Parser {
       DepthFirstVoidVisitor v2 = new MyVisitor();
       start2.accept(v2);
       System.out.println("...................................");
-      expression2 = new String("if(ara> 0 && pulse_flag==1,cAra,dAra*ara)");
+      expression2 = new String("if(ara> 0 && pulse_flag==1, cAra,dAra*ara)");
       is2 = new ByteArrayInputStream(expression2.getBytes("UTF-8"));
       react2 = new MR_Expression_Parser(is2);
       start2 = react2.CompleteExpression();

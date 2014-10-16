@@ -36,6 +36,7 @@ import msmb.parsers.mathExpression.visitor.GetElementBeforeSpecialExtension;
 import  msmb.parsers.mathExpression.visitor.GetFunctionNameVisitor;
 import  msmb.parsers.mathExpression.visitor.GetFunctionParametersVisitor;
 import msmb.parsers.mathExpression.visitor.SwapParametersVisitor;
+import msmb.runManager.RunManager;
 //import msmb.runManager.RunManager;
 
 import java.awt.*;
@@ -401,7 +402,7 @@ public class MainGui extends JFrame implements MSMB_Interface {
 	}
 	
 	
-	static boolean modelHasBeenModified = false;
+	public static boolean modelHasBeenModified = false;
 	
 	public static String globalQ_defaultValue_for_dialog_window = Constants.DEFAULT_GLOBALQ_INITIAL_VALUE;
 	public static String compartment_default_for_dialog_window = new String(Constants.DEFAULT_COMPARTMENT_NAME);
@@ -571,7 +572,7 @@ public class MainGui extends JFrame implements MSMB_Interface {
 	private ComplexBuilderFrame complexBuilderFrame;
 
 	private JMenuItem menu_importAnnotations;
-	//public static RunManager runManager;
+	public static RunManager runManager;
 	private JPanel jPanelModelDefinition;
 	private JTextField textFieldModelDefinition;
 
@@ -1652,6 +1653,9 @@ public class MainGui extends JFrame implements MSMB_Interface {
 		            	           		
 		                    				ComplexSpecies originalComplex = multiModel.getComplexSpecies(name);
 		                    			 	complexBuilderFrame.setComplexSpecies(originalComplex,sel+1);
+		                    			 	Rectangle screen = getGraphicsConfiguration().getBounds();
+		                		        	complexBuilderFrame.setLocation( screen.x + (screen.width - complexBuilderFrame.getWidth()) / 2, screen.y + (screen.height - complexBuilderFrame.getHeight()) / 2 );
+		                	         
 		                    			 	MutablePair<ComplexSpecies, HashMap<String, String>> returned = complexBuilderFrame.showDialog();
 		                    			 	if(returned == null) return;
 		                    				ComplexSpecies complex = returned.left;
@@ -1818,7 +1822,10 @@ public class MainGui extends JFrame implements MSMB_Interface {
 		 MainGui.indexToDelete.clear();
 		multiModel.setModelName(Constants.DEFAULT_MODEL_NAME);
 		textFieldModelName.setText(getModelName());
-		
+
+		  if(lastLoadSaveAction_file!= null) frame.setTitle(Constants.TOOL_NAME_FULL+" - version "+serialVersionUID + " - "+ lastLoadSaveAction_file.getAbsolutePath());
+		  else frame.setTitle(Constants.TOOL_NAME_FULL+" - version "+serialVersionUID);
+			
 		clearTable(tableCompartmentsmodel);
 		clearTable(tableFunctionsmodel);
 		clearTable(tableGlobalQmodel);
@@ -1853,7 +1860,7 @@ public class MainGui extends JFrame implements MSMB_Interface {
 	     scrollPaneListFunctionToCompact.revalidate();
 	     
 	     
-	    
+	    runManager.clearRM();
 	     
 	     ConsistencyChecks.emptyFields.clear();
 	     
@@ -2002,19 +2009,26 @@ public class MainGui extends JFrame implements MSMB_Interface {
 	        		    	try {
 	        				if(ext.compareTo(Constants.FILE_EXTENSION_COPASI)==0)	{
 	        					saveCPS(file,true);
+	        					lastLoadSaveAction_file = null;
 	        					clearAllTables();
+	        					
 	                    	}
 	        	        	else if(ext.compareTo(Constants.FILE_EXTENSION_XML)==0) {
 	        	        		saveSBML(file,true);
-	        					clearAllTables();
+	        	        		lastLoadSaveAction_file = null;
+	        	        		clearAllTables();
+	        					
 	                    	}
 	        	        	else if(ext.compareTo(Constants.FILE_EXTENSION_SBML)==0) {
 	        	        		saveSBML(file,true);
-	        					clearAllTables();
+	        	        		lastLoadSaveAction_file = null;
+	        	        		clearAllTables();
+	        					
 	                    	}
 	        	        	else if(ext.compareTo(Constants.FILE_EXTENSION_MSMB)==0)    {
 	        	        		 exportTables(file, true);
-	        	        		 clearAllTables();
+	        	        		 lastLoadSaveAction_file = null;
+	        	 	        	clearAllTables();
 	        	        	} else {
 	        	        		return;
 	        	        	}
@@ -2025,18 +2039,21 @@ public class MainGui extends JFrame implements MSMB_Interface {
 	        						e.printStackTrace();
 	        						try {
 										progress(Constants.ProgressBar.END.progress);
+										lastLoadSaveAction_file = null;
 									} catch (InterruptedException e1) {
 															e1.printStackTrace();
 									}
 	        				}
 	        			} else if(n==1) {
-	        				clearAllTables();
+	        				lastLoadSaveAction_file = null;
+	        		        clearAllTables();
 	        			} else if(n == 2) {
 	        				return;
 	        			}
 	    			
 	        			
 	        		}
+	        		lastLoadSaveAction_file = null;
 	        		clearAllTables();
 	        		modelHasBeenModified = false;
 	            	
@@ -2143,58 +2160,7 @@ public class MainGui extends JFrame implements MSMB_Interface {
 			itemSave.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.CTRL_MASK));
 			itemSave.addActionListener(new ActionListener() {
 	            public void actionPerformed(ActionEvent arg0) {
-	            	if(lastLoadSaveAction_file==null
-	            			|| lastLoadSaveAction_file_format.compareTo(Constants.FILE_EXTENSION_MSMB) != 0 ) {
-						JOptionPane.showMessageDialog(null,"You didn't save the model as "+Constants.FILE_EXTENSION_MSMB+" before, so Save is not allowed. \nPlease use the Save as to choose the proper destination folder!\n", "Error!", JOptionPane.WARNING_MESSAGE);
-						return;
-	            	}	
-	            	recordAutosave.stopAutosave();
-	        			   
-	            		try {
-	            			 exportTables(lastLoadSaveAction_file, true);
-        	            	 modelHasBeenModified = false;
-	            			//CTRL-S will always save as msmb. If we want to save as the previous load/save we can use the code below
-	            	     /*   	if(lastLoadSaveAction_file_format.compareTo(Constants.FILE_EXTENSION_SBML) == 0 ||
-	            	        		lastLoadSaveAction_file_format.compareTo(Constants.FILE_EXTENSION_XML) == 0 ){
-	            	        	   	validateMultiModel(false,false);
-	       	            	     	saveSBML(lastLoadSaveAction_file,true);
-	            	        		modelHasBeenModified = false;
-	            	        	} else if(	lastLoadSaveAction_file_format.compareTo(Constants.FILE_EXTENSION_MSMB) == 0){
-	            	        		 exportTables(lastLoadSaveAction_file, true);
-	            	            	 modelHasBeenModified = false;
-	            	        	} else if(	lastLoadSaveAction_file_format.compareTo(Constants.FILE_EXTENSION_COPASI) == 0){
-	            	        	   	validateMultiModel(false,false);
-	       	            	     	saveCPS(lastLoadSaveAction_file,true);
-	            	        		modelHasBeenModified = false;
-	            	        	} else {
-	            	        		return;
-	            	        	}*/
-	            			
-	            			
-	            	        	addRecents(lastLoadSaveAction_file);
-	            	        	
-							} catch (Throwable e) {
-								if(MainGui.DEBUG_SHOW_PRINTSTACKTRACES) 
-									e.printStackTrace();
-								Object[] options = {"Continue with Export",
-								"Go back"};
-								int n = JOptionPane.showOptionDialog(frame,
-										"There are some major issues in the model and it cannot be saved in the original format!.\n"
-												+ "Do you want to save it to .msmb format or go back and fix the issues?",
-												"Major issues in the model",
-												JOptionPane.YES_NO_OPTION,
-												JOptionPane.ERROR_MESSAGE,
-												null,     //do not use a custom Icon
-												options,  //the titles of buttons
-												options[0]); //default button title
-								if(n == 0) { //continue
-									saveMultistateFormat.doClick();
-									
-								}  else {
-									recordAutosave.startAutosave();
-									return;
-								}
-							}
+	            	save();
 	                   
 	            }
 			}
@@ -2375,6 +2341,12 @@ public class MainGui extends JFrame implements MSMB_Interface {
 			preferencesMenu.addActionListener(new ActionListener() {
 				 public void actionPerformed(ActionEvent arg0) {
 					 MainGui.cellValueBeforeChange = "";
+						Rectangle screen = getGraphicsConfiguration().getBounds();
+
+				 		preferenceFrame.setLocation( screen.x + (screen.width - 
+						 		preferenceFrame.getWidth()) / 2, screen.y + (screen.height - 
+								 		preferenceFrame.getHeight()) / 2 );
+					
 			 		preferenceFrame.setVisible(true);
 				 }
 
@@ -2553,6 +2525,8 @@ public class MainGui extends JFrame implements MSMB_Interface {
 	            public void actionPerformed(ActionEvent arg0) {
 	            	complexBuilderFrame.clearAll();
 		            complexBuilderFrame.addComponents(multiModel.getAllSpecies());
+		        	Rectangle screen = getGraphicsConfiguration().getBounds();
+		        	complexBuilderFrame.setLocation( screen.x + (screen.width - complexBuilderFrame.getWidth()) / 2, screen.y + (screen.height - complexBuilderFrame.getHeight()) / 2 );
 	            	MutablePair<ComplexSpecies, HashMap<String, String>> returned = complexBuilderFrame.showDialog();
 	            	if(returned != null) {
 		            	ComplexSpecies complex = returned.left;
@@ -2656,20 +2630,20 @@ public class MainGui extends JFrame implements MSMB_Interface {
 			renamingFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);			
 		
 		
-		/*	runManager = new RunManager();
+			runManager = new RunManager();
 			
-			JMenu test = new JMenu("TEST");
+			JMenu test = new JMenu("Run Manager");
 			jMenuBar.add(test);
 	
-			JMenuItem rm = new JMenuItem("run manager");
+			JMenuItem rm = new JMenuItem("Open Run Manager...");
 			rm.addActionListener(new ActionListener() {
 				
 	            public void actionPerformed(ActionEvent arg0) {
-	            	runManager.initializeAndShow(multiModel);
+	            	showRM();
 	            }
 			}
 			);
-			test.add(rm);*/
+			test.add(rm);
 		return jMenuBar;
 	}
 	
@@ -2679,6 +2653,66 @@ public class MainGui extends JFrame implements MSMB_Interface {
 	
 	
 
+	public void save() {
+		if(lastLoadSaveAction_file==null
+    			|| lastLoadSaveAction_file_format.compareTo(Constants.FILE_EXTENSION_MSMB) != 0 ) {
+			JOptionPane.showMessageDialog(null,"You didn't save the model as "+Constants.FILE_EXTENSION_MSMB+" before, so Save is not allowed. \nPlease use the Save as to choose the proper destination folder!\n", "Error!", JOptionPane.WARNING_MESSAGE);
+			return;
+    	}	
+    	recordAutosave.stopAutosave();
+			   
+    		try {
+    			 exportTables(lastLoadSaveAction_file, true);
+            	 modelHasBeenModified = false;
+    			//CTRL-S will always save as msmb. If we want to save as the previous load/save we can use the code below
+    	     /*   	if(lastLoadSaveAction_file_format.compareTo(Constants.FILE_EXTENSION_SBML) == 0 ||
+    	        		lastLoadSaveAction_file_format.compareTo(Constants.FILE_EXTENSION_XML) == 0 ){
+    	        	   	validateMultiModel(false,false);
+	            	     	saveSBML(lastLoadSaveAction_file,true);
+    	        		modelHasBeenModified = false;
+    	        	} else if(	lastLoadSaveAction_file_format.compareTo(Constants.FILE_EXTENSION_MSMB) == 0){
+    	        		 exportTables(lastLoadSaveAction_file, true);
+    	            	 modelHasBeenModified = false;
+    	        	} else if(	lastLoadSaveAction_file_format.compareTo(Constants.FILE_EXTENSION_COPASI) == 0){
+    	        	   	validateMultiModel(false,false);
+	            	     	saveCPS(lastLoadSaveAction_file,true);
+    	        		modelHasBeenModified = false;
+    	        	} else {
+    	        		return;
+    	        	}*/
+    			
+    			
+    	        	addRecents(lastLoadSaveAction_file);
+    	        	
+				} catch (Throwable e) {
+					if(MainGui.DEBUG_SHOW_PRINTSTACKTRACES) 
+						e.printStackTrace();
+					Object[] options = {"Continue with Export",
+					"Go back"};
+					int n = JOptionPane.showOptionDialog(frame,
+							"There are some major issues in the model and it cannot be saved in the original format!.\n"
+									+ "Do you want to save it to .msmb format or go back and fix the issues?",
+									"Major issues in the model",
+									JOptionPane.YES_NO_OPTION,
+									JOptionPane.ERROR_MESSAGE,
+									null,     //do not use a custom Icon
+									options,  //the titles of buttons
+									options[0]); //default button title
+					if(n == 0) { //continue
+						saveMultistateFormat.doClick();
+						
+					}  else {
+						recordAutosave.startAutosave();
+						return;
+					}
+				}
+		
+	}
+	protected void showRM() {
+		runManager.initializeAndShow(multiModel, this);
+   	}
+	
+	
 	protected void addChangeComplex(int index, ComplexSpecies complex) {
 		boolean oldAutocompleteWithDefaults = autocompleteWithDefaults;
 		boolean oldShowDefaultDialogWindow = show_defaults_dialog_window;
@@ -3591,7 +3625,10 @@ public class MainGui extends JFrame implements MSMB_Interface {
 							}
 						});
 				dialog.pack();
-				dialog.setLocationRelativeTo(null);
+			
+				//center frame on screen of the parent (no matter on which screen the parent window is)
+				Rectangle screen = this.getGraphicsConfiguration().getBounds();
+				dialog.setLocation( screen.x + (screen.width - dialog.getWidth()) / 2, screen.y + (screen.height - dialog.getHeight()) / 2 );
 				dialog.setVisible(true);
 				
 				if(optionPane.getValue() == options[0]) {//save as .multis
@@ -3699,7 +3736,9 @@ public class MainGui extends JFrame implements MSMB_Interface {
 						}
 					});
 			dialog.pack();
-			dialog.setLocationRelativeTo(null);
+			Rectangle screen = this.getGraphicsConfiguration().getBounds();
+			dialog.setLocation( screen.x + (screen.width - dialog.getWidth()) / 2, screen.y + (screen.height - dialog.getHeight()) / 2 );
+		
 			dialog.setVisible(true);
 			
 			if(optionPane.getValue() == options[0]) {//save as .multis
@@ -4297,12 +4336,10 @@ public class MainGui extends JFrame implements MSMB_Interface {
 		recolorCellsWithErrors();
 		
 		
-		//if(tableSpeciesmodel.disabledCell.contains(row+"_"+Constants.SpeciesColumns.EXPRESSION.index)) {
 		if(!tableSpeciesmodel.isViewEditable(row, Constants.SpeciesColumns.EXPRESSION.index)) {
 			expression = Constants.NOT_EDITABLE_VIEW;
 		}
 		
-		//if(tableSpeciesmodel.disabledCell.contains(row+"_"+Constants.SpeciesColumns.INITIAL_QUANTITY.index)) {
 		if(!tableSpeciesmodel.isViewEditable(row, Constants.SpeciesColumns.INITIAL_QUANTITY.index)) {
 			initialQuantity = Constants.NOT_EDITABLE_VIEW;
 		}
@@ -5092,7 +5129,8 @@ public class MainGui extends JFrame implements MSMB_Interface {
 							});
 
 					dialog.pack();
-					dialog.setLocationRelativeTo(null);
+					Rectangle screen = this.getGraphicsConfiguration().getBounds();
+					dialog.setLocation( screen.x + (screen.width - dialog.getWidth()) / 2, screen.y + (screen.height - dialog.getHeight()) / 2 );
 					dialog.setVisible(true);
 
 					if(optionPane.getValue() == options[1]) {
@@ -5243,7 +5281,8 @@ public class MainGui extends JFrame implements MSMB_Interface {
 					
 						FunctionFromExpressionDialog newFunctionDialog = new FunctionFromExpressionDialog(elementsToDefine, equation,massAction);
 						newFunctionDialog.pack();
-						newFunctionDialog.setLocationRelativeTo(null);
+						Rectangle screen = this.getGraphicsConfiguration().getBounds();
+						newFunctionDialog.setLocation( screen.x + (screen.width - newFunctionDialog.getWidth()) / 2, screen.y + (screen.height - newFunctionDialog.getHeight()) / 2 );
 						newFunctionDialog.setVisible(true);
 						dialogAcceptRejectShowed = true;
 						Vector<Vector<String>> returnedElements = newFunctionDialog.getElementsToReturn();
@@ -6656,8 +6695,9 @@ public class MainGui extends JFrame implements MSMB_Interface {
 		    		    });
 		    		
 		    		dialog.pack();
-		    		dialog.setLocationRelativeTo(null);
-			    	dialog.setVisible(true);
+		    		Rectangle screen = this.getGraphicsConfiguration().getBounds();
+					dialog.setLocation( screen.x + (screen.width - dialog.getWidth()) / 2, screen.y + (screen.height - dialog.getHeight()) / 2 );
+					dialog.setVisible(true);
 	  	    	    	
 		    	 if(optionPane.getValue() != options[0]) {
 		    		 globalQ_default_for_dialog_window.clear();
@@ -9154,6 +9194,11 @@ public class MainGui extends JFrame implements MSMB_Interface {
 	
 	public static void main(String[] args) {
 		try {
+			//to suppress completely all the System.out statement
+			/*System.setOut(new PrintStream(new OutputStream() {
+				@Override public void write(int b) throws IOException {}
+			}));
+			*/
 			 String basePath = MainGui.class.getProtectionDomain().getCodeSource().getLocation().getPath();
 			 String  currentPath = basePath+ "..\\libs"; 
 			  addLibraryPath(currentPath);

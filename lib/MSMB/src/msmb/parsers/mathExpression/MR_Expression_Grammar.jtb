@@ -18,7 +18,7 @@ import java.io.*;
 
 
 public class MR_Expression_Parser {
-  public static void main(String args [])  {
+  public static void main(String args [])   {
     try    {     
        String expression = new String("1*floor(Time/tau)");
       InputStream is = new ByteArrayInputStream(expression.getBytes("UTF-8"));
@@ -37,7 +37,7 @@ public class MR_Expression_Parser {
       System.out.println("...................................");
 
 
-	expression2 = new String("if(ara> 0 && pulse_flag==1,cAra,dAra*ara)");
+	expression2 = new String("if(ara> 0 && pulse_flag==1, cAra,dAra*ara)");
 is2 = new ByteArrayInputStream(expression2.getBytes("UTF-8"));
 	   react2 = new MR_Expression_Parser(is2);
   	  start2 = react2.CompleteExpression();

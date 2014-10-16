@@ -8,6 +8,8 @@ import javax.swing.JButton;
 import javax.swing.JOptionPane;
 
 import org.apache.commons.lang3.tuple.MutablePair;
+import org.jgraph.graph.AttributeMap;
+
 import msmb.debugTab.DebugMessage;
 
 import msmb.model.ComplexSpecies;
@@ -17,10 +19,11 @@ import msmb.model.Species;
 import msmb.utility.CellParsers;
 import msmb.utility.Constants;
 
-class ExportMultistateFormat {
+public class ExportMultistateFormat {
 
 	private static File file = null;
 	static MainGui  mainW;
+	public static boolean isAutosave;
 	
 	public static void setMainGui(MainGui mainGui){	mainW = mainGui; }
 	
@@ -134,11 +137,11 @@ class ExportMultistateFormat {
 			out.writeObject(complexSpecies);
 			out.flush();
 	
-			/*HashMap<String, HashMap<Object, AttributeMap>> mutantsGraph =  MainGui.runManager.getMutantsGraphToSave();
+			HashMap<String, HashMap<Object, AttributeMap>> mutantsGraph =  MainGui.runManager.getMutantsGraphToSave();
 			out.writeObject(mutantsGraph);
 			out.flush();
-		*/
-			
+		
+	
 			out.close();
 			if(mainW!=null)mainW.progress(100);
 			
@@ -244,20 +247,16 @@ class ExportMultistateFormat {
 				//problems reading the complexes, it's ok for old msmb files
 				//e.printStackTrace();
 			}
-	
-	
-			
+				
 			try{
-			/*	HashMap<String, HashMap<Object, AttributeMap>> mutantsGraph =  (HashMap<String, HashMap<Object, AttributeMap>>) in.readObject();
+				HashMap<String, HashMap<Object, AttributeMap>> mutantsGraph =  (HashMap<String, HashMap<Object, AttributeMap>>) in.readObject();
 				if(mutantsGraph!=null) {
 					MainGui.runManager.initializeMutantsGraph_fromSavedMSMB(mutantsGraph);
-				}*/	
-			
+				}
 			} catch(Exception e) {
 				//problems reading mutantsDB, it's ok for old msmb files
 				if(MainGui.DEBUG_SHOW_PRINTSTACKTRACES) 	 e.printStackTrace();
 			}
-			
 			
 			in.close();
 		} catch (Exception e) {

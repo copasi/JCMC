@@ -16,6 +16,7 @@ import org.COPASI.CFunctionParameter;
 import org.COPASI.CMetab;
 import org.COPASI.CModel;
 import org.COPASI.CModelValue;
+import org.COPASI.CUnit;
 import org.fife.ui.autocomplete.BasicCompletion;
 import org.fife.ui.autocomplete.DefaultCompletionProvider;
 
@@ -1276,22 +1277,15 @@ public class Constants {
 		}
 		
 		public static enum UnitTypeVolume {
-			/*FL("fl", CUnit.fl), 
+			FL("fl", CUnit.fl), 
 			ML("ml", CUnit.ml),
 			PL("pl", CUnit.pl),
 			NL("nl", CUnit.nl),
 			MICROL("ml", CUnit.microl),
 			L("l", CUnit.l),
 			M3("m3",CUnit.m3),
-			DIMENSIONLESS_VOL("dimensionlessVol", CUnit.dimensionlessVolume);*/
-			FL("fl", CModel.fl), 
-			ML("ml", CModel.ml),
-			PL("pl", CModel.pl),
-			NL("nl", CModel.nl),
-			MICROL("ml", CModel.microl),
-			L("l", CModel.l),
-			M3("m3",CModel.m3),
-			DIMENSIONLESS_VOL("dimensionlessVol", CModel.dimensionlessVolume);
+			DIMENSIONLESS_VOL("dimensionlessVol", CUnit.dimensionlessVolume);
+		
 			  public final String description;
 			   public final int copasiType;
 			   
@@ -1325,7 +1319,7 @@ public class Constants {
 		
 			
 		public static enum UnitTypeTime {	
-			/*FS("fs", CUnit.fs), 
+			FS("fs", CUnit.fs), 
 			MS("ms", CUnit.ms),
 			PS("ps", CUnit.ps),
 			NS("ns", CUnit.ns),
@@ -1334,17 +1328,8 @@ public class Constants {
 			MIN("min",CUnit.min),
 			H("h",CUnit.h),
 			D("d",CUnit.d),
-			DIMENSIONLESS_TIME("dimensionlessTime", CUnit.dimensionlessTime);*/
-			FS("fs", CModel.fs), 
-			MS("ms", CModel.ms),
-			PS("ps", CModel.ps),
-			NS("ns", CModel.ns),
-			MICROS("micros", CModel.micros),
-			S("s", CModel.s),
-			MIN("min",CModel.min),
-			H("h",CModel.h),
-			D("d",CModel.d),
-			DIMENSIONLESS_TIME("dimensionlessTime", CModel.dimensionlessTime);
+			DIMENSIONLESS_TIME("dimensionlessTime", CUnit.dimensionlessTime);
+		
 			  public final String description;
 			   public final int copasiType;
 			   
@@ -1377,22 +1362,14 @@ public class Constants {
 		
 		
 		public static enum UnitTypeQuantity {
-			/*NUMBER("#", CUnit.number), 
+			NUMBER("#", CUnit.number), 
 			FMOL("fmol", CUnit.fMol), 
 			MMOL("mmol", CUnit.mMol),
 			PMOL("pmol", CUnit.pMol),
 			NMOL("nmol", CUnit.nMol),
 			MICROMOL("micromol", CUnit.microMol),
 			MOL("mol", CUnit.Mol),
-			DIMENSIONLESS_QUANTITY("dimensionlessQuantity", CUnit.dimensionlessQuantity);*/
-			NUMBER("#", CModel.number), 
-			FMOL("fmol", CModel.fMol), 
-			MMOL("mmol", CModel.mMol),
-			PMOL("pmol", CModel.pMol),
-			NMOL("nmol", CModel.nMol),
-			MICROMOL("micromol", CModel.microMol),
-			MOL("mol", CModel.Mol),
-			DIMENSIONLESS_QUANTITY("dimensionlessQuantity", CModel.dimensionlessQuantity);
+			DIMENSIONLESS_QUANTITY("dimensionlessQuantity", CUnit.dimensionlessQuantity);
 			 	   
 			   public final String description;
 			   public final int copasiType;

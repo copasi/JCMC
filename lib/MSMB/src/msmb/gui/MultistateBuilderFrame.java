@@ -77,7 +77,7 @@ public class MultistateBuilderFrame extends JDialog	 {
 		this.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 		this.setContentPane(getJContentPane());
 		this.setTitle("Multistate Builder");
-		this.setLocationRelativeTo(parentFrame);
+	
 		this.setResizable(true);
 		
 		Vector<Component> order = new Vector<Component>(7);
@@ -101,6 +101,8 @@ public class MultistateBuilderFrame extends JDialog	 {
 		GraphicalProperties.resetFonts(this);
 		pack();
 		setLocationRelativeTo(null);
+		Rectangle screen = parentFrame.getGraphicsConfiguration().getBounds();
+		setLocation( screen.x + (screen.width - getWidth()) / 2, screen.y + (screen.height - getHeight()) / 2 );
 		try {
 			if(species==null || species.getName().length()==0) {
 				species = new MultistateSpecies(MainGui.multiModel,new String());

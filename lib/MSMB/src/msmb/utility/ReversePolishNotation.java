@@ -20,12 +20,13 @@ public class ReversePolishNotation {
     public ReversePolishNotation(HashMap<String, Integer> functions_nameNumArguments) {
     	functions.clear();
     	functions.putAll(functions_nameNumArguments);
-	}
+      	functions.put("sin",1);
+      	functions.put("cos",1);
+    	functions.put("exp",1);
+    	functions.put("log",1);
+   }
 
 
-	public void setFunctions( HashMap<String,Integer> fun) {
-    	
-    }
     
     // Supported operators
     private static final Map<String, int[]> OPERATORS = new HashMap<String, int[]>();
@@ -50,7 +51,7 @@ public class ReversePolishNotation {
         OPERATORS.put("not", new int[] { 8, RIGHT_ASSOC, 1 });
         OPERATORS.put("*unary*minus", new int[] { 8, RIGHT_ASSOC, 1 });
         OPERATORS.put("*unary*plus", new int[] { 8, RIGHT_ASSOC, 1 });
-         
+       
       }
     private static final int SINGLE_VAR_NUM_PRECEDENCE = 100;
     
@@ -150,12 +151,10 @@ public class ReversePolishNotation {
     	HashMap<String, Integer> functions = new HashMap<String, Integer>();
     	functions.put("function",3);
     	functions.put("test",2);
-    	functions.put("sin",1);
-    	functions.put("exp",1);
-        functions.put("if",3);
+         functions.put("if",3);
     	ReversePolishNotation rpn = new ReversePolishNotation(functions);
    
-    	String original = "V / ( 2 * TV )";//"a <= b && c < d";//"Day_in_hours - Time <= 12 && Day_in_hours - Time < 0";//"if ( Time < 30 , 0 , 0.075 * ( Time - 30 ) )"; //"1.11 * sin ( 2 * 3.1416 / 800 * ( Time - 200 ) ) + 1.11";//"2 * sin ( 1 ) + 3";//"a && b && c || d && f";//"a + b * c >= 3 + 2 * 1 && ";//" function ( f - b * c + d , ! e , test ( ( b * s ) / 2 , 4 + 2 + ( 3 ) ) ) ";//"function ( A + ( B + ( ! e + 2 * 4 ) ) , 2 )";
+    	String original = "2 * sin ( 1 ) + 3";//"a && b && c || d && f";//"a + b * c >= 3 + 2 * 1 && ";//" function ( f - b * c + d , ! e , test ( ( b * s ) / 2 , 4 + 2 + ( 3 ) ) ) ";//"function ( A + ( B + ( ! e + 2 * 4 ) ) , 2 )";
         String[] input = original.split(" ");
     	System.out.println("Original: ");
     	System.out.println(original);
@@ -171,7 +170,7 @@ public class ReversePolishNotation {
         FULL_BRACKETS = false;
         System.out.println(rpn.RPNtoInfix(output));
         
-    	String evaluation = " ( 1 + 2 ) * 0.5  + 3";
+    	String evaluation = "log ( 2 ) / 90";//"( 1 + 2 ) * 0.5  + 3";
         String[] input2 = evaluation.split(" ");
     	System.out.println("evaluation: ");
     	System.out.println(evaluation);
@@ -274,15 +273,35 @@ public double evaluateRPN(Object[] inputTokens ) throws Exception {
 	    double x,y;
 	    try  {x = Double.parseDouble(tk);}
 	    catch (Exception e)  {
-	      y = evaluateRPN_recursive(tks);  x = evaluateRPN_recursive(tks);
-	      if      (tk.equals("+"))  x += y;
-	      else if (tk.equals("-"))  x -= y;
-	      else if (tk.equals("*"))  x *= y;
-	      else if (tk.equals("/"))  x /= y;
-	      else {
-	    	  System.out.println("Unrecognized tk: "+tk);
-	    	  throw new Exception();
-	      }
+	    	if (tk.equals("sin")) {
+	    		 y = evaluateRPN_recursive(tks);
+	    		 x = Math.sin(y);
+	    	} else if (tk.equals("cos")) {
+	    		 y = evaluateRPN_recursive(tks);
+	    		 x = Math.cos(y);
+	    	}else if (tk.equals("exp")) {
+	    		 y = evaluateRPN_recursive(tks);
+	    		 x = Math.exp(y);
+	    	}else if (tk.equals("log")) {
+	    		 y = evaluateRPN_recursive(tks);
+	    		 x = Math.log(y);
+	    	}else if (tk.equals("*unary*minus")) {
+	    		 y = evaluateRPN_recursive(tks);
+	    		 x = -y;
+	    	}else if (tk.equals("*unary*plus")) {
+	    		 y = evaluateRPN_recursive(tks);
+	    		 x = y;
+	    	} else {
+		      y = evaluateRPN_recursive(tks);  x = evaluateRPN_recursive(tks);
+		      if      (tk.equals("+"))  x += y;
+		      else if (tk.equals("-"))  x -= y;
+		      else if (tk.equals("*"))  x *= y;
+		      else if (tk.equals("/"))  x /= y;
+		      else {
+		    	  System.out.println("Unrecognized tk: "+tk);
+		    	  throw new Exception();
+		      }
+	    	}
 	    }
 	    return x;
 	  }

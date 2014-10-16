@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Vector;
 
 import msmb.debugTab.DebugConstants;
@@ -182,8 +183,19 @@ public class Mutant implements Comparable, Serializable{
 			
 			
 			return errorsFound;
-			
-			
+		}
+		
+		
+		public void replaceMutantNameInExpression(String oldN, String newN, MultiModel multiModel) {
+			Iterator<String> it = changes.keySet().iterator();
+			while(it.hasNext()) {
+					String k = it.next();
+					String oldExpr = changes.get(k);
+					if(oldExpr.contains(oldN)) {
+						String newExpr = RunManager.RM_applyRenameAncestorInExpression(multiModel, oldExpr, oldN, newN);
+						changes.put(k, newExpr);
+					}
+			}
 		}
 
 

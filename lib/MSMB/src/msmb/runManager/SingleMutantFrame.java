@@ -5,6 +5,7 @@ package msmb.runManager;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.ComponentOrientation;
+import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.GridBagConstraints;
 import java.awt.Rectangle;
@@ -31,16 +32,27 @@ import javax.swing.JButton;
 import org.apache.commons.lang3.tuple.MutablePair;
 import msmb.commonUtilities.tables.CustomTableModel;
 import msmb.commonUtilities.tables.EditableCellRenderer;
+import msmb.gui.CustomTableModel_MSMB;
 import msmb.gui.MainGui;
 import msmb.debugTab.DebugConstants;
 import msmb.debugTab.DebugMessage;
+import msmb.debugTab.FoundElement;
 import msmb.debugTab.TreeDebugMessages;
+import msmb.model.FunctionsDB;
 import msmb.model.MultiModel;
+import msmb.parsers.chemicalReaction.MR_ChemicalReaction_Parser;
+import msmb.parsers.chemicalReaction.syntaxtree.CompleteReaction;
+import msmb.parsers.chemicalReaction.visitor.ExtractNamesSpeciesUsedVisitor;
+import msmb.parsers.mathExpression.MR_Expression_Parser;
 import msmb.parsers.mathExpression.MR_Expression_Parser_ReducedParserException;
 import msmb.parsers.mathExpression.syntaxtree.CompleteExpression;
+import msmb.parsers.mathExpression.visitor.EvaluateExpressionVisitor;
+import msmb.parsers.mathExpression.visitor.ExtractNamesUsedVisitor;
 import msmb.parsers.mathExpression.visitor.Look4UndefinedMisusedVisitor;
+import msmb.utility.CellParsers;
 import msmb.utility.Constants;
 import msmb.utility.GraphicalProperties;
+import msmb.utility.ReversePolishNotation;
 
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
@@ -51,6 +63,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Vector;
+import javax.swing.border.TitledBorder;
+import java.awt.Color;
 
 public class SingleMutantFrame extends JDialog {
 
@@ -84,6 +98,14 @@ public class SingleMutantFrame extends JDialog {
 	private JPanel jPanelDebug;
 	private TreeDebugMessages jPanelTreeDebugMessages_RM;
 	private JTextField filter;
+	private JPanel mainContentPane;
+	private JPanel panel;
+	private JLabel lblName;
+	private JTextField textFieldName;
+	private JPanel singleMutantPane;
+	private JPanel panel_1;
+	private JButton btnCancel;
+	private MutantsDB mutDB;
 	
 	
 	/**
@@ -94,7 +116,7 @@ public class SingleMutantFrame extends JDialog {
 			public void run() {
 				try {
 						UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-					SingleMutantFrame frame = new SingleMutantFrame(null);
+					SingleMutantFrame frame = new SingleMutantFrame(null,null);
 					frame.setVisible(true);
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -107,17 +129,16 @@ public class SingleMutantFrame extends JDialog {
 	 * Create the frame.
 	 * @param multiModel 
 	 */
-	public SingleMutantFrame(MultiModel multiModel) {
+	public SingleMutantFrame(MultiModel multiModel, MutantsDB mutDB) {
 		this.multiModel = multiModel;
+		this.mutDB = mutDB;
 		setTitle("Edit single mutant");
-		setBounds(100, 100, 450, 300);
 		setModal(true);
 
 		setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
 
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
-		setContentPane(contentPane);
 		contentPane.setLayout(new BorderLayout(5, 5));
 		
 		tabs = new JTabbedPane();
@@ -191,21 +212,34 @@ public class SingleMutantFrame extends JDialog {
 		tabs.addTab(Constants.TitlesTabs.DEBUG.getDescription(),  null, jScrollPaneDebug , null);
 	
 		contentPane.add(tabs);
+		tabs.setPreferredSize(new Dimension(800,400));
+		
+		mainContentPane = new JPanel();
+		mainContentPane.setLayout(new BorderLayout(0, 0));
+		setContentPane(mainContentPane);
+		
+		panel = new JPanel();
+		panel.setBorder(new EmptyBorder(6, 6, 6, 6));
+		mainContentPane.add(panel, BorderLayout.NORTH);
+		panel.setLayout(new BorderLayout(0, 0));
+		
+		lblName = new JLabel("Name:  ");
+		panel.add(lblName, BorderLayout.WEST);
+		
+		textFieldName = new JTextField();
+		panel.add(textFieldName);
+		textFieldName.setColumns(10);
+		
+		singleMutantPane = new JPanel();
+		singleMutantPane.setBorder(new TitledBorder(UIManager.getBorder("TitledBorder.border"), " ", TitledBorder.LEADING, TitledBorder.TOP, null, new Color(0, 0, 0)));
+		singleMutantPane.setLayout(new BorderLayout(3, 3));
+		
+		singleMutantPane.add(contentPane, BorderLayout.CENTER);
+		mainContentPane.add(singleMutantPane, BorderLayout.CENTER);
 		
 		JPanel panel_2 = new JPanel();
+		singleMutantPane.add(panel_2, BorderLayout.NORTH);
 		panel_2.setLayout(new BorderLayout());
-		contentPane.add(panel_2, BorderLayout.NORTH);
-		
-		JButton btnSaveCurrentConfiguration = new JButton("Save configuration & Close");
-		btnSaveCurrentConfiguration.addActionListener(new ActionListener() {
-			
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				exitOption = ExitOption.OK;
-				dispose();
-			}
-		});
-		panel_2.add(btnSaveCurrentConfiguration, BorderLayout.EAST);
 		
 		filter = new JTextField();
 		filter.getDocument().addDocumentListener(new DocumentListener() {
@@ -224,14 +258,34 @@ public class SingleMutantFrame extends JDialog {
 		JPanel panel_2_filter = new JPanel();
 		panel_2_filter.setLayout(new BorderLayout());
 		panel_2_filter.add(filter,BorderLayout.CENTER );
-		panel_2_filter.add(new JLabel("Filter rows:"), BorderLayout.WEST );
+		panel_2_filter.add(new JLabel("  Filter rows:  "), BorderLayout.WEST );
 		panel_2.add(panel_2_filter, BorderLayout.CENTER);
 		
-	
-		setSize(700, 359);
-		//pack();
-		setLocationRelativeTo(null);
+		panel_1 = new JPanel();
+		FlowLayout flowLayout = (FlowLayout) panel_1.getLayout();
+		flowLayout.setAlignment(FlowLayout.RIGHT);
+		mainContentPane.add(panel_1, BorderLayout.SOUTH);
 		
+		btnCancel = new JButton("Cancel");
+		btnCancel.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				exitOption = ExitOption.CANCEL;
+				dispose();
+			}
+		});
+		panel_1.add(btnCancel);
+		
+		JButton btnSaveCurrentConfiguration = new JButton("Save configuration & Close");
+		panel_1.add(btnSaveCurrentConfiguration);
+		btnSaveCurrentConfiguration.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				exitOption = ExitOption.OK;
+				dispose();
+			}
+		});
+			
 	}
 	
 	public void applyNewFilter() {
@@ -397,20 +451,24 @@ public class SingleMutantFrame extends JDialog {
 			}
 			
 			filter.setText("");
+			textFieldName.setText(userObject.getName());
 			updateDebugTab();
 			
-			GraphicalProperties.resetFonts(this);
 			
 			setTitle("Edit single mutant - "+currentMutant.getName());
 			setVisible(true);
 		
 			//once the window is closed
 			if(exitOption != ExitOption.CANCEL) {
+				while(!updateName()) {}
+				
 				currentMutant.clearChanges();
 				currentMutant.clearCumulativeChanges();
 				currentMutant.updateChanges(jTableGLQ.getAllChanges());
 				currentMutant.updateChanges(jTableSPC.getAllChanges());
 				currentMutant.updateChanges(jTableCMP.getAllChanges());
+				
+				mutDB.rename(currentMutant, textFieldName.getText().trim());
 			}
 			
 			
@@ -421,7 +479,22 @@ public class SingleMutantFrame extends JDialog {
 	
 	
 	
-
+	 protected boolean updateName() {
+			
+		 	String newName = textFieldName.getText().trim();
+	 		  if(newName.compareTo(currentMutant.getName())==0) return true;
+			  boolean success = true;
+			  if(newName.length()==0) {
+					JOptionPane.showMessageDialog(null, "The name cannot be empty.\n", "Error!", JOptionPane.ERROR_MESSAGE);
+					success= false;
+			  }
+			  else if(mutDB.isNameDuplicate(newName)) {
+				JOptionPane.showMessageDialog(null, "The name already exists.\nProvide a different name.", "Error!", JOptionPane.ERROR_MESSAGE);
+				success= false;
+			  }
+			  return success;
+		  }
+	 
 	private void revalidateExpressions() {
 		HashMap<String, String> localChanges = currentMutant.getChanges();
 		
@@ -548,7 +621,7 @@ public class SingleMutantFrame extends JDialog {
     		   String name = (String) r.get(Constants.SpeciesColumns.NAME.index-1);
     		   String key = Mutant.generateChangeKey(MutantChangeType.SPC_INITIAL_VALUE, name);
     		   if(conflicts.contains(key)) {
-    			   r.set(Constants.SpeciesColumns.INITIAL_QUANTITY.index-1, "!! CONFLICT !!");
+    			   r.set(Constants.SpeciesColumns.INITIAL_QUANTITY.index-1,RunManager.NotesLabels.CONFLICT.getLabel());
       			   r.set(Constants.SpeciesColumns.NOTES.index-1, RunManager.NotesLabels.CONFLICT.getLabel());
       			 DebugMessage dm = new DebugMessage();
 				 dm.setOrigin_table(Constants.TitlesTabs.SPECIES.getDescription());
@@ -602,7 +675,7 @@ public class SingleMutantFrame extends JDialog {
     		   String name = (String) r.get(Constants.CompartmentsColumns.NAME.index-1);
     		   String key = Mutant.generateChangeKey(MutantChangeType.COMP_INITIAL_VALUE, name);
     		   if(conflicts.contains(key)) {
-    			   r.set(Constants.CompartmentsColumns.INITIAL_SIZE.index-1, "!! CONFLICT !!");
+    			   r.set(Constants.CompartmentsColumns.INITIAL_SIZE.index-1, RunManager.NotesLabels.CONFLICT.getLabel());
       			   r.set(Constants.CompartmentsColumns.NOTES.index-1, RunManager.NotesLabels.CONFLICT.getLabel());
 	      			 DebugMessage dm = new DebugMessage();
 					 dm.setOrigin_table(Constants.TitlesTabs.COMPARTMENTS.getDescription());
@@ -719,7 +792,7 @@ public class SingleMutantFrame extends JDialog {
     		   String name = (String) r.get(Constants.GlobalQColumns.NAME.index-1);
     		   String key = Mutant.generateChangeKey(MutantChangeType.GLQ_INITIAL_VALUE, name);
     		   if(conflicts.contains(key)) {
-    			   r.set(Constants.GlobalQColumns.VALUE.index-1, "!! CONFLICT !!");
+    			   r.set(Constants.GlobalQColumns.VALUE.index-1, RunManager.NotesLabels.CONFLICT.getLabel());
       			   r.set(Constants.GlobalQColumns.NOTES.index-1, RunManager.NotesLabels.CONFLICT.getLabel());
       			 DebugMessage dm = new DebugMessage();
 				 dm.setOrigin_table(Constants.TitlesTabs.GLOBALQ.getDescription());
@@ -878,7 +951,75 @@ public class SingleMutantFrame extends JDialog {
 	}
 
 	
+	private Vector<FoundElement> searchRM(String s) {
+		
+		//to avoid the rename of global quantities that has the same name of a species (when the species is renamed) 
+		//I need to exclude the main column of global quantities table from the search
+		
+		if(s.trim().length() ==0) return new Vector<FoundElement>();
+		Vector<Vector> tablesAndColumns = new Vector<Vector>();
+		
+		Vector element = null;
+		
+		element = new Vector();
+		element.add(tableSPCmodel);
+		element.add(Constants.TitlesTabs.SPECIES.getDescription());
+		element.add(Constants.SpeciesColumns.EXPRESSION.index);
+		tablesAndColumns.add(element);
+		
+		element = new Vector();
+		element.add(tableGLQmodel);
+		element.add(Constants.TitlesTabs.GLOBALQ.getDescription());
+		element.add(Constants.GlobalQColumns.EXPRESSION.index);
+		tablesAndColumns.add(element);
+		
+		element = new Vector();
+		element.add(tableCMPmodel);
+		element.add(Constants.TitlesTabs.COMPARTMENTS.getDescription());
+		element.add(Constants.CompartmentsColumns.EXPRESSION.index);
+		tablesAndColumns.add(element);
+	
+		
+		Vector<FoundElement> found = new Vector<FoundElement>();
+		for(Vector el : tablesAndColumns) {
+			if(el.get(0) instanceof CustomTableModel) {
+				CustomTableModel tModel = (CustomTableModel) el.get(0);
+				String descr = (String) el.get(1);
+				for(int row = 0; row < (tModel).getRowCount(); row++){
+					for(int i = 2;  i < el.size(); i++)
+					{
+						int col = (int) Integer.parseInt(el.get(i).toString());
+						String next = (tModel.getValueAt(row, col).toString().trim());
+						if(next.trim().length() ==0) continue;
+						try {
+							Vector<String> names = new Vector<String>();
+							InputStream is = new ByteArrayInputStream(next.getBytes("UTF-8"));
+								MR_Expression_Parser_ReducedParserException parser = new MR_Expression_Parser_ReducedParserException(is,"UTF-8");
+								ExtractNamesUsedVisitor v = new ExtractNamesUsedVisitor(multiModel);
+								CompleteExpression root = parser.CompleteExpression();
+								root.accept(v);
+								names.addAll(v.getNamesUsed());
+					
+									for(String n : names) {
+										if(n.compareTo(s)==0)
+										{
+											found.add(new FoundElement(descr, row, col));
+											break;
+										} 
+										
+									}
+							} catch (Throwable e) {
+								continue;
+							}
+						}
+					}
+				}
+			}
+    	return found;
+    }
+	
 
+	
 	private Vector<Vector<String>> parseExpression_withRefParents(MultiModel m, String expression, String table_descr, String column_descr) throws Throwable {
 		 Vector ret = new Vector();
 			

@@ -22,6 +22,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Vector;
 
+import org.COPASI.CCompartment;
+import org.COPASI.CCopasiObjectName;
+import org.COPASI.CMetab;
+import org.COPASI.CModelValue;
+import org.COPASI.CReaction;
 import org.apache.commons.lang3.tuple.MutablePair;
 
 import msmb.model.Function;
@@ -49,10 +54,10 @@ public class EvaluateExpressionVisitor extends DepthFirstVoidVisitor {
 	
 
 	
-		//for now only simple mathematical expressions are allowed, no function calls.
-	public EvaluateExpressionVisitor(MultiModel mm, boolean doNotEvaluate)  { 
+	//for now only simple mathematical expressions are allowed, no function calls.
+	public EvaluateExpressionVisitor(MultiModel mm, boolean evaluate, boolean justSplit)  { 
 		  multiModel = mm;
-		  this.doEvaluation = doNotEvaluate;
+		  this.doEvaluation = evaluate;
 	}
 	
 	public EvaluateExpressionVisitor(MultiModel mm)  { 
@@ -68,7 +73,7 @@ public class EvaluateExpressionVisitor extends DepthFirstVoidVisitor {
 	//the visitor of the relational operator will set it true if proper relational operator are found
 		private boolean isBooleanExpression= false;
 		private boolean doEvaluation = true;
-
+	
 
 	@Override
 	public void visit(RelationalOperator n) {
@@ -88,9 +93,11 @@ public class EvaluateExpressionVisitor extends DepthFirstVoidVisitor {
 	
 	@Override
 	public void visit(NodeToken n) {
-		expression+=n.tokenImage;
-		splittedExpression.add(n.tokenImage);
-		super.visit(n);
+		if(n.tokenImage.trim().length() > 0) {
+			expression+=n.tokenImage;
+			splittedExpression.add(n.tokenImage);
+			super.visit(n);
+		}
 	}
 	
 	@Override
@@ -105,28 +112,38 @@ public class EvaluateExpressionVisitor extends DepthFirstVoidVisitor {
 		else super.visit(n);
 	}
 	
+	
+	
+ 
+	
 	@Override
 	public void visit(SpeciesReferenceOrFunctionCall n) {
 		try {
 			String element = ToStringVisitor.toString(n);
-			if(doEvaluation) {
-				Integer elementValue = generateElement(element);
-				if(elementValue == null) {
-					exceptions.add(new Exception("Problem in evaluating element: "+element));
-				}
-				expression += elementValue;
-				splittedExpression.add(elementValue.toString());
-			} else {
-				if(fromRunManager) {
-					String name = ToStringVisitor.toString(n);
-					if(name.startsWith(MR_Expression_ParserConstantsNOQUOTES.getTokenImage(MR_Expression_ParserConstantsNOQUOTES.MUTANT_PARENT_SEPARATOR))) {
-						String parent = name.substring(MR_Expression_ParserConstantsNOQUOTES.getTokenImage(MR_Expression_ParserConstantsNOQUOTES.MUTANT_PARENT_SEPARATOR).length());
-						parentsRefs.add(parent);
+				if(doEvaluation && multistateForDependentSUM!= null) {
+					Integer elementValue = generateElementInt(element);
+					if(elementValue == null) {
+							exceptions.add(new Exception("Problem in evaluating element: "+element));
+					} else {
+						expression += elementValue;
+						splittedExpression.add(elementValue.toString());
 					}
-				} 
-				expression += element;
-				splittedExpression.add(element);
-			}
+				} else {
+					
+						if(fromRunManager) {
+
+							String name = ToStringVisitor.toString(n);
+							if(name.startsWith(MR_Expression_ParserConstantsNOQUOTES.getTokenImage(MR_Expression_ParserConstantsNOQUOTES.MUTANT_PARENT_SEPARATOR))) {
+								String parent = name.substring(MR_Expression_ParserConstantsNOQUOTES.getTokenImage(MR_Expression_ParserConstantsNOQUOTES.MUTANT_PARENT_SEPARATOR).length());
+								parentsRefs.add(parent);
+							}
+						} 
+						expression += element;
+						splittedExpression.add(element);
+					} 
+			
+			
+			
 			
 		} catch (Throwable e) {
 			exceptions.add(e);
@@ -134,7 +151,10 @@ public class EvaluateExpressionVisitor extends DepthFirstVoidVisitor {
 		}
 	}
 	
-	public Integer generateElement(String element) {
+	
+	
+	
+	public Integer generateElementInt(String element) {
 		if(CellParsers.isKeyword(element)) return null;
 		Integer ret = null;
 		try{
@@ -205,10 +225,7 @@ public class EvaluateExpressionVisitor extends DepthFirstVoidVisitor {
 	
 	
 public Double evaluateExpression_notTruncated() {
-	
-	
-	
-		ReversePolishNotation rpn = new ReversePolishNotation(new HashMap<String,Integer>());
+	ReversePolishNotation rpn = new ReversePolishNotation(new HashMap<String,Integer>());
 		double r;
 		try {
 			String[] output = rpn.infixToRPN(splittedExpression.toArray());
@@ -224,6 +241,9 @@ public Double evaluateExpression_notTruncated() {
 public Vector<String> getParentsReferences() {
 	return parentsRefs;
 }
+
+
+
 
 
 	

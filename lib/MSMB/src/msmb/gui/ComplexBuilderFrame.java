@@ -119,7 +119,6 @@ public class ComplexBuilderFrame extends JDialog {
 	MutablePair<ComplexSpecies, HashMap<String, String>> showDialog() {
 		exitOption = ExitOption.CANCEL;
 		pack();
-		setLocationRelativeTo(null);
 		setVisible(true);
 	    
 		if(exitOption == ExitOption.CANCEL) return null;
@@ -257,7 +256,7 @@ public class ComplexBuilderFrame extends JDialog {
 				        	multistateAdd_frame.setMultistateSpecies(selectedMulti, complexSpecies.getSiteNamesUsed() );
 							multistateAdd_frame.setVisible(true);
 						//	do all these things only if the user then choose ok, because if s/he selects cancel then I have to undo those changes :)
-							//CHANGE THE MULTISTATE IN THE TREE WITH THE ALIAS=NAME, REFRESH TREE
+							//(missing) change multistate in the tree with the alias=name & refresh tree
 						/*	if(multistateAdd_frame.exitOption!=ExitOption.CANCEL) {
 								complexSpecies.getNextAlias(alreadyTrackedMulti);
 							}*/
@@ -462,7 +461,6 @@ public class ComplexBuilderFrame extends JDialog {
 		GraphicalProperties.resetFonts(this);
 		pack();
 		splitPane_global.setDividerLocation(0.5);
-		setLocationRelativeTo(null);
 		super.setVisible(true);
 	}
 	

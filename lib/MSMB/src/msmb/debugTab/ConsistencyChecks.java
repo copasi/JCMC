@@ -576,7 +576,7 @@ public class ConsistencyChecks {
 	      ByteArrayInputStream is2 = new ByteArrayInputStream(expression.getBytes("UTF-8"));
 			  MR_Expression_Parser parser = new MR_Expression_Parser(is2,"UTF-8");
 		  	  CompleteExpression start = parser.CompleteExpression();
-		  	 EvaluateExpressionVisitor vis = new EvaluateExpressionVisitor(MainGui.multiModel,false);
+		  	 EvaluateExpressionVisitor vis = new EvaluateExpressionVisitor(MainGui.multiModel,false,false);
 		      start.accept(vis);
 			  if(vis.getExceptions().size() == 0) {
 				  ret  = vis.isBooleanExpression();

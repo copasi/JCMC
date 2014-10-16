@@ -23,7 +23,7 @@ set(SRC
 	${MSMB_SOURCE_DIR}/src/msmb/parsers/multistateSpecies/*.java
 	${MSMB_SOURCE_DIR}/src/msmb/parsers/multistateSpecies/syntaxtree/*.java
 	${MSMB_SOURCE_DIR}/src/msmb/parsers/multistateSpecies/visitor/*.java
-#	${MSMB_SOURCE_DIR}/src/msmb/runManager/*.java
+	${MSMB_SOURCE_DIR}/src/msmb/runManager/*.java
 )
 
 
@@ -39,9 +39,8 @@ execute_process(COMMAND ${git_cmd} ${git_arg1} ${git_arg2}
 )
 
 file(WRITE version.txt "commit=${git_ver}\n")
-file(APPEND version.txt "major=1\n")
+file(APPEND version.txt "major=2\n")
 file(APPEND version.txt "minor=0\n")
-
 
 # create an executable jar
 create_jar(MSMB ${SRC})

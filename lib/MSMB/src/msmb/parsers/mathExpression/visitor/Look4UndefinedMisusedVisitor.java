@@ -702,7 +702,7 @@ public class Look4UndefinedMisusedVisitor extends DepthFirstVoidVisitor {
 						if(definedInTable!=Constants.TitlesTabs.COMPARTMENTS.index) misused.add(element);
 					}
 				}*/
-				 //TOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO CHECK... IF A NAME IS USED IN MORE THAN ONE SOMEWHERE THERE SHOULD BE THE CHECK THAT A SUFFIX EXISTS.... PROBABLY NOT HERE...
+				 //TO CHECK... IF A NAME IS USED IN MORE THAN ONE SOMEWHERE THERE SHOULD BE THE CHECK THAT A SUFFIX EXISTS.... PROBABLY NOT HERE...
 				
 				if(Constants.FunctionParamType.SITE.signatureType.compareTo(types.get(i))==0) {
 					try {

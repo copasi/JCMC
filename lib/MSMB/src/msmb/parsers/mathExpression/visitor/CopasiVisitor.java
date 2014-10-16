@@ -426,8 +426,7 @@ public class CopasiVisitor extends DepthFirstVoidVisitor {
 					}
 				} else {
 					if(fromRunManager && referenceToParent) {
-						System.out.println("element: "+element );
-						int indexOfSeparator = element.indexOf(MR_Expression_ParserConstantsNOQUOTES.getTokenImage(MR_Expression_ParserConstantsNOQUOTES.MUTANT_PARENT_SEPARATOR));
+							int indexOfSeparator = element.indexOf(MR_Expression_ParserConstantsNOQUOTES.getTokenImage(MR_Expression_ParserConstantsNOQUOTES.MUTANT_PARENT_SEPARATOR));
 						copasiExpression+=element.substring(0, indexOfSeparator) 
 								+ MR_Expression_ParserConstantsNOQUOTES.getTokenImage(MR_Expression_ParserConstants.EXTENSION_SPECIES) 
 								+MR_Expression_ParserConstantsNOQUOTES.getTokenImage(MR_Expression_ParserConstantsNOQUOTES.MUTANT_PARENT_SEPARATOR)
@@ -466,8 +465,7 @@ public class CopasiVisitor extends DepthFirstVoidVisitor {
 						else element_copasiTerm = null;
 					} else {
 						if(fromRunManager && referenceToParent) {
-							System.out.println("element: "+element );
-							int indexOfSeparator = element.indexOf(MR_Expression_ParserConstantsNOQUOTES.getTokenImage(MR_Expression_ParserConstantsNOQUOTES.MUTANT_PARENT_SEPARATOR));
+								int indexOfSeparator = element.indexOf(MR_Expression_ParserConstantsNOQUOTES.getTokenImage(MR_Expression_ParserConstantsNOQUOTES.MUTANT_PARENT_SEPARATOR));
 							copasiExpression+=element.substring(0, indexOfSeparator) 
 									+ MR_Expression_ParserConstantsNOQUOTES.getTokenImage(MR_Expression_ParserConstants.EXTENSION_GLOBALQ) 
 									+MR_Expression_ParserConstantsNOQUOTES.getTokenImage(MR_Expression_ParserConstantsNOQUOTES.MUTANT_PARENT_SEPARATOR)
@@ -492,7 +490,6 @@ public class CopasiVisitor extends DepthFirstVoidVisitor {
 							else element_copasiTerm = null;
 						} else {
 							if(fromRunManager && referenceToParent) {
-								System.out.println("element: "+element );
 								int indexOfSeparator = element.indexOf(MR_Expression_ParserConstantsNOQUOTES.getTokenImage(MR_Expression_ParserConstantsNOQUOTES.MUTANT_PARENT_SEPARATOR));
 								copasiExpression+=element.substring(0, indexOfSeparator) 
 										+ MR_Expression_ParserConstantsNOQUOTES.getTokenImage(MR_Expression_ParserConstants.EXTENSION_COMPARTMENT) 
@@ -536,10 +533,7 @@ public class CopasiVisitor extends DepthFirstVoidVisitor {
 				start.accept(v);
 				MultistateSpecies sp = (MultistateSpecies) multiModel.getSpecies(v.getSpeciesName());
 			
-				
 				int index = multiModel.findMetabolite(element,null);
-				
-				//TOOOOO DOOOOOO
 				
 				String element_kind_quantifier = null; //getKindQuantifier(extensions);
 				String element_timing_quantifier = null;//getTimingQuantifier(extensions);
@@ -593,7 +587,7 @@ public class CopasiVisitor extends DepthFirstVoidVisitor {
 		else copasiExpression+="<"+element_copasiTerm+">";
 	}
 
-	private String getKindQuantifier(Vector<String> extensions) {
+	 static String getKindQuantifier(Vector<String> extensions) {
 		for(int i = 0; i < extensions.size(); i++) {
 			String ext = MR_Expression_ParserConstantsNOQUOTES.getTokenImage(MR_Expression_ParserConstants.EXTENSION_COMPARTMENT);
 			if(extensions.get(i).compareTo(ext)==0) {	return ext;	} 
@@ -607,7 +601,7 @@ public class CopasiVisitor extends DepthFirstVoidVisitor {
 		return null;
 	}
 
-	private String getQuantityQuantifier(Vector<String> extensions) {
+	 static String getQuantityQuantifier(Vector<String> extensions) {
 		for(int i = 0; i < extensions.size(); i++) {
 				String ext = MR_Expression_ParserConstantsNOQUOTES.getTokenImage(MR_Expression_ParserConstants.EXTENSION_PARTICLE);
 				if(extensions.get(i).compareTo(ext)==0) {	return ext;	} 
@@ -617,7 +611,7 @@ public class CopasiVisitor extends DepthFirstVoidVisitor {
 			return null;
 	}
 
-	private String getTimingQuantifier(Vector<String> extensions) {
+	static String getTimingQuantifier(Vector<String> extensions) {
 		for(int i = 0; i < extensions.size(); i++) {
 			String ext = MR_Expression_ParserConstantsNOQUOTES.getTokenImage(MR_Expression_ParserConstants.EXTENSION_INIT);
 			if(extensions.get(i).compareTo(ext)==0) {	return ext;	} 

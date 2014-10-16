@@ -41,8 +41,9 @@ public class RecordAutosave {
 			    		  outputFileCompleteName = path+Constants.AUTOSAVE_TMP_PREFIX +baseName+Constants.AUTOSAVE_SESSION_SUFFIX+Constants.FILE_EXTENSION_MSMB;
 			    		  File outputfile = new File(outputFileCompleteName);
 			    		  ExportMultistateFormat.setFile(outputfile);
+			    		  ExportMultistateFormat.isAutosave = true;
 				          ExportMultistateFormat.export_MSMB_format(false);
-				          
+				    	  ExportMultistateFormat.isAutosave = false;
 					} catch (Exception e) {
 						if(MainGui.DEBUG_SHOW_PRINTSTACKTRACES)
 							e.printStackTrace();

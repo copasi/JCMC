@@ -405,7 +405,7 @@ public class MultistateSpeciesVisitor extends DepthFirstVoidVisitor
 
 	
 	private String transferFrom_extractSpeciesName(String transferFrom) {
-		//TO CHANGE to account for the fact that . can exists in names, if between quotes
+		//(missing) change to account for the fact that . can exists in names, if between quotes
 			return transferFrom.substring(0, transferFrom.lastIndexOf("."));
 	}	
 	
@@ -419,7 +419,7 @@ public class MultistateSpeciesVisitor extends DepthFirstVoidVisitor
 		else return "";
   }
 	private String transferFrom_extractSiteName(String transferFrom) {
-		//TO CHANGE to account for the fact that . can exists in names, if between quotes
+		//(missing) change to account for the fact that . can exists in names, if between quotes
 			return transferFrom.substring(transferFrom.lastIndexOf(".")+1);
 	}
 	@Override

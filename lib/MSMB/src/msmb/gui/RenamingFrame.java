@@ -68,7 +68,8 @@ public class RenamingFrame extends JDialog implements WindowListener{
 		super();
 		initialize();
 		 this.addWindowListener(this);
-
+		Rectangle screen = owner.getGraphicsConfiguration().getBounds();
+		setLocation( screen.x + (screen.width - getWidth()) / 2, screen.y + (screen.height - getHeight()) / 2 );
 	}
 	
 	public void setRenamingString(String from, String to, String fromTable, int rowDeclaration) {
@@ -100,7 +101,6 @@ public class RenamingFrame extends JDialog implements WindowListener{
 		this.setContentPane(getJContentPane());
 		this.setTitle("Apply change to connected cells");
 		this.setResizable(false);
-		this.setLocationRelativeTo(null);
 	}
 
 	

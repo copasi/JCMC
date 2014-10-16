@@ -3,6 +3,7 @@ package msmb.gui;
 import java.awt.BorderLayout;
 import java.awt.Font;
 import java.awt.Insets;
+import java.awt.Rectangle;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
@@ -25,14 +26,16 @@ public class ProgressBarFrame extends JFrame implements Runnable {
 	private JPanel newContentPane;
 	
 	public ProgressBarFrame(JFrame owner, String title) throws InterruptedException {
-		setTitle(title);
+		 setTitle(title);
 		initialize();
+	
+		//center frame on screen of the parent (no matter on which screen the parent window is)
+		Rectangle screen = owner.getGraphicsConfiguration().getBounds();
+		setLocation( screen.x + (screen.width - getWidth()) / 2, screen.y + (screen.height - getHeight()) / 2 );
+			
 	}
 		
-	/**
-	 * This method initializes this
-	 * 
-	 */
+
 	private void initialize() {
 		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		
@@ -63,9 +66,9 @@ public class ProgressBarFrame extends JFrame implements Runnable {
 		
 		setSize(195, 268);
 		setResizable(false);
-		setLocationRelativeTo(null); 
 	    
-	    pack();
+			
+		pack();
 		newContentPane.revalidate();
 		progressBar.revalidate();
 		getContentPane().paintAll(progressBar.getGraphics());

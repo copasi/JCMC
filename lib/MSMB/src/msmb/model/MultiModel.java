@@ -449,7 +449,7 @@ public class MultiModel {
 		 		
 		 System.out.println("created"); System.out.flush();
 				 			
-		 
+	
 		 progress(progressBarFrame,Constants.ProgressBar.COMPILING_CPS.progress);
 		copasiDataModel.getModel().compile();
 		 System.out.println("compiled"); System.out.flush();
@@ -3202,7 +3202,7 @@ public class MultiModel {
 					
 						total = model.getMetabolites().size();
 						for (long i = total-1; i >= 0; i--)	{
-							CMetab  m = (CMetab) model.getMetabolites().get(i);
+							CMetab  m = (CMetab) model.getMetabolites().get(i);cle
 							model.removeMetabolite(m, true);
 						}		
 						
@@ -3222,11 +3222,11 @@ public class MultiModel {
 				
 				if(!MainGui.fromInterface) copasiDataModel.newModel();
 				
-						copasiDataModel.deleteOldData();
-						copasiDataModel.getModel().setTimeUnit(MainGui.timeUnit);
-						copasiDataModel.getModel().setVolumeUnit(MainGui.volumeUnit);
-						copasiDataModel.getModel().setQuantityUnit(MainGui.quantityUnit);
-						copasiDataModel.getModel().setObjectName(copasiDataModel_modelName);
+				copasiDataModel.deleteOldData();
+				copasiDataModel.getModel().setTimeUnit(MainGui.timeUnit);
+				copasiDataModel.getModel().setVolumeUnit(MainGui.volumeUnit);
+				copasiDataModel.getModel().setQuantityUnit(MainGui.quantityUnit);
+				copasiDataModel.getModel().setObjectName(copasiDataModel_modelName);
 
 										
 			} catch (Exception e) {
@@ -3396,9 +3396,9 @@ public class MultiModel {
 		copasiDataModel = CCopasiRootContainer.addDatamodel();
 		copasiDataModel_key = new String(copasiDataModel.getModel().getKey());
 		copasiDataModel.getModel().setSBMLId(copasiDataModel_key);
-		copasiDataModel.getModel().setTimeUnit(CModel.s);
-		copasiDataModel.getModel().setVolumeUnit(CModel.fl);
-		copasiDataModel.getModel().setQuantityUnit(CModel.number);
+		copasiDataModel.getModel().setTimeUnit(CUnit.s);
+		copasiDataModel.getModel().setVolumeUnit(CUnit.fl);
+		copasiDataModel.getModel().setQuantityUnit(CUnit.number);
 		copasiDataModel.getModel().setObjectName(modelName);
 	}
 	
@@ -5938,6 +5938,12 @@ public Integer getGlobalQIndex(String name) {
 		String oldId = annotation.substring(start, annotation.indexOf("\"",start))	;
 		String ret = annotation.replaceAll(oldId, newId);
 		return ret;
+	}
+	
+
+
+	public Integer getCompIndex(String name) {
+		return compDB.getCompIndex(name);
 	}
 
 	

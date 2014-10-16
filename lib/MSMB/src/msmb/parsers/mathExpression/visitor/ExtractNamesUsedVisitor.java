@@ -55,7 +55,6 @@ public class ExtractNamesUsedVisitor extends DepthFirstVoidVisitor {
 						f = multiModel.getFunctionByName(ToStringVisitor.toString(n.name.nodeChoice.choice));
 						names.add(f.getName());
 					} catch (Throwable e) {
-						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
 					if(f==null) {	
@@ -83,7 +82,6 @@ public class ExtractNamesUsedVisitor extends DepthFirstVoidVisitor {
 								checkParameterUsage((ArgumentList)nodeOptional.node,f);
 							}
 						} catch (Throwable e) {
-							// TODO Auto-generated catch block
 							e.printStackTrace();
 						}
 						

@@ -40,10 +40,12 @@ import org.COPASI.CTimeSeries;
 import org.COPASI.CTrajectoryMethod;
 import org.COPASI.CTrajectoryProblem;
 import org.COPASI.CTrajectoryTask;
+import org.COPASI.ModelParameterSetVectorN;
 import org.COPASI.ReportItemVector;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.jgraph.graph.AttributeMap;
 import org.jgrapht.alg.CycleDetector;
+import org.jgrapht.alg.DijkstraShortestPath;
 import org.jgrapht.graph.*;
 import org.jgrapht.traverse.*;
 
@@ -55,15 +57,34 @@ public class SimulationsDB
 {
 	public static final String DEFAULT_DURATION = "1";
 	public static final String DEFAULT_STEPS = "100";
+	public static final String DEFAULT_METHOD = "Deterministic (LSODA)";
+
+	public String getDefaultValue(SimulationChangeType simchangetype) {
+		String value = null;
+		if(simchangetype.equals(SimulationChangeType.TOTAL_TIME)){
+			value = SimulationsDB.DEFAULT_DURATION;
+		} else if(simchangetype.equals(SimulationChangeType.INTERVAL_NUMBER)){
+			value = SimulationsDB.DEFAULT_STEPS;
+		} else  if(simchangetype.equals(SimulationChangeType.INTERVAL_SIZE)){
+			value = new Double(Double.parseDouble(SimulationsDB.DEFAULT_DURATION)/Double.parseDouble(SimulationsDB.DEFAULT_STEPS)).toString();
+		}  else  if(simchangetype.equals(SimulationChangeType.METHOD)){
+			value = SimulationsDB.DEFAULT_METHOD;
+		}
+		return value;
+	}
+	
 	
 	MultiModel multiModel = null;
 	ListenableDirectedGraph<Simulation, DefaultEdge> graphOfSimulations = new ListenableDirectedGraph<Simulation, DefaultEdge>(DefaultEdge.class);
 	Simulation baseSet = null;
 	private CModel model;
+	private RunManager runManager;
     
 	public SimulationsDB(MultiModel m){
 		multiModel = m;
 	}
+	
+
 	
 	public Simulation getSimulationOfMutant(Mutant m) {
 	  	Iterator<Simulation> iter =  new DepthFirstIterator<Simulation, DefaultEdge>(graphOfSimulations);
@@ -144,9 +165,20 @@ public class SimulationsDB
     	return anc;
     }
     
+    public Vector<Mutant> getChildren_castMutant(Simulation m) {
+    	Vector<Mutant> anc = new Vector<Mutant>();
+    	Set<DefaultEdge> con = graphOfSimulations.edgesOf(m);
+    	for(DefaultEdge edge : con) {
+    		Simulation target = graphOfSimulations.getEdgeTarget(edge);
+    		if(target== m) { //to only include incoming edges
+    			anc.add(graphOfSimulations.getEdgeSource(edge));
+    		}
+    	}
+    	return anc;
+    }
+    
     public Vector<Simulation> collectAncestors(Simulation startVertex) {
     	Vector<Simulation> ret = new Vector<Simulation>();
-    	graphOfSimulations.containsVertex(startVertex);
     	GraphIterator<Simulation, DefaultEdge> iterator = new BreadthFirstIterator<Simulation, DefaultEdge>(graphOfSimulations,startVertex);
     	 	while (iterator.hasNext()) {
     	 		Simulation element = iterator.next();
@@ -293,29 +325,62 @@ public class SimulationsDB
         return false;
     }
     
+    public void setRunManager(RunManager rm) { this.runManager = rm; }
+    
     public void exportMutantGraph(
     		String baseFileName, 
-    		MutantsDB mutDB){
+    		MutantsDB mutDB,
+    		HashSet<String> toBeSimulated){
     	
     	if(detectConflict_allNodes()) {
 			System.out.println("CANNOT EXPORT, CONFLICTS TO BE FIXED");
 			return;
 		} 
     	Iterator<Simulation> iterator = graphOfSimulations.vertexSet().iterator();
-    	try {
-			String copasiKey =  multiModel.saveCPS(false, null, MainGui.tableReactionmodel,null);
+    	
+    	int total = toBeSimulated.size();
+    
+    	iterator = graphOfSimulations.vertexSet().iterator();
+        try {
+			String copasiKey =  multiModel.saveCPS(true, null, MainGui.tableReactionmodel,null);
+			String baseModel =  multiModel.copasiDataModel.exportSBMLToString();
+			
 			int i = 1;
 			while(iterator.hasNext()) {
 				Simulation sim = iterator.next();
+				sim.clearTimeSeries();
 				Iterator<Object> iterator2 = sim.getMutantsParameters().iterator();
 				while (iterator2.hasNext()) {
 					Mutant mtnt_parameters = (Mutant) iterator2.next();
+					
+					if(!toBeSimulated.contains(sim.getName()+"__"+mtnt_parameters)) { continue;}
+					
 					mutDB.exportMutant(mtnt_parameters, null);
+					model = multiModel.copasiDataModel.getModel();
+					
+			
 					System.out.println(i + ": simulating "+mtnt_parameters);
-		       		exportSimulation(sim, baseFileName+"_"+mtnt_parameters.getName());
-		       		System.out.println(i++ + ": done");
-		       	 }
+					
+					if(baseFileName!= null) {
+		       			exportSimulation(sim,mtnt_parameters.getName(), baseFileName+"_"+mtnt_parameters.getName());
+		 			}
+		       		else {
+		       			runManager.progress((i*100/total)-1, sim.getName() + " ("+mtnt_parameters.getName()+")");
+						exportSimulation(sim,mtnt_parameters.getName(), null);
+						try {
+							runManager.plotMutantGraph(sim, mtnt_parameters.getName());
+						} catch(Exception ex) {
+							ex.printStackTrace();
+						}
+		      			runManager.initializeTimeSeriesVariables(sim.getTimeSeriesVariables(mtnt_parameters.getName()));
+		       		}
+					i++;
+		       		System.out.println(i+ ": done");
+		       		multiModel.copasiDataModel.importSBMLFromString(baseModel);
+				}
 			}
+			
+			runManager.progress(100, "Done");
 		} catch (Throwable e) {
 			e.printStackTrace();
 		}
@@ -326,8 +391,9 @@ public class SimulationsDB
    
 	private String ELEMENTS_SEPARATOR = ",";
 	
+	 
 			
-	public  void exportSimulation(Simulation sim,String baseFileName) {
+	private  void exportSimulation(Simulation sim, String mutant, String baseFileName) {
 		
 		multiModel.copasiDataModel.getModel().compile();
 		sim.clearCumulativeChanges();
@@ -337,7 +403,8 @@ public class SimulationsDB
 		
 		model.forceCompile();
 		model.updateInitialValues();
-		model.calculate();
+		model.compile();
+		
 		
 		CFunctionDB funDB_copasi = CCopasiRootContainer.getFunctionList();
 		CFunctionVectorN funcs = funDB_copasi.loadedFunctions();
@@ -347,127 +414,154 @@ public class SimulationsDB
 			CFunction cfun = (CFunction)val;
 			cfun.compile();
 		}
-				
-		//ADD CHANGES FROM LOCAL NODE OF SIMULATION
-		String duration = DEFAULT_DURATION;
-		String steps = DEFAULT_STEPS;
+		
+		
+		String duration = sim.getDuration();
+		String steps = sim.getIntervals();
 		String change = sim.getChanges().get(Simulation.generateChangeKey(SimulationChangeType.TOTAL_TIME, ""));
 		if(change != null) duration = new String(change);
 		
-		 CReportDefinitionVector reports = multiModel.copasiDataModel.getReportDefinitionList();
-		 reports.cleanup();
-		 reports.clear();
-		 CReportDefinition report = reports.createReportDefinition("Report", "Output for timecourse");
-		 report.setTaskType(CCopasiTask.timeCourse);
-		 report.setIsTable(false);
-		 report.setSeparator(new CCopasiReportSeparator(ELEMENTS_SEPARATOR+" "));
-		 ReportItemVector header = report.getHeaderAddr();
-		 ReportItemVector body = report.getBodyAddr();
-		 body.add(new CRegisteredObjectName(model.getObject(new CCopasiObjectName("Reference=Time")).getCN().getString()));
-		 header.add(new CRegisteredObjectName(new CCopasiStaticString("time").getCN().getString()));
-		
-		 int i, iMax =(int) model.getMetabolites().size();
-		 
-		 if(iMax>0) {
-			 header.add(new CRegisteredObjectName(report.getSeparator().getCN().getString()));
-			 body.add(new CRegisteredObjectName(report.getSeparator().getCN().getString()));
-			  for (i = 0;i < iMax;++i)
-			 {
-				 CMetab metab = model.getMetabolite(i);
-				 assert metab != null;
-				 body.add(new CRegisteredObjectName(metab.getObject(new CCopasiObjectName("Reference=Concentration")).getCN().getString()));
-				 
-				 String name = metab.getObjectName()+"_"+metab.getCompartment().getObjectName();
-				 String separator = report.getSeparator().getObjectName().toString().trim();
-				 if(name.contains(separator)) {
-					 header.add(new CRegisteredObjectName(new CCopasiStaticString("\""+metab.getObjectName()+"_"+metab.getCompartment().getObjectName()+"\"").getCN().getString()));
-				 } else {
-					 String metabName = metab.getObjectName();
-					 if(metabName.startsWith("\"") && metabName.endsWith("\"")) metabName = metabName.replace("\"", "");
-					 metabName = metabName.replace("\"", "''");
-					 
-					 String metabComp = metab.getCompartment().getObjectName();
-					 if(metabComp.startsWith("\"") && metabComp.endsWith("\"")) metabComp = metabComp.replace("\"", "");
-					 metabComp = metabComp.replace("\"", "''");
-					// header.add(new CRegisteredObjectName(new CCopasiStaticString(metabName+"_"+metabComp).getCN().getString()));
-					 header.add(new CRegisteredObjectName(new CCopasiStaticString(metabName).getCN().getString()));
-				 }
-				 
-				 if(i!=iMax-1)
+		 CReportDefinition report = null;
+			 CReportDefinitionVector reports = multiModel.copasiDataModel.getReportDefinitionList();
+			 reports.cleanup();
+			 reports.clear();
+			 report = reports.createReportDefinition("Report", "Output for timecourse");
+			 report.setTaskType(CCopasiTask.timeCourse);
+			 report.setIsTable(false);
+			 report.setSeparator(new CCopasiReportSeparator(ELEMENTS_SEPARATOR+" "));
+			 ReportItemVector header = report.getHeaderAddr();
+			 ReportItemVector body = report.getBodyAddr();
+			 body.add(new CRegisteredObjectName(model.getObject(new CCopasiObjectName("Reference=Time")).getCN().getString()));
+			 header.add(new CRegisteredObjectName(new CCopasiStaticString("time").getCN().getString()));
+			
+			 int i, iMax =(int) model.getMetabolites().size();
+			 
+			 if(iMax>0) {
+				 header.add(new CRegisteredObjectName(report.getSeparator().getCN().getString()));
+				 body.add(new CRegisteredObjectName(report.getSeparator().getCN().getString()));
+				  for (i = 0;i < iMax;++i)
 				 {
-					 body.add(new CRegisteredObjectName(report.getSeparator().getCN().getString()));
-					 header.add(new CRegisteredObjectName(report.getSeparator().getCN().getString()));
+					 CMetab metab = model.getMetabolite(i);
+					 assert metab != null;
+					 body.add(new CRegisteredObjectName(metab.getObject(new CCopasiObjectName("Reference=Concentration")).getCN().getString()));
+					 
+					 String name = metab.getObjectName()+"_"+metab.getCompartment().getObjectName();
+					 String separator = report.getSeparator().getObjectName().toString().trim();
+					 if(name.contains(separator)) {
+						 header.add(new CRegisteredObjectName(new CCopasiStaticString("\""+metab.getObjectName()+"_"+metab.getCompartment().getObjectName()+"\"").getCN().getString()));
+					 } else {
+						 String metabName = metab.getObjectName();
+						 if(metabName.startsWith("\"") && metabName.endsWith("\"")) metabName = metabName.replace("\"", "");
+						 metabName = metabName.replace("\"", "''");
+						 
+						 String metabComp = metab.getCompartment().getObjectName();
+						 if(metabComp.startsWith("\"") && metabComp.endsWith("\"")) metabComp = metabComp.replace("\"", "");
+						 metabComp = metabComp.replace("\"", "''");
+						// header.add(new CRegisteredObjectName(new CCopasiStaticString(metabName+"_"+metabComp).getCN().getString()));
+						 header.add(new CRegisteredObjectName(new CCopasiStaticString(metabName).getCN().getString()));
+					 }
+					 
+					 if(i!=iMax-1)
+					 {
+						 body.add(new CRegisteredObjectName(report.getSeparator().getCN().getString()));
+						 header.add(new CRegisteredObjectName(report.getSeparator().getCN().getString()));
+					 }
 				 }
 			 }
-		 }
-		 
-		
-		 iMax =(int) model.getModelValues().size();
-		 if(iMax>0) {
-			 body.add(new CRegisteredObjectName(report.getSeparator().getCN().getString()));
-			 header.add(new CRegisteredObjectName(report.getSeparator().getCN().getString()));
 			 
-			 for (i = 0;i < iMax;++i)
-		 
-		 {
-			 CModelValue modelValue = model.getModelValue(i);
-			 assert modelValue != null;
-				 body.add(new CRegisteredObjectName(modelValue.getObject(new CCopasiObjectName("Reference=Value")).getCN().getString()));
-				 header.add(new CRegisteredObjectName(new CCopasiStaticString(modelValue.getObjectName()).getCN().getString()));
-				 if(i!=iMax-1)
-				 {
-					 body.add(new CRegisteredObjectName(report.getSeparator().getCN().getString()));
-					 header.add(new CRegisteredObjectName(report.getSeparator().getCN().getString()));
-				 }
-		 }
-		 }
-		 
-		 iMax =(int) model.getCompartments().size();
-	
-		 if(iMax>0) {
-			 body.add(new CRegisteredObjectName(report.getSeparator().getCN().getString()));
-			 header.add(new CRegisteredObjectName(report.getSeparator().getCN().getString()));
-		 
+			
+			 iMax =(int) model.getModelValues().size();
+			 if(iMax>0) {
+				 body.add(new CRegisteredObjectName(report.getSeparator().getCN().getString()));
+				 header.add(new CRegisteredObjectName(report.getSeparator().getCN().getString()));
+				 
+				 for (i = 0;i < iMax;++i)
+			 
+			 {
+				 CModelValue modelValue = model.getModelValue(i);
+				 assert modelValue != null;
+					 body.add(new CRegisteredObjectName(modelValue.getObject(new CCopasiObjectName("Reference=Value")).getCN().getString()));
+					 header.add(new CRegisteredObjectName(new CCopasiStaticString(modelValue.getObjectName()).getCN().getString()));
+					 if(i!=iMax-1)
+					 {
+						 body.add(new CRegisteredObjectName(report.getSeparator().getCN().getString()));
+						 header.add(new CRegisteredObjectName(report.getSeparator().getCN().getString()));
+					 }
+			 }
+			 }
+			 
+			 iMax =(int) model.getCompartments().size();
 		
-		 for (i = 0;i < iMax;++i)
-		 {
-			 CCompartment modelValue = model.getCompartment(i);
-			 assert modelValue != null;
-				 body.add(new CRegisteredObjectName(modelValue.getObject(new CCopasiObjectName("Reference=Volume")).getCN().getString()));
-				 header.add(new CRegisteredObjectName(new CCopasiStaticString(modelValue.getObjectName()).getCN().getString()));
-				 if(i!=iMax-1)
-				 {
-					 body.add(new CRegisteredObjectName(report.getSeparator().getCN().getString()));
-					 header.add(new CRegisteredObjectName(report.getSeparator().getCN().getString()));
-				 }
-		 }
-		 }
-	
+			 if(iMax>0) {
+				 body.add(new CRegisteredObjectName(report.getSeparator().getCN().getString()));
+				 header.add(new CRegisteredObjectName(report.getSeparator().getCN().getString()));
+			 
+			
+			 for (i = 0;i < iMax;++i)
+			 {
+				 CCompartment modelValue = model.getCompartment(i);
+				 assert modelValue != null;
+					 body.add(new CRegisteredObjectName(modelValue.getObject(new CCopasiObjectName("Reference=Volume")).getCN().getString()));
+					 header.add(new CRegisteredObjectName(new CCopasiStaticString(modelValue.getObjectName()).getCN().getString()));
+					 if(i!=iMax-1)
+					 {
+						 body.add(new CRegisteredObjectName(report.getSeparator().getCN().getString()));
+						 header.add(new CRegisteredObjectName(report.getSeparator().getCN().getString()));
+					 }
+			 }
+			 }
+		
+	  
+		
 		 CTrajectoryTask trajectoryTask = (CTrajectoryTask)multiModel.copasiDataModel.getTask("Time-Course");
 		 if (trajectoryTask == null)
 		 {
 			 trajectoryTask = new CTrajectoryTask();
 			 multiModel.copasiDataModel.getTaskList().addAndOwn(trajectoryTask);
 		 }
+	
+		 trajectoryTask.setMethodType(sim.getMethod());
+		 HashMap<String, Double> param = sim.getMethodParameters();
+		 	 
+		 CTrajectoryMethod method = (CTrajectoryMethod)trajectoryTask.getMethod();
 		 
-		 trajectoryTask.setMethodType(CCopasiMethod.deterministic);
+		 Iterator<String> it = param.keySet().iterator();
+		 while(it.hasNext()){
+			 String k = it.next();
+			 CCopasiParameter parameter = method.getParameter(k);
+			 if(parameter != null) {
+				boolean result = false;
+				Double value = param.get(k);
+				 result = parameter.setDblValue(value);
+				 if(!result) result = parameter.setIntValue(value.intValue());
+				 if(!result) result = parameter.setUDblValue(value);
+				 if(!result) result = parameter.setUIntValue(value.longValue());
+				 if(!result) {
+					 boolean bvalue = false;
+					 if(value.intValue() != 0) bvalue=true;
+					 result = parameter.setBoolValue(bvalue);
+				 }
+			 }
+	
+		 }
+				 
 		 trajectoryTask.getProblem().setModel(multiModel.copasiDataModel.getModel());
 		 trajectoryTask.setScheduled(true);
 
-		 trajectoryTask.getReport().setReportDefinition(report);
-		 trajectoryTask.getReport().setTarget(baseFileName + sim.getName()+".txt");
+		trajectoryTask.getReport().setReportDefinition(report);
 		 trajectoryTask.getReport().setAppend(false);
+		if(baseFileName!= null) {
+						 trajectoryTask.getReport().setTarget(baseFileName + sim.getName()+".txt");
+		 } else {
+			 trajectoryTask.getReport().setTarget("ISSUE_REPORT_TARGET_TO_DELETE.txt");
+		 }
 		 
 		 CTrajectoryProblem problem = (CTrajectoryProblem)trajectoryTask.getProblem();
-		 problem.setStepNumber(Long.parseLong(steps));
+		 problem.setStepNumber((new Double(steps)).longValue());
 		 multiModel.copasiDataModel.getModel().setInitialTime(0.0);
-		 problem.setDuration(Double.parseDouble(duration));
+		 problem.setDuration(RM_buildCopasiExpression(duration,sim, SimulationChangeType.TOTAL_TIME));
 		 problem.setTimeSeriesRequested(true);
-
-		 CTrajectoryMethod method = (CTrajectoryMethod)trajectoryTask.getMethod();
-		 CCopasiParameter parameter = method.getParameter("Absolute Tolerance");
-		 parameter.setDblValue(1.0e-12);
-		
+			 
 		 boolean result=true;
 		 try
 		 {
@@ -496,42 +590,12 @@ public class SimulationsDB
 			 }
 		}
 		 
-		 CTimeSeries timeSeries = trajectoryTask.getTimeSeries();
-      
-		 /*System.out.println( "The time series consists of " + (new Long(timeSeries.getRecordedSteps())).toString() + "." );
-         System.out.println( "Each step contains " + (new Long(timeSeries.getNumVariables())).toString() + " variables." );
-         System.out.println( "The initial state is: " );
-         iMax = (int)timeSeries.getNumVariables();
-         for (i = 0;i < iMax;++i)
-         {
-            if(		   timeSeries.getTitle(i).contains("SBF") 
-            		|| timeSeries.getTitle(i).contains("MCM1")
-            		|| timeSeries.getTitle(i).contains("CLB2")
-            		) { 
-            	System.out.println(timeSeries.getTitle(i) + ": " + (new Double(new Double(timeSeries.getData(0, i))/6.02214179E23).toString() ));
-            } else if (	timeSeries.getTitle(i).contains("kamcm")
-            		|| timeSeries.getTitle(i).contains("kimcm")
-            		|| timeSeries.getTitle(i).contains("Jamcm")
-            		|| timeSeries.getTitle(i).contains("Jimcm")
-            		|| timeSeries.getTitle(i).contains("Vasbf")
-            		|| timeSeries.getTitle(i).contains("Visbf")
-            		|| timeSeries.getTitle(i).contains("Jasbf")
-            		|| timeSeries.getTitle(i).contains("Jisbf")){
-              	System.out.println(timeSeries.getTitle(i) + ": " + (new Double(new Double(timeSeries.getData(0, i))).toString() ));
-                      	
-            }
-         }*/
-         
-        /* System.out.println( "The final state is: " );
-         iMax = (int)timeSeries.getNumVariables();
-         int lastIndex = (int)timeSeries.getRecordedSteps() - 1;
-         for (i = 0;i < iMax;++i)
-         {
-        	 
-             System.out.println(timeSeries.getTitle(i) + ": " + (new Double(timeSeries.getData(lastIndex, i))).toString() );
-         }*/
-	
-	
+		 if(baseFileName == null) {
+			 CTimeSeries timeSeries = trajectoryTask.getTimeSeries();
+			 
+			 sim.addTimeSeries(timeSeries, mutant);
+			 
+		 }
 	}
 	
 	
@@ -572,11 +636,10 @@ public class SimulationsDB
 				InputStream is = new ByteArrayInputStream(expression.getBytes("UTF-8"));
 				MR_Expression_Parser parser = new MR_Expression_Parser(is,"UTF-8");
 				CompleteExpression root = parser.CompleteExpression();
-			    EvaluateExpressionVisitor vis = new EvaluateExpressionVisitor(multiModel,false);
+			    EvaluateExpressionVisitor vis = new EvaluateExpressionVisitor(multiModel,false,false);
 			    vis.setFromRunManager(true);
 			    root.accept(vis);
-					
-			
+				
 				if(vis.getExceptions().size() == 0) {
 					Set<DefaultEdge> edges = graphOfSimulations.outgoingEdgesOf(exportingSim);
 					String parsedexpression  = vis.getExpression();
@@ -607,6 +670,58 @@ public class SimulationsDB
 			}
 			return null;
 		}
+	 
+	
+
+	public Simulation getSimulation(String simName) {
+	  	Iterator<Simulation> iter =  new DepthFirstIterator<Simulation, DefaultEdge>(graphOfSimulations);
+        while (iter.hasNext()) {
+        	  Simulation vertex = iter.next();
+        	  if(vertex.getName().compareTo(simName) ==0) return vertex;
+        }
+        return null;
+	}
+
+	
+	public void rename(Simulation currentSimulation, String newName) {
+		if(currentSimulation.getName().compareTo(newName)==0) return;
+		Vector<DefaultEdge> edgesToParents = getEdgesToParents(currentSimulation);		
+		Vector<Simulation> children = getChildren(currentSimulation);
+		graphOfSimulations.removeVertex(currentSimulation);
+		currentSimulation.setName(newName);
+		graphOfSimulations.addVertex(currentSimulation);
+		for(int i = 0; i < children.size(); ++i) {
+			addConnection(children.get(i), currentSimulation);
+		}
+		for(int i = 0; i < edgesToParents.size(); ++i) {
+			Simulation target = graphOfSimulations.getEdgeTarget(edgesToParents.get(i));
+			addConnection(currentSimulation, target);
+		}
+		return;
+	}
+	
+	public void  replaceSimulationInExpression(String oldN, String newN) {
+		if(oldN.compareTo(newN)==0) return;
+	  	Iterator<Simulation> iter =  new DepthFirstIterator<Simulation, DefaultEdge>(graphOfSimulations);
+        while (iter.hasNext()) {
+        	Mutant vertex = iter.next();
+        	vertex.replaceMutantNameInExpression(oldN, newN, multiModel);
+        }
+         return;
+	}
+	
+	public Vector<Simulation>  collectDescendants(Simulation root) {
+		Iterator<Simulation> iter =  new DepthFirstIterator<Simulation, DefaultEdge>(graphOfSimulations);
+		Vector<Simulation> ret = new Vector<Simulation>();
+		while (iter.hasNext()) {
+        	Simulation vertex = iter.next();
+        	List<DefaultEdge> path = DijkstraShortestPath.findPathBetween(graphOfSimulations, vertex, root);
+        	if(path!=null && path.size() > 0) {
+        		ret.add(vertex);
+        	}
+        }
+         return ret;
+	}
 
 	
 

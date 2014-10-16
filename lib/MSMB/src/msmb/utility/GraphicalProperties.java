@@ -9,6 +9,7 @@ import java.util.List;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
+import javax.swing.JComponent;
 import javax.swing.JEditorPane;
 import javax.swing.JLabel;
 import javax.swing.JList;
@@ -26,7 +27,9 @@ import javax.swing.UIManager;
 import javax.swing.border.Border;
 import javax.swing.border.TitledBorder;
 
+import org.jdesktop.swingx.JXLabel;
 import org.jdesktop.swingx.JXList;
+import org.jdesktop.swingx.JXTaskPane;
 
 import msmb.gui.MainGui;
 
@@ -163,6 +166,22 @@ public class GraphicalProperties {
 				 JXList current = it16.next();
 				 current.setFont(customFont);
 			 }
+			 
+			/* List<JXTaskPane> jxtaskPane = SwingUtils.getDescendantsOfClass(JXTaskPane.class, container);
+			 Iterator<JXTaskPane> it17 = jxtaskPane.iterator();
+			 while(it17.hasNext()) {
+				 JXTaskPane current = it17.next();
+				 current.setFont(customFont);
+				 ((JComponent) current.getContentPane()).setFont(customFont);
+				
+			 }
+			 
+			 List<JXLabel> jxLabel = SwingUtils.getDescendantsOfClass(JXLabel.class, container);
+			 Iterator<JXLabel> it18 = jxLabel.iterator();
+			 while(it18.hasNext()) {
+				 JXLabel current = it18.next();
+				 current.setFont(customFont);
+			 }*/
 
 		// container.revalidate();
 		 SwingUtilities.updateComponentTreeUI(container);
