@@ -49,6 +49,7 @@ function(create_jar _TARGET_NAME)
 	if("${CMAKE_HOST_SYSTEM_NAME}" MATCHES "Darwin")
 		 message("Darwin detected!!")
 		 set(COPASI_DIR_OS "mac_universal")
+		 set(LIBSBML_DIR_OS "mac_universal")
 	endif("${CMAKE_HOST_SYSTEM_NAME}" MATCHES "Darwin")
 
     if (NOT DEFINED CMAKE_JAVA_TARGET_OUTPUT_DIR)
@@ -59,17 +60,17 @@ function(create_jar _TARGET_NAME)
 	ExternalProject_Get_Property(MSMB binary_dir)
 	#message(STATUS "MSMB location: " ${binary_dir})
 	#copy the COPASI library into the lib directory
-	file(COPY ${AC_SOURCE_DIR}/lib/MSMB/CopasiLibs/${COPASI_DIR_OS}${COPASI_DIR_ARCH}/${COPASI_LIBRARY_NAME} DESTINATION 
+	file(COPY ${JCMC_SOURCE_DIR}/lib/MSMB/CopasiLibs/${COPASI_DIR_OS}${COPASI_DIR_ARCH}/${COPASI_LIBRARY_NAME} DESTINATION 
                              ${CMAKE_JAVA_TARGET_OUTPUT_DIR}/lib)	
-	file(COPY ${AC_SOURCE_DIR}/lib/MSMB/CopasiLibs/${COPASI_DIR_OS}${COPASI_DIR_ARCH}/copasi.jar DESTINATION 
+	file(COPY ${JCMC_SOURCE_DIR}/lib/MSMB/CopasiLibs/${COPASI_DIR_OS}${COPASI_DIR_ARCH}/copasi.jar DESTINATION 
                              ${CMAKE_JAVA_TARGET_OUTPUT_DIR}/lib)
 	#copy the libSBML library into the lib directory
-	file(COPY ${AC_SOURCE_DIR}/lib/libSBML/${LIBSBML_DIR_OS}${LIBSBML_DIR_ARCH}/${LIBSBML_LIBRARY_NAME} DESTINATION 
+	file(COPY ${JCMC_SOURCE_DIR}/lib/libSBML/${LIBSBML_DIR_OS}${LIBSBML_DIR_ARCH}/${LIBSBML_LIBRARY_NAME} DESTINATION 
                              ${CMAKE_JAVA_TARGET_OUTPUT_DIR}/lib)	
-	file(COPY ${AC_SOURCE_DIR}/lib/libSBML/${LIBSBML_DIR_OS}${LIBSBML_DIR_ARCH}/libsbmlj.jar DESTINATION 
+	file(COPY ${JCMC_SOURCE_DIR}/lib/libSBML/${LIBSBML_DIR_OS}${LIBSBML_DIR_ARCH}/libsbmlj.jar DESTINATION 
                              ${CMAKE_JAVA_TARGET_OUTPUT_DIR}/lib)
 	#copy the jgraph library into the lib directory
-	file(COPY ${AC_SOURCE_DIR}/lib/jgraphx.jar DESTINATION 
+	file(COPY ${JCMC_SOURCE_DIR}/lib/jgraphx.jar DESTINATION 
                              ${CMAKE_JAVA_TARGET_OUTPUT_DIR}/lib)
 
 	file(GLOB MY_JARS "${CMAKE_JAVA_TARGET_OUTPUT_DIR}/lib/*.jar")
@@ -167,10 +168,12 @@ function(create_jar _TARGET_NAME)
         endif (_JAVA_EXT MATCHES ".java")
     endforeach(_JAVA_SOURCE_FILE)
 
-	#Copy the version file in the OUTPUT path
-#	 file(COPY ${AC_SOURCE_DIR}/version.txt DESTINATION 
-#                             ${CMAKE_JAVA_TARGET_OUTPUT_DIR})
-
+	#Copy the version file to the OUTPUT path
+	file(COPY ${JCMC_SOURCE_DIR}/version.txt DESTINATION 
+                             ${CMAKE_JAVA_TARGET_OUTPUT_DIR}/util/)
+	#Copy the logo icon to the OUTPUT path
+	file(COPY ${JCMC_SOURCE_DIR}/util/logo.png DESTINATION 
+                             ${CMAKE_JAVA_TARGET_OUTPUT_DIR}/util/)
 
     # create an empty java_class_filelist
     if (NOT EXISTS ${CMAKE_JAVA_CLASS_OUTPUT_PATH}/java_class_filelist)
@@ -315,12 +318,12 @@ endif(${COPASI_DIR_OS} MATCHES "linux")
 
 if(${CMAKE_HOST_SYSTEM_NAME} MATCHES "Darwin")
 	#Copy the main script to reset the working directory of the launcher file 
-	file(COPY ${AC_SOURCE_DIR}/MSMB/CopasiLibs/${COPASI_DIR_OS}${COPASI_DIR_ARCH}/scriptToRunJar.txt 
+	file(COPY ${JCMC_SOURCE_DIR}/MSMB/CopasiLibs/${COPASI_DIR_OS}${COPASI_DIR_ARCH}/scriptToRunJar.txt 
 		DESTINATION ${CMAKE_JAVA_TARGET_OUTPUT_DIR}
 		FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ)
 	file(RENAME ${CMAKE_JAVA_TARGET_OUTPUT_DIR}/scriptToRunJar.txt ${CMAKE_JAVA_TARGET_OUTPUT_DIR}/${_TARGET_NAME}_launcher.command )
  	file(APPEND ${CMAKE_JAVA_TARGET_OUTPUT_DIR}/${_TARGET_NAME}_launcher.command "\njava -Djava.library.path=./lib -jar ${_TARGET_NAME}.jar")
 endif(${CMAKE_HOST_SYSTEM_NAME} MATCHES "Darwin")
 
-add_dependencies(AC MSMB)
+add_dependencies(JCMC MSMB)
 endfunction(create_jar)

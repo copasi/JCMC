@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 2.8.6)
 find_package(Java)
-project(AC Java)
+project(JCMC Java)
 
 include(UseJava)
 include(JarHelper.cmake)
@@ -17,7 +17,7 @@ ExternalProject_Add(
 
 # the java source files
 set(SRC
-	${AC_SOURCE_DIR}/src/acgui/*.java
+	${JCMC_SOURCE_DIR}/src/acgui/*.java
 )
 
 #message(STATUS "java path " ${CMAKE_JAVA_INCLUDE_PATH})
@@ -38,9 +38,9 @@ set(SRC
 #  OUTPUT_VARIABLE git_ver
 #)
 
-#file(WRITE version.txt "commit=${git_ver}\n")
-#file(APPEND version.txt "major=1\n")
-#file(APPEND version.txt "minor=0\n")
+file(WRITE version.txt "commit=${git_ver}\n")
+file(APPEND version.txt "major=1\n")
+file(APPEND version.txt "minor=0\n")
 
 # create an executable jar
-create_jar(AC ${SRC})
+create_jar(JCMC ${SRC})
