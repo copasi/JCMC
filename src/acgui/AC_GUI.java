@@ -147,11 +147,13 @@ public class AC_GUI extends JFrame
 	{
 		BufferedReader fin;
 		String strLine;
+		String version = "";
 		String major = "";
 		String minor = "";
 		String commit = "";
+		int landmark;
 		String notFound = "0.0.0";
-		
+		// expected format is JCMC version: v0.9-0-gbe798e3
 		try 
 		{
 			//InputStream is = getClass().getResourceAsStream("util/version.txt");
@@ -163,18 +165,19 @@ public class AC_GUI extends JFrame
 			fin = new BufferedReader(new InputStreamReader(is));
 			while ((strLine = fin.readLine()) != null)
 			{
-				if(strLine.toLowerCase().contains("major"))
+				if(strLine.contains("JCMC version: v"))
 				{
-					major = strLine.substring(strLine.indexOf("=")+1).trim();
+					landmark = strLine.indexOf(":");
+					version = strLine.substring(landmark+1).trim();
+					landmark = version.indexOf(".");
+					major = version.substring(1, landmark);
+					version = version.substring(landmark);
+					landmark = version.indexOf("-");
+					minor = version.substring(1, landmark);
+					version = version.substring(landmark);
+					landmark = version.indexOf("-", 1);
+					commit = version.substring(1, landmark);					
 				}
-				else if (strLine.toLowerCase().contains("minor"))
-				{
-					minor = strLine.substring(strLine.indexOf("=")+1).trim();
-				}
-				else if (strLine.toLowerCase().contains("commit"))
-				{
-					commit = strLine.substring(strLine.indexOf("=")+1).trim();
-				} 
 			 }
 			fin.close();
 			return major+"."+minor+"."+commit;	

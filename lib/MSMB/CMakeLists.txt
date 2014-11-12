@@ -38,7 +38,8 @@ execute_process(COMMAND ${git_cmd} ${git_arg1} ${git_arg2}
   OUTPUT_VARIABLE git_ver
 )
 
-file(WRITE version.txt "commit=${git_ver}\n")
+#file(WRITE version.txt "commit=${git_ver}\n")
+file(WRITE version.txt "commit=\n")
 file(APPEND version.txt "major=2\n")
 file(APPEND version.txt "minor=0\n")
 

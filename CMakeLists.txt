@@ -20,27 +20,17 @@ set(SRC
 	${JCMC_SOURCE_DIR}/src/acgui/*.java
 )
 
-#message(STATUS "java path " ${CMAKE_JAVA_INCLUDE_PATH})
-#set(CMAKE_JAVA_INCLUDE_PATH 
-#	${AC_SOURCE_DIR}/lib/jgraphx.jar
-#	${AC_SOURCE_DIR}/lib/copasi.jar
-#)
-#message(STATUS "java path " ${CMAKE_JAVA_INCLUDE_PATH})
+set (git_cmd "git")
+set (git_arg1 "describe") 
+set (git_arg2 "--tags")
+set (git_arg3 "--long")
+execute_process(COMMAND ${git_cmd} ${git_arg1} ${git_arg2} ${git_arg3}
+  WORKING_DIRECTORY ${JCMC_SOURCE_DIR}
+  OUTPUT_VARIABLE git_version
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
 
-#git describe --always --> short id of last commit
-#git rev-parse HEAD --> long id of last commit
-#set (git_cmd "git")
-#set (git_arg1 "describe") 
-#set (git_arg2 "--tags")
-#execute_process(COMMAND ${git_cmd} ${git_arg1} ${git_arg2}
-#  WORKING_DIRECTORY ${ACGUI_SOURCE_DIR}
-#  RESULT_VARIABLE git_result
-#  OUTPUT_VARIABLE git_ver
-#)
-
-file(WRITE version.txt "commit=${git_ver}\n")
-file(APPEND version.txt "major=1\n")
-file(APPEND version.txt "minor=0\n")
+file(WRITE version.txt "JCMC version: ${git_version}")
 
 # create an executable jar
 create_jar(JCMC ${SRC})
