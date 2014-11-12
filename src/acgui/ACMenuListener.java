@@ -570,7 +570,7 @@ public class ACMenuListener implements ActionListener
 			Image image = icon.getImage();
 			Image scaledImage = image.getScaledInstance(100, 100, Image.SCALE_SMOOTH);
 			icon = new ImageIcon(scaledImage);
-			System.out.println(icon.getIconHeight() + "  x " + icon.getIconWidth());
+			//System.out.println(icon.getIconHeight() + "  x " + icon.getIconWidth());
 			JOptionPane.showMessageDialog(null,
 				    info,
 				    "About",

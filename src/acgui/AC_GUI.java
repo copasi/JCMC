@@ -150,6 +150,7 @@ public class AC_GUI extends JFrame
 		String major = "";
 		String minor = "";
 		String commit = "";
+		String notFound = "0.0.0";
 		
 		try 
 		{
@@ -157,7 +158,7 @@ public class AC_GUI extends JFrame
 			InputStream is = new FileInputStream("util/version.txt");
 			if(is == null)
 			{
-				 return "0.9.0";
+				 return notFound;
 			}
 			fin = new BufferedReader(new InputStreamReader(is));
 			while ((strLine = fin.readLine()) != null)
@@ -181,7 +182,7 @@ public class AC_GUI extends JFrame
 		catch (Exception e) 
 		{
 			e.printStackTrace();
-			return "0.9.0";
+			return notFound;
 		}
 	}
 	
