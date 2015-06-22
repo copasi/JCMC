@@ -158,10 +158,6 @@ public class AC_GUI extends JFrame
 		{
 			//InputStream is = getClass().getResourceAsStream("util/version.txt");
 			InputStream is = new FileInputStream("util/version.txt");
-			if(is == null)
-			{
-				 return notFound;
-			}
 			fin = new BufferedReader(new InputStreamReader(is));
 			while ((strLine = fin.readLine()) != null)
 			{
@@ -184,7 +180,8 @@ public class AC_GUI extends JFrame
 		}
 		catch (Exception e) 
 		{
-			e.printStackTrace();
+			// there was an error with the version file
+			//e.printStackTrace();
 			return notFound;
 		}
 	}

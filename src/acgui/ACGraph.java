@@ -150,8 +150,8 @@ public class ACGraph extends mxGraph
 
 		mxGeometry geo = model.getGeometry(cell);
 		Object value = model.getValue(cell);
-		double currentX = geo.getX();
-		double currentY = geo.getY();
+		double prevX = geo.getX();
+		double prevY = geo.getY();
 		
 		if (geo != null)
 		{
@@ -182,73 +182,76 @@ public class ACGraph extends mxGraph
 					{
 						double parentWidth = parentGeo.getWidth();
 						double parentHeight = parentGeo.getHeight();
-						double relativeDx = 0.0;
-						double relativeDy = 0.0;
-						double newX = 0.0;
-						double newY = 0.0;
-
-						if (((currentX == 0.0) || (currentX == 1.0)) && ((currentY != 0.0) && (currentY != 1.0)))
-						{
-							// port is on left or right side of the parent
-
-							// normalize the Y translation
-							relativeDy = dy / parentHeight;
-						}
-						else if (((currentY == 0.0) || (currentY == 1.0)) && ((currentX != 0.0) && (currentX != 1.0)))
-						{
-							// port is on the top or bottom of the parent
-
-							// normalize the X translation
-							relativeDx = dx / parentWidth;
-						}
-						else
-						{
-							// port is in a corner
-							//System.out.println("port is in a corner");
-							if (Math.abs(dx) > Math.abs(dy))
-							{
-								relativeDx = dx / parentWidth;
-							}
-							else
-							{
-								relativeDy = dy / parentHeight;
-							}
-						}
+						double relativeDx = dx / parentWidth;
+						double relativeDy = dy / parentHeight;
+						double currentX = prevX + relativeDx;
+						double currentY = prevY + relativeDy;
+						double newX = currentX;
+						double newY = currentY;
 
 						// Calculate the relative translation
 
-						if (relativeDx < 0) // the port was translated to the left
+						if (((currentX > 0.0) && (currentX < 1.0)) && ((currentY > 0.0) && (currentY < 1.0)))
 						{
-							// ensure the port stays on the parent border
-							newX = Math.max(0.0, (currentX + relativeDx));
-						}
-						else if (relativeDx > 0) // the port was translated to the right
-						{
-							// ensure the port stays on the parent border
-							newX = Math.min(1.0, (currentX + relativeDx));
+							// the port was dropped in the interior of the parent
+							if (currentX >= currentY)
+							{
+								if ((1.0-currentX) < currentY)
+								{
+									newX = 1.0;
+								}
+								else
+								{
+									newY = 0.0;
+								}
+							}
+							else
+							{
+								if ((1.0-currentY) < currentX)
+								{
+									newY = 1.0;
+								}
+								else
+								{
+									newX = 0.0;
+								}
+							}
 						}
 						else
 						{
-							// no horizontal translation occurred
-							newX = currentX;
-						}
+							// the port was dropped on the exterior of the parent
+							if (relativeDx < 0) // the port was translated to the left
+							{
+								// ensure the port stays on the parent border
+								newX = Math.max(0.0, currentX);
+							}
+							else if (relativeDx > 0) // the port was translated to the right
+							{
+								// ensure the port stays on the parent border
+								newX = Math.min(1.0, currentX);
+							}
+							else
+							{
+								// no horizontal translation occurred
+								newX = prevX;
+							}
 
-						if (relativeDy < 0) // the port was translated down
-						{
-							// ensure the port stays on the parent border
-							newY = Math.max(0.0, (currentY + relativeDy));
+							if (relativeDy < 0) // the port was translated down
+							{
+								// ensure the port stays on the parent border
+								newY = Math.max(0.0, currentY);
+							}
+							else if (relativeDy > 0) // the port was translated up
+							{
+								// ensure the port stays on the parent border
+								newY = Math.min(1.0, currentY);
+							}
+							else
+							{
+								// no vertical translation occurred
+								newY = prevY;
+							}
 						}
-						else if (relativeDy > 0) // the port was translated up
-						{
-							// ensure the port stays on the parent border
-							newY = Math.min(1.0, (currentY + relativeDy));
-						}
-						else
-						{
-							// no vertical translation occurred
-							newY = currentY;
-						}
-
 						// set the new coordinates
 						geo.setX(newX);
 						geo.setY(newY);

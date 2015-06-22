@@ -133,7 +133,7 @@ public class SubmoduleAddEditor extends JDialog implements TreeSelectionListener
 		checkBox = new JCheckBox("Save as a local definition");
 		checkBox.setFont(new Font("Dialog", Font.PLAIN, 11));
 		checkBox.setSelected(true);
-		checkBox.setEnabled(false);
+		checkBox.setEnabled(true);
 		
 		paddingPanel = new JPanel();
 		//paddingPanel.setLayout(new BorderLayout());
@@ -237,7 +237,7 @@ public class SubmoduleAddEditor extends JDialog implements TreeSelectionListener
 	            	{
 	            		addButton.setEnabled(true);
 	            		checkBox.setSelected(true);
-	            		//checkBox.setEnabled(true);
+	            		checkBox.setEnabled(true);
 	            		msg1 = "Valid SBML file.";
 	            		msg2 = "Level " + sDoc.getLevel() + " Version " + sDoc.getVersion() + ".";
 	            	}
@@ -295,8 +295,8 @@ public class SubmoduleAddEditor extends JDialog implements TreeSelectionListener
 			if (file != null)
 			{
 				dispose();
-				//AC_GUI.loadSubmodule(file.getAbsolutePath(), AC_GUI.activeModule, !checkBox.isSelected());
-				AC_GUI.loadSubmodule(file.getAbsolutePath(), AC_GUI.activeModule, false);
+				AC_GUI.loadSubmodule(file.getAbsolutePath(), AC_GUI.activeModule, !checkBox.isSelected());
+				//AC_GUI.loadSubmodule(file.getAbsolutePath(), AC_GUI.activeModule, false);
 			}
 		}else if (ae.getActionCommand().equalsIgnoreCase("cancel"))
 		{

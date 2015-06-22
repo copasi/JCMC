@@ -3,11 +3,12 @@ package acgui;
 /**
  * An enum to represent the type of variable.
  * @author T.C. Jones
+ * @version 01/23/2015
  */
 public enum VariableType
 {
 
-	SPECIES("Species"), GLOBAL_QUANTITY("Global Quantity");
+	SPECIES("Species"), GLOBAL_QUANTITY("Module Quantity");
 	
 	private final String name;
 	

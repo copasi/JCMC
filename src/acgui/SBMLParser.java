@@ -201,31 +201,45 @@ public class SBMLParser {
 		return libsbml.readSBMLFromFile(fileName);
 	}
 	
-	public static ModuleDefinition importExternalDefinition(String fileName, String modelRef)
+	public static ModuleDefinition importExternalDefinition(ExternalModelDefinition moduleDefinition, ModuleDefinition parent, SBMLNamespaces nameSpaces, GeneralGlyph glyph)
 	{
+		String sbmlID = moduleDefinition.getId();
+		String name = moduleDefinition.getName();
+		String source = moduleDefinition.getSource();
+		String modelRef = moduleDefinition.getModelRef();
+		String md5 = moduleDefinition.getMd5();
+		String sbmlString;
 		SBMLFileResolver fileResolver = new SBMLFileResolver();
-		SBMLDocument externalDoc = fileResolver.resolve(fileName);
+		SBMLDocument externalDoc = fileResolver.resolve(source);
 		if (externalDoc == null)
 		{
 			return null;
 		}
 		else
 		{
+			/*
 			JOptionPane.showMessageDialog(null,
 				    "Time to import an external definition.",
 				    "Information",
 				    JOptionPane.INFORMATION_MESSAGE);
+			*/
 			if (modelRef.isEmpty())
 			{
 				// return the containing model
-				
+				removePluginData(externalDoc);
+				sbmlString = libsbml.writeSBMLToString(externalDoc);
+				ModuleDefinition definition = AC_Utility.createModuleDefinition(sbmlID, name, sbmlString, parent);
+				definition.setExternal(true);
+				definition.setExternalSource(source);
+				definition.setExternalModelRef(modelRef);
+				definition.setmd5(md5);
+				return definition;
 			}
 			else
 			{
 				// find the correct Model to import
 				// search listOfModelDefinitions
 				// search listOfExternalModelDefinitions
-				
 			}
 		}
 		return null;
@@ -1372,6 +1386,7 @@ public class SBMLParser {
 				{
 					// module definition is internal
 					moduleDefinition = internalModuleDefinition;
+					//System.out.println(moduleDefinition.toSBML());
 					definition = importModuleDefinition(moduleDefinition, parent.getModuleDefinition(), nameSpaces, glyph);
 				}
 				else if ((internalModuleDefinition == null) && (externalModuleDefinition != null))
@@ -1379,12 +1394,13 @@ public class SBMLParser {
 					// module definition is external
 					String externalSource = externalModuleDefinition.getSource();
 					String md5 = externalModuleDefinition.getMd5();
-					String externalModelRef = externalModuleDefinition.getModelRef();
 					boolean validExternalFile = AC_Utility.validateExternalFile(externalSource, md5);
 					if (validExternalFile)
 					{
-						definition = importExternalDefinition(externalSource, externalModelRef);
+						//definition = importExternalDefinition(externalSource, externalModelRef);
+						definition = importExternalDefinition(externalModuleDefinition, parent.getModuleDefinition(), nameSpaces, glyph);
 						moduleDefinition = externalModuleDefinition.getReferencedModel();
+						//System.out.println(moduleDefinition.toSBML());
 					}
 				}
 				else

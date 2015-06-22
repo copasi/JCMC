@@ -1603,6 +1603,9 @@ public class AC_Utility
 			return false;
 		}
 		
+		System.out.println("oldmd5: " + md5);
+		System.out.println("newmd5: " + newmd5);
+		System.out.println("External file valid? " + md5.equals(newmd5));
 		if (md5.equals(newmd5))
 		{
 			return true;

@@ -225,12 +225,9 @@ public class AC_IO
 		if (external)
 		{
 			boolean validExternalFile = AC_Utility.validateExternalFile(externalSource, md5);
-			if (validExternalFile)
+			if (!validExternalFile)
 			{
-				return SBMLParser.importExternalDefinition(externalSource, externalModelRef);
-			}
-			else
-			{
+				//return SBMLParser.importExternalDefinition(externalSource, externalModelRef);
 				return null;
 			}
 		}

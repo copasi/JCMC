@@ -483,7 +483,7 @@ public class ModelBuilder
 			newGlobalQList = new Vector<String>(globalq.size());
 			for (int i = 0; i < globalq.size(); i++)
 			{
-				newGlobalQList.add(i, globalq.get(i) + " - Global Quantity");
+				newGlobalQList.add(i, globalq.get(i) + " - Module Quantity");
 			}
 		}
 		catch (Exception e)
