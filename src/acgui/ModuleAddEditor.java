@@ -28,13 +28,15 @@ public class ModuleAddEditor extends JDialog implements ActionListener
 	private mxGraphComponent graphComponent;
 	private JTextField textfield;
 	private String acceptButtonName;
+	private String moduleType;
 	
-	public ModuleAddEditor(Module iParent, mxGraphComponent iGraphComponent, String buttonName)
+	public ModuleAddEditor(Module iParent, mxGraphComponent iGraphComponent, String buttonName, String type)
 	{
 		super();
 		parent = iParent;
 		graphComponent = iGraphComponent;
 		acceptButtonName = buttonName;
+		moduleType = type;
 		initializeComponents();
 	}
 
@@ -42,7 +44,7 @@ public class ModuleAddEditor extends JDialog implements ActionListener
 	{
 		JPanel upperPanel = new JPanel();
 		
-		JLabel label = new JLabel("Module name:");
+		JLabel label = new JLabel(moduleType + " name:");
 		//label.setFont(new Font("Serif", Font.PLAIN, 14));
 		textfield = new JTextField();
 		textfield.setColumns(20);
@@ -73,7 +75,7 @@ public class ModuleAddEditor extends JDialog implements ActionListener
 		//getContentPane().setPreferredSize(new Dimension(650, 500));
 		this.getRootPane().setDefaultButton(addButton);
 		
-		setTitle("New Module");
+		setTitle("New " + moduleType);
 		setSize(650, 500);
 		pack();
 		setLocationRelativeTo(graphComponent);
@@ -85,7 +87,7 @@ public class ModuleAddEditor extends JDialog implements ActionListener
 		if (ae.getActionCommand().equals(acceptButtonName))
 		{
 			String name = textfield.getText();
-			if (AC_Utility.moduleNameValidation(name, true))
+			if (AC_Utility.moduleNameValidation(parent, name, true))
 			{
 				if (parent == null)
 				{

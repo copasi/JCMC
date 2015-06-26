@@ -5,6 +5,8 @@ package acgui;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 
 import javax.swing.tree.DefaultMutableTreeNode;
 
@@ -33,6 +35,7 @@ public class Module implements Serializable
 	private mxGeometry drawingCellGeometry_Submodule;
 	private String drawingCellStyle;
 	private ArrayList<Module> children;
+	private Set<String> submoduleNames;
 	private ArrayList<ACComponentNode> ports;
 	private ArrayList<ConnectionNode> connections;
 	private ArrayList<ACComponentNode> visibleVariables;
@@ -41,6 +44,7 @@ public class Module implements Serializable
 	public Module()
 	{
 		children = new ArrayList<Module>();
+		submoduleNames = new HashSet<String>();
 		ports = new ArrayList<ACComponentNode>();
 		connections = new ArrayList<ConnectionNode>();
 		visibleVariables = new ArrayList<ACComponentNode>();
@@ -194,6 +198,7 @@ public class Module implements Serializable
 	public void addChild(Module mod)
 	{
 		children.add(mod);
+		submoduleNames.add(mod.getName());
 	}
 	
 	/**
@@ -203,6 +208,7 @@ public class Module implements Serializable
 	public void removeChild(Module mod)
 	{
 		children.remove(mod);
+		submoduleNames.remove(mod.getName());
 	}
 	
 	/**
@@ -304,6 +310,17 @@ public class Module implements Serializable
 	public ArrayList<ACComponentNode> getEquivalences()
 	{
 		return equivalences;
+	}
+	
+	/**
+	 * Check if the given String is the name of a submodule.
+	 * @param name the name to check
+	 * @return true if there exists a submodule with the given name,
+	 * otherwise false.
+	 */
+	public boolean checkSubmoduleName(String name)
+	{
+		return submoduleNames.contains(name);
 	}
 	
 	/**

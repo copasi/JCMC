@@ -36,6 +36,7 @@ public class AC_Utility
 			parent.addChild(module);
 		}
 		moduleNameList.add(name);
+
 		return module;
 	}
 	
@@ -940,6 +941,21 @@ public class AC_Utility
 		return null;
 	}
 	
+	public static String promptUserForNewModuleName(Module parent, String moduleType)
+	{
+		String message = "Enter " + moduleType + " name:";
+		String newName = JOptionPane.showInputDialog(message, "");
+		while (newName != null)
+		{
+			if (moduleNameValidation(parent, newName, true))
+			{
+				return newName;
+			}
+			newName = JOptionPane.showInputDialog(message, "");
+		}
+		return null;
+	}
+	
 	public static void promptUserEditModuleName(String initialName)
 	{
 		String msg = "Please enter a name:";
@@ -992,6 +1008,59 @@ public class AC_Utility
 		}
 		
 		return false;
+	}
+	
+	public static boolean moduleNameValidation(Module parent, String name, boolean displayMessage)
+	{
+		String message;
+		
+		if ((name == null) || (name.isEmpty()))
+		{
+			if (displayMessage)
+			{
+				message = "Please enter a name.";
+				JOptionPane.showMessageDialog(null, message, "Invalid Name", JOptionPane.WARNING_MESSAGE);
+			}
+			return false;
+		}
+		
+		if (sbmlNameValidation(name, displayMessage))
+		{
+			if (parent != null)
+			{
+				// the name in question belongs to a submodule
+				if (parent.getName().equals(name))
+				{
+					// a submodule cannot have the same name as the active module
+					if (displayMessage)
+					{
+						message = "The active module is already named \"" + name + "\"." + eol;
+						message += "A submodule cannot have the same name as the active module." + eol;
+						message += "Please enter a different name.";
+						JOptionPane.showMessageDialog(null, message, "Invalid Name", JOptionPane.ERROR_MESSAGE);
+					}
+					return false;
+				}
+				else if (submoduleNameUsed(parent, name))
+				{
+					if (displayMessage)
+					{
+						message = "There already exists a Submodule with the name \"" + name + "\"." + eol;
+						message += "Please enter a different name.";
+						JOptionPane.showMessageDialog(null, message, "Invalid Name", JOptionPane.ERROR_MESSAGE);
+					}
+					return false;
+				}
+			}
+			return true;
+		}
+		
+		return false;
+	}
+	
+	public static boolean submoduleNameUsed(Module parent, String submoduleName)
+	{
+		return parent.checkSubmoduleName(submoduleName);
 	}
 	
 	public static int promptUserExternalModuleChange(Module module)

@@ -63,14 +63,16 @@ public class SubmoduleAddEditor extends JDialog implements TreeSelectionListener
 	private mxGraphComponent graphComponent;
 	private File file;
 	private boolean lastSelectionWasFromList;
+	private Module parent;
 	private SubmoduleDefinitionPanel submoduleDefinitions;
 	
 	/**
 	 * 
 	 */
-	public SubmoduleAddEditor(mxGraphComponent iGraphComponent)
+	public SubmoduleAddEditor(Module iParent, mxGraphComponent iGraphComponent)
 	{
 		super();
+		parent = iParent;
 		graphComponent = iGraphComponent;
 		initializeComponents();
 		lastSelectionWasFromList = false;

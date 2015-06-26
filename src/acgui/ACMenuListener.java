@@ -57,7 +57,7 @@ public class ACMenuListener implements ActionListener
 			}
 			else
 			{
-				moduleAddEditor = new ModuleAddEditor(null, AC_GUI.drawingBoard.graphComponent, "Create");
+				moduleAddEditor = new ModuleAddEditor(null, AC_GUI.drawingBoard.graphComponent, "Create", "Module");
 				moduleAddEditor.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 				moduleAddEditor.setModal(true);
 				moduleAddEditor.setVisible(true);
@@ -346,7 +346,7 @@ public class ACMenuListener implements ActionListener
 				*/
 				if (AC_GUI.canModuleAddSubmodule(AC_GUI.activeModule))
 				{
-					moduleAddEditor = new ModuleAddEditor(AC_GUI.activeModule, AC_GUI.drawingBoard.graphComponent, "Add");
+					moduleAddEditor = new ModuleAddEditor(AC_GUI.activeModule, AC_GUI.drawingBoard.graphComponent, "Add", "Submodule");
 					moduleAddEditor.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 					moduleAddEditor.setModal(true);
 					moduleAddEditor.setVisible(true);
@@ -372,7 +372,7 @@ public class ACMenuListener implements ActionListener
 				*/
 				if (AC_GUI.canModuleAddSubmodule(AC_GUI.activeModule))
 				{
-					SubmoduleAddEditor tae = new SubmoduleAddEditor(AC_GUI.drawingBoard.graphComponent);
+					SubmoduleAddEditor tae = new SubmoduleAddEditor(AC_GUI.activeModule, AC_GUI.drawingBoard.graphComponent);
 					tae.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 					tae.setModal(true);
 					tae.setVisible(true);
