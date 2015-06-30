@@ -39,14 +39,15 @@ public class VariableAddEditor extends JDialog implements ActionListener
 	private JTextField textfield;
 	private JComboBox comboBox1;
 	private mxGraphComponent graphComponent;
-	
+	private Module module;
 	
 	/**
 	 * 
 	 */
-	public VariableAddEditor(mxGraphComponent iGraphComponent)
+	public VariableAddEditor(Module iModule, mxGraphComponent iGraphComponent)
 	{
 		super();
+		module = iModule;
 		graphComponent = iGraphComponent;
 		initializeComponents();
 	}
@@ -109,7 +110,7 @@ public class VariableAddEditor extends JDialog implements ActionListener
 			}
 			else
 			{
-				if (AC_Utility.showVariableValidation((String)comboBox1.getSelectedItem()))
+				if (AC_Utility.showVariableValidation((String)comboBox1.getSelectedItem(), module))
 				{
 					//AC_GUI.addVisibleVariable((String)comboBox1.getSelectedItem());
 					AC_GUI.showVariable((String)comboBox1.getSelectedItem());

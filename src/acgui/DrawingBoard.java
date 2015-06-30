@@ -3547,7 +3547,7 @@ public class DrawingBoard extends JPanel
 						{
 							if (AC_GUI.canModuleBeModified(activeModule))
 							{
-								VariableAddEditor varAddEditor = new VariableAddEditor(graphComponent);
+								VariableAddEditor varAddEditor = new VariableAddEditor(activeModule, graphComponent);
 								varAddEditor.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 								varAddEditor.setModal(true);
 								varAddEditor.setVisible(true);

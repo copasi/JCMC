@@ -700,7 +700,7 @@ public class AC_GUI extends JFrame
 	
 	public static void addVisibleVariable(String refName)
 	{
-		VariableType vType= null;
+		VariableType vType = null;
 		if (refName.endsWith(VariableType.SPECIES.toString()))
 		{
 			refName = refName.replace(" - " + VariableType.SPECIES.toString(), "");

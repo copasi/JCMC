@@ -1278,27 +1278,21 @@ public class AC_Utility
 		return n;
 	}
 	
-	public static boolean showVariableValidation(String refName)
+	public static boolean showVariableValidation(String extendedRefName, Module module)
 	{
-		ListIterator<ACComponentNode> vars = AC_GUI.activeModule.getVisibleVariables().listIterator();
-		ListIterator<ACComponentNode> eNodes = AC_GUI.activeModule.getEquivalences().listIterator();
-		String oldRefName = refName;
-		String msg;
+		String shortRefName = "";
 		VariableType vType = null;
+		ModuleDefinition moduleDefinition = module.getModuleDefinition();
 		
 		// trim the refName
-		if (refName.endsWith(VariableType.SPECIES.toString()))
+		if (extendedRefName.endsWith(VariableType.SPECIES.toString()))
 		{
-			System.out.println("Old refName: " + refName);
-			refName = refName.replace(" - " + VariableType.SPECIES.toString(), "");
-			System.out.println("New refName: " + refName);
+			shortRefName = extendedRefName.replace(" - " + VariableType.SPECIES.toString(), "");
 			vType = VariableType.SPECIES;
 		}
-		else if (refName.endsWith(VariableType.GLOBAL_QUANTITY.toString()))
+		else if (extendedRefName.endsWith(VariableType.GLOBAL_QUANTITY.toString()))
 		{
-			System.out.println("Old refName: " + refName);
-			refName = refName.replace(" - " + VariableType.GLOBAL_QUANTITY.toString(), "");
-			System.out.println("New refName: " + refName);
+			shortRefName = extendedRefName.replace(" - " + VariableType.GLOBAL_QUANTITY.toString(), "");
 			vType = VariableType.GLOBAL_QUANTITY;
 		}
 		else
@@ -1306,36 +1300,16 @@ public class AC_Utility
 			System.err.println("AC_GUI.visibleVariableValidation: A valid VariableType was not found.");
 		}
 		
-		VisibleVariableNode currentVar;
-		while (vars.hasNext())
+		if (moduleDefinition.checkDisplayedVariableRefName(extendedRefName))
 		{
-			currentVar = (VisibleVariableNode)vars.next();
-			
-			if ((refName.compareToIgnoreCase(currentVar.getVisibleVariableDefinition().getRefName()) == 0) && (vType.equals(currentVar.getVisibleVariableDefinition().getVariableType())))
-			{
-				//System.out.println("comp refName: " + refName.compareToIgnoreCase(currentPort.getRefName()));
-				msg = "\"" + oldRefName + "\"";
-				msg += " is already visible.";
-				msg += " Cannot show the same variable multiple times.";
-				JOptionPane.showMessageDialog(null, msg);
-				return false;
-			}
+			String message = vType + " " + shortRefName;
+			message += " is already visible." + eol;
+			message += "Cannot show the same " + vType.toString().toLowerCase() + " multiple times.";
+			//JOptionPane.showMessageDialog(null, message);
+			JOptionPane.showMessageDialog(null, message, "Invalid Operation", JOptionPane.ERROR_MESSAGE);
+			return false;
 		}
 		
-		EquivalenceNode currenteNode;
-		while (eNodes.hasNext())
-		{
-			currenteNode = (EquivalenceNode)eNodes.next();
-			
-			if ((refName.compareToIgnoreCase(currenteNode.getEquivalenceDefinition().getRefName()) == 0) && (vType.equals(VariableType.SPECIES)))
-			{
-				msg = "\"" + oldRefName + "\"";
-				msg += " is already visible.";
-				msg += " Cannot show the same variable multiple times.";
-				JOptionPane.showMessageDialog(null, msg);
-				return false;
-			}
-		}
 		return true;
 	}
 	
@@ -1370,7 +1344,7 @@ public class AC_Utility
 		{
 			String message = vType + " " + shortRefName;
 			message += " is already associated with a Port." + eol;
-			message += "Cannot associate the same " + vType + " with multiple Ports.";
+			message += "Cannot associate the same " + vType.toString().toLowerCase() + " with multiple Ports.";
 			//JOptionPane.showMessageDialog(null, message);
 			JOptionPane.showMessageDialog(null, message, "Invalid Name", JOptionPane.ERROR_MESSAGE);
 			return false;
@@ -1387,7 +1361,7 @@ public class AC_Utility
 		{
 			String message = "\"" + portName + "\"";
 			message += " is already the name of a Port." + eol;
-			message += "Cannot assign the same Port Name to multiple Ports.";
+			message += "Cannot assign the same name to multiple Ports.";
 			//JOptionPane.showMessageDialog(null, message);
 			JOptionPane.showMessageDialog(null, message, "Invalid Name", JOptionPane.ERROR_MESSAGE);
 			return false;

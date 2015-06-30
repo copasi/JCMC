@@ -33,6 +33,7 @@ public class ModuleDefinition implements Serializable
 	private ArrayList<Module> instances;
 	private Set<String> portRefNames;
 	private Set<String> portNames;
+	private Set<String> displayedVariables;
 	
 	/**
 	 * 
@@ -47,6 +48,7 @@ public class ModuleDefinition implements Serializable
 		instances = new ArrayList<Module>();
 		portRefNames = new HashSet<String>();
 		portNames = new HashSet<String>();
+		displayedVariables = new HashSet<String>();
 	}
 	
 	public ModuleDefinition(String iName)
@@ -259,11 +261,15 @@ public class ModuleDefinition implements Serializable
 	public void addVisibleVariable(VisibleVariableDefinition var)
 	{
 		visibleVariables.add(var);
+		String extendedRefName = var.getRefName() + " - " + var.getVariableType();
+		displayedVariables.add(extendedRefName);
 	}
 	
 	public void removeVisibleVariable(VisibleVariableDefinition var)
 	{
 		visibleVariables.remove(var);
+		String extendedRefName = var.getRefName() + " - " + var.getVariableType();
+		displayedVariables.remove(extendedRefName);
 	}
 	
 	public ArrayList<ACComponentDefinition> getVisibleVariables()
@@ -274,11 +280,15 @@ public class ModuleDefinition implements Serializable
 	public void addEquivalence(EquivalenceDefinition eNode)
 	{
 		equivalences.add(eNode);
+		String extendedRefName = eNode.getRefName() + " - " + eNode.getVariableType();
+		displayedVariables.add(extendedRefName);
 	}
 	
 	public void removeEquivalence(EquivalenceDefinition eNode)
 	{
 		equivalences.remove(eNode);
+		String extendedRefName = eNode.getRefName() + " - " + eNode.getVariableType();
+		displayedVariables.remove(extendedRefName);
 	}
 	
 	public ArrayList<ACComponentDefinition> getEquivalences()
@@ -333,6 +343,19 @@ public class ModuleDefinition implements Serializable
 	public boolean checkPortName(String name)
 	{
 		return portNames.contains(name);
+	}
+	
+	/**
+	 * Check if the given String is the ref name of a
+	 * visible variable or equivalence currently being displayed.
+	 * @param name the name to check
+	 * @return true if there exists a visible variable or equivalence
+	 * with the given ref name,
+	 * otherwise false.
+	 */
+	public boolean checkDisplayedVariableRefName(String name)
+	{
+		return displayedVariables.contains(name);
 	}
 	
 	@Override
