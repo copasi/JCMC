@@ -226,7 +226,7 @@ public class TreeView extends JPanel implements TreeSelectionListener
 				//tree.startEditingAtPath(tree.getSelectionPath());
 				if (AC_GUI.canModuleBeModified(AC_GUI.activeModule))
 				{
-					AC_Utility.promptUserEditModuleName(AC_GUI.selectedModule.getName());
+					AC_Utility.promptUserEditModuleName(AC_GUI.selectedModule, AC_GUI.selectedModule.getName());
 				}
 			}
 		});

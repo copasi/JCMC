@@ -142,7 +142,7 @@ public class PortAddEditor extends JDialog implements ActionListener
 			}
 			else
 			{
-				if (AC_Utility.portValidation(textfield.getText(), (String)comboBox1.getSelectedItem()))
+				if (AC_Utility.portValidation(module, textfield.getText(), (String)comboBox1.getSelectedItem()))
 				{
 					AC_GUI.addPort(module, (String)comboBox1.getSelectedItem(), textfield.getText(), (PortType)comboBox2.getSelectedItem());
 					dispose();

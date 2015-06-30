@@ -87,7 +87,7 @@ public class ModuleAddEditor extends JDialog implements ActionListener
 		if (ae.getActionCommand().equals(acceptButtonName))
 		{
 			String name = textfield.getText();
-			if (AC_Utility.moduleNameValidation(parent, name, true))
+			if (AC_Utility.newModuleNameValidation(parent, name, true))
 			{
 				if (parent == null)
 				{

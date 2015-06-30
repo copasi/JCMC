@@ -286,7 +286,7 @@ public class SubmoduleAddEditor extends JDialog implements TreeSelectionListener
 				ModuleDefinition definition = (ModuleDefinition)submoduleDefinitions.getSelected().getUserObject();
 				if (definition != null)
 				{
-					String newInstanceName = AC_Utility.promptUserForNewModuleName("Enter a Module name for the new instance.");
+					String newInstanceName = AC_Utility.promptUserForNewModuleName(parent, "Enter a Module name for the new instance.");
 					if (newInstanceName != null)
 					{
 						AC_GUI.newModuleInstance(newInstanceName, definition, AC_GUI.activeModule);

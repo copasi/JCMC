@@ -133,7 +133,7 @@ public class CopasiUtility
 		if (dataModel != null)
 		{
 			//moduleDefinitionName = validateModuleDefinitionName(dataModel);
-			names = assignNames(dataModel);
+			names = assignNames(dataModel, null);
 			if (names != null)
 			{
 				mod = AC_Utility.createModule(names[0], names[1], false);
@@ -160,7 +160,7 @@ public class CopasiUtility
 		if (dataModel != null)
 		{
 			//moduleDefinitionName = validateModuleDefinitionName(dataModel);
-			names = assignNames(dataModel);
+			names = assignNames(dataModel, parent);
 			if (names != null)
 			{
 				mod = AC_Utility.createModule(names[0], names[1], parent, false);
@@ -276,14 +276,14 @@ public class CopasiUtility
 		System.out.println();
 	}
 	
-	private static String[] assignNames(CCopasiDataModel dataModel)
+	private static String[] assignNames(CCopasiDataModel dataModel, Module parent)
 	{
 		String names[] = new String[2];
 		String moduleDefinitionName;
 		String moduleName;
 		
-		moduleDefinitionName = validateModuleDefinitionName(dataModel);
-		moduleName = validateModuleName(moduleDefinitionName);
+		moduleDefinitionName = validateModuleDefinitionName(dataModel, parent);
+		moduleName = validateModuleName(moduleDefinitionName, parent);
 		
 		if ((moduleDefinitionName == null) || (moduleName == null))
 		{
@@ -331,7 +331,7 @@ public class CopasiUtility
 		return dataModel;
 	}
 	
-	private static String validateModuleDefinitionName(CCopasiDataModel dataModel)
+	private static String validateModuleDefinitionName(CCopasiDataModel dataModel, Module parent)
 	{
 		String modelName = dataModel.getModel().getObjectName();
 		
@@ -358,7 +358,7 @@ public class CopasiUtility
 		return modelName;
 	}
 	
-	private static String validateModuleName(String definitionName)
+	private static String validateModuleName(String definitionName, Module parent)
 	{
 		if (definitionName == null)
 		{
@@ -370,7 +370,7 @@ public class CopasiUtility
 		
 		while (!validName)
 		{
-			newName = AC_Utility.promptUserForNewModuleName("Enter a Module name:");
+			newName = AC_Utility.promptUserForNewModuleName(parent, "Enter a Module name:");
 			if (newName == null)
 			{
 				return null;

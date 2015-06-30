@@ -233,7 +233,7 @@ public class AC_IO
 		}
 		
 		//ModuleDefinition definition = new ModuleDefinition(name, parent, msmbData);
-		name = validateModuleName(name);
+		//name = validateModuleName(name);
 		if (name == null)
 		{
 			return null;
@@ -865,7 +865,7 @@ public class AC_IO
 		//AC_GUI.drawingBoard.createCell(module);
 		//definition.addInstance(module);
 		*/
-		name = validateModuleName(name);
+		name = validateModuleName(name, parent);
 		if (name == null)
 		{
 			return null;
@@ -1450,11 +1450,11 @@ public class AC_IO
 		return null;
 	}
 	
-	private static String validateModuleName(String name)
+	private static String validateModuleName(String name, Module parent)
 	{
-		if (!AC_Utility.moduleNameValidation(name, true))
+		if (!AC_Utility.newModuleNameValidation(parent, name, true))
 		{
-			return AC_Utility.promptUserForNewModuleName("Enter Module name:");	
+			return AC_Utility.promptUserForNewModuleName(parent, "Enter Module name:");	
 		}
 		return name;
 	}

@@ -989,17 +989,24 @@ public class AC_GUI extends JFrame
 	
 	public static void updatePort(PortNode port, String value, int col)
 	{
+		PortDefinition portDefinition = port.getPortDefinition();
+		ModuleDefinition moduleDefinition = portDefinition.getParent();
+		
 		switch (col)
 		{
 			case 1:
-				port.getPortDefinition().setRefName(value);
+				String extendedOldRefName = portDefinition.getRefName() + " - " + portDefinition.getVariableType();
+				String extendedNewRefName = value + " - " + portDefinition.getVariableType();
+				moduleDefinition.updatePortRefName(extendedOldRefName, extendedNewRefName);
+				portDefinition.setRefName(value);
 				break;
 			case 2:
 				removeConnectionsFromPort(port);
-				port.getPortDefinition().setType(PortType.valueOf(value.toUpperCase()));
+				portDefinition.setType(PortType.valueOf(value.toUpperCase()));
 				break;
 			case 3:
-				port.getPortDefinition().setName(value);
+				moduleDefinition.updatePortName(portDefinition.getName(), value);
+				portDefinition.setName(value);
 				break;
 		}
 		

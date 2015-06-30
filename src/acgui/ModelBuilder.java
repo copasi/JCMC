@@ -571,9 +571,11 @@ public class ModelBuilder
 								return;
 							}
 						}
-						if (AC_Utility.moduleNameValidation(after.getName(), true))
+						if (AC_Utility.newModuleNameValidation(loadedModule.getParent(), after.getName(), true))
 						{
-							AC_Utility.changeModuleName(AC_GUI.activeModule, after.getName(), true);
+							System.out.println(loadedModule.getName());
+							System.out.println(AC_GUI.activeModule.getName());
+							AC_Utility.changeModuleName(loadedModule, after.getName(), true);
 						}
 						else
 						{

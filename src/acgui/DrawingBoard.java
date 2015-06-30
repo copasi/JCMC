@@ -3514,7 +3514,7 @@ public class DrawingBoard extends JPanel
 							//graphComponent.startEditingAtCell(cell);
 							if (AC_GUI.canModuleBeModified(activeModule))
 							{
-								AC_Utility.promptUserEditModuleName(AC_GUI.selectedModule.getName());
+								AC_Utility.promptUserEditModuleName(activeModule, activeModule.getName());
 							}
 						}
 					});
@@ -3569,7 +3569,7 @@ public class DrawingBoard extends JPanel
 							//graphComponent.startEditingAtCell(cell);
 							if (AC_GUI.canModuleBeModified(activeModule))
 							{
-								AC_Utility.promptUserEditModuleName(AC_GUI.selectedModule.getName());
+								AC_Utility.promptUserEditModuleName(AC_GUI.selectedModule, AC_GUI.selectedModule.getName());
 							}
 						}
 					});

@@ -35,20 +35,20 @@ public class Module implements Serializable
 	private mxGeometry drawingCellGeometry_Submodule;
 	private String drawingCellStyle;
 	private ArrayList<Module> children;
-	private Set<String> submoduleNames;
 	private ArrayList<ACComponentNode> ports;
 	private ArrayList<ConnectionNode> connections;
 	private ArrayList<ACComponentNode> visibleVariables;
 	private ArrayList<ACComponentNode> equivalences;
+	private Set<String> submoduleNames;
 	
 	public Module()
 	{
 		children = new ArrayList<Module>();
-		submoduleNames = new HashSet<String>();
 		ports = new ArrayList<ACComponentNode>();
 		connections = new ArrayList<ConnectionNode>();
 		visibleVariables = new ArrayList<ACComponentNode>();
 		equivalences = new ArrayList<ACComponentNode>();
+		submoduleNames = new HashSet<String>();
 	}
 	
 	public Module(String iName, Module iParent)

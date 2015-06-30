@@ -941,13 +941,13 @@ public class AC_Utility
 		return null;
 	}
 	
-	public static String promptUserForNewModuleName(Module parent, String moduleType)
+	public static String promptUserForNewModuleName(Module parent, String message)
 	{
-		String message = "Enter " + moduleType + " name:";
+		//String message = "Enter " + moduleType + " name:";
 		String newName = JOptionPane.showInputDialog(message, "");
 		while (newName != null)
 		{
-			if (moduleNameValidation(parent, newName, true))
+			if (newModuleNameValidation(parent, newName, true))
 			{
 				return newName;
 			}
@@ -966,6 +966,22 @@ public class AC_Utility
 			if (moduleNameValidation(name, true))
 			{
 				changeModuleName(AC_GUI.selectedModule, name, false);
+				return;
+			}
+			name = (String)JOptionPane.showInputDialog(null, msg, "Edit Module Name", JOptionPane.QUESTION_MESSAGE, null, null, initialName);
+		}
+	}
+	
+	public static void promptUserEditModuleName(Module module, String initialName)
+	{
+		String msg = "Please enter a name:";
+		String name = (String)JOptionPane.showInputDialog(null, msg, "Edit Module Name", JOptionPane.QUESTION_MESSAGE, null, null, initialName);
+		while (name != null)
+		{
+			name = name.trim();
+			if (editModuleNameValidation(module, name, true))
+			{
+				changeModuleName(module, name, false);
 				return;
 			}
 			name = (String)JOptionPane.showInputDialog(null, msg, "Edit Module Name", JOptionPane.QUESTION_MESSAGE, null, null, initialName);
@@ -1010,17 +1026,10 @@ public class AC_Utility
 		return false;
 	}
 	
-	public static boolean moduleNameValidation(Module parent, String name, boolean displayMessage)
-	{
-		String message;
-		
-		if ((name == null) || (name.isEmpty()))
+	public static boolean newModuleNameValidation(Module parent, String name, boolean displayMessage)
+	{		
+		if (isNameEmpty(name, displayMessage))
 		{
-			if (displayMessage)
-			{
-				message = "Please enter a name.";
-				JOptionPane.showMessageDialog(null, message, "Invalid Name", JOptionPane.WARNING_MESSAGE);
-			}
 			return false;
 		}
 		
@@ -1029,26 +1038,12 @@ public class AC_Utility
 			if (parent != null)
 			{
 				// the name in question belongs to a submodule
-				if (parent.getName().equals(name))
+				if (moduleNameConflictParent(parent, name, displayMessage))
 				{
-					// a submodule cannot have the same name as the active module
-					if (displayMessage)
-					{
-						message = "The active module is already named \"" + name + "\"." + eol;
-						message += "A submodule cannot have the same name as the active module." + eol;
-						message += "Please enter a different name.";
-						JOptionPane.showMessageDialog(null, message, "Invalid Name", JOptionPane.ERROR_MESSAGE);
-					}
 					return false;
 				}
-				else if (submoduleNameUsed(parent, name))
+				else if (moduleNameConflictSiblings(parent, name, displayMessage))
 				{
-					if (displayMessage)
-					{
-						message = "There already exists a Submodule with the name \"" + name + "\"." + eol;
-						message += "Please enter a different name.";
-						JOptionPane.showMessageDialog(null, message, "Invalid Name", JOptionPane.ERROR_MESSAGE);
-					}
 					return false;
 				}
 			}
@@ -1058,9 +1053,107 @@ public class AC_Utility
 		return false;
 	}
 	
-	public static boolean submoduleNameUsed(Module parent, String submoduleName)
+	public static boolean editModuleNameValidation(Module module, String name, boolean displayMessage)
+	{		
+		if (isNameEmpty(name, displayMessage))
+		{
+			return false;
+		}
+		
+		if (module.getName().equals(name))
+		{
+			return true;
+		}
+		
+		if (sbmlNameValidation(name, displayMessage))
+		{
+			Module parent = module.getParent();
+			if (parent != null)
+			{
+				// the name in question belongs to a submodule
+				if (moduleNameConflictParent(parent, name, displayMessage))
+				{
+					return false;
+				}
+				else if (moduleNameConflictSiblings(parent, name, displayMessage))
+				{
+					return false;
+				}
+			}
+			
+			if (moduleNameConflictChildren(module, name, displayMessage))
+			{
+				return false;
+			}
+			
+			return true;
+		}
+		
+		return false;
+	}
+	
+	public static boolean isNameEmpty(String name, boolean displayMessage)
 	{
-		return parent.checkSubmoduleName(submoduleName);
+		if ((name == null) || (name.isEmpty()))
+		{
+			if (displayMessage)
+			{
+				String message = "Please enter a name.";
+				JOptionPane.showMessageDialog(null, message, "Invalid Name", JOptionPane.WARNING_MESSAGE);
+			}
+			return true;
+		}
+		return false;
+	}
+	
+	public static boolean moduleNameConflictParent(Module parent, String name, boolean displayMessage)
+	{
+		if (parent.getName().equals(name))
+		{
+			// a module cannot have the same name as its container module
+			if (displayMessage)
+			{
+				String message = "The container module is already named \"" + name + "\"." + eol;
+				message += "A submodule cannot have the same name as its container module." + eol;
+				message += "Please enter a different name.";
+				JOptionPane.showMessageDialog(null, message, "Invalid Name", JOptionPane.ERROR_MESSAGE);
+			}
+			return true;
+		}
+		return false;
+	}
+	
+	public static boolean moduleNameConflictSiblings(Module parent, String name, boolean displayMessage)
+	{
+		if (parent.checkSubmoduleName(name))
+		{
+			if (displayMessage)
+			{
+				String message = "A submodule with the name \"" + name + "\" already exists." + eol;
+				message += "Submodules on the same hierarchical level must have unique names." + eol;
+				message += "Please enter a different name.";
+				JOptionPane.showMessageDialog(null, message, "Invalid Name", JOptionPane.ERROR_MESSAGE);
+			}
+			return true;
+		}
+		return false;
+	}
+	
+	public static boolean moduleNameConflictChildren(Module module, String name, boolean displayMessage)
+	{
+		if (module.checkSubmoduleName(name))
+		{
+			if (displayMessage)
+			{
+				String message = "\"" + module.getName() + "\" ";
+				message += " already contains a submodule with the name \"" + name + "\"." + eol;
+				message += "A container cannot have the same name as one of its submodules." + eol;
+				message += "Please enter a different name.";
+				JOptionPane.showMessageDialog(null, message, "Invalid Name", JOptionPane.ERROR_MESSAGE);
+			}
+			return true;
+		}
+		return false;
 	}
 	
 	public static int promptUserExternalModuleChange(Module module)
@@ -1246,123 +1339,60 @@ public class AC_Utility
 		return true;
 	}
 	
-	public static boolean portValidation(String portName, String refName)
+	public static boolean portValidation(Module module, String portName, String refName)
 	{
-		ListIterator<ACComponentNode> ports = AC_GUI.activeModule.getPorts().listIterator();
-		PortNode currentPort;
-		String msg;
-		String oldRefName = refName;
-		VariableType vType= null;
+		return portNameValidation(portName, module) && portRefNameValidation(refName, module);
+	}
+	
+	public static boolean portRefNameValidation(String extendedRefName, Module module)
+	{
+		VariableType vType = null;
+		ModuleDefinition moduleDefinition = module.getModuleDefinition();
+		String shortRefName = "";
 		
 		// trim the refName
-		if (refName.endsWith(VariableType.SPECIES.toString()))
+		if (extendedRefName.endsWith(VariableType.SPECIES.toString()))
 		{
-			System.out.println("Old refName: " + refName);
-			refName = refName.replace(" - " + VariableType.SPECIES.toString(), "");
-			System.out.println("New refName: " + refName);
+			shortRefName = extendedRefName.replace(" - " + VariableType.SPECIES.toString(), "");
 			vType = VariableType.SPECIES;
 		}
-		else if (refName.endsWith(VariableType.GLOBAL_QUANTITY.toString()))
+		else if (extendedRefName.endsWith(VariableType.GLOBAL_QUANTITY.toString()))
 		{
-			System.out.println("Old refName: " + refName);
-			refName = refName.replace(" - " + VariableType.GLOBAL_QUANTITY.toString(), "");
-			System.out.println("New refName: " + refName);
+			shortRefName = extendedRefName.replace(" - " + VariableType.GLOBAL_QUANTITY.toString(), "");
 			vType = VariableType.GLOBAL_QUANTITY;
 		}
 		else
 		{
-			System.err.println("AC_GUI.portValidation: A valid VariableType was not found.");
+			System.err.println("AC_Utility:portRefNameValidation: A valid VariableType was not found.");
 		}
 		
-		while (ports.hasNext())
+		if (moduleDefinition.checkPortRefName(extendedRefName))
 		{
-			currentPort = (PortNode)ports.next();
-			
-			if ((refName.compareToIgnoreCase(currentPort.getPortDefinition().getRefName()) == 0) && (vType.equals(currentPort.getPortDefinition().getVariableType())))
-			{
-				//System.out.println("comp refName: " + refName.compareToIgnoreCase(currentPort.getRefName()));
-				msg = "\"" + oldRefName + "\"";
-				msg += " is already associated with a Port.";
-				msg += " Cannot associate the same Ref Name with multiple Ports.";
-				JOptionPane.showMessageDialog(null, msg);
-				return false;
-			}
-			
-			if (portName.compareTo(currentPort.getPortDefinition().getName()) == 0)
-			{
-				//System.out.println("comp portName: " + portName.compareToIgnoreCase(currentPort.getName()));
-				msg = "\"" + portName + "\"";
-				msg += " is already the name of a Port.";
-				msg += " Cannot assign the same Port Name to multiple Ports.";
-				JOptionPane.showMessageDialog(null, msg);
-				return false;
-			}
+			String message = vType + " " + shortRefName;
+			message += " is already associated with a Port." + eol;
+			message += "Cannot associate the same " + vType + " with multiple Ports.";
+			//JOptionPane.showMessageDialog(null, message);
+			JOptionPane.showMessageDialog(null, message, "Invalid Name", JOptionPane.ERROR_MESSAGE);
+			return false;
 		}
+		
 		return true;
 	}
 	
-	public static boolean portRefNameValidation(String refName, Module parentModule)
+	public static boolean portNameValidation(String portName, Module module)
 	{
-		ListIterator<ACComponentNode> ports = parentModule.getPorts().listIterator();
-		PortNode currentPort;
-		String msg;
-		String oldRefName = refName;
+		ModuleDefinition pModuleDefinition = module.getModuleDefinition();
 		
-		// trim the refName
-		if (refName.endsWith(VariableType.SPECIES.toString()))
+		if (pModuleDefinition.checkPortName(portName))
 		{
-			System.out.println("Old refName: " + refName);
-			refName = refName.replace(" - " + VariableType.SPECIES.toString(), "");
-			System.out.println("New refName: " + refName);
-		}
-		else if (refName.endsWith(VariableType.GLOBAL_QUANTITY.toString()))
-		{
-			System.out.println("Old refName: " + refName);
-			refName = refName.replace(" - " + VariableType.GLOBAL_QUANTITY.toString(), "");
-			System.out.println("New refName: " + refName);
-		}
-		else
-		{
-			System.err.println("AC_Utility:portNameValidation: A valid VariableType was not found.");
+			String message = "\"" + portName + "\"";
+			message += " is already the name of a Port." + eol;
+			message += "Cannot assign the same Port Name to multiple Ports.";
+			//JOptionPane.showMessageDialog(null, message);
+			JOptionPane.showMessageDialog(null, message, "Invalid Name", JOptionPane.ERROR_MESSAGE);
+			return false;
 		}
 		
-		while (ports.hasNext())
-		{
-			currentPort = (PortNode)ports.next();
-			
-			if (refName.equals(currentPort.getPortDefinition().getRefName()))
-			{
-				//System.out.println("comp refName: " + refName.compareToIgnoreCase(currentPort.getRefName()));
-				msg = "\"" + oldRefName + "\"";
-				msg += " is already associated with a Port.";
-				msg += " Cannot associate the same Ref Name with multiple Ports.";
-				JOptionPane.showMessageDialog(null, msg);
-				return false;
-			}
-		}
-		return true;
-	}
-	
-	public static boolean portNameValidation(String portName, Module parentModule)
-	{
-		ListIterator<ACComponentNode> ports = parentModule.getPorts().listIterator();
-		PortNode currentPort;
-		String msg;
-		
-		while (ports.hasNext())
-		{
-			currentPort = (PortNode)ports.next();
-			
-			if (portName.equals(currentPort.getPortDefinition().getName()))
-			{
-				//System.out.println("comp refName: " + refName.compareToIgnoreCase(currentPort.getRefName()));
-				msg = "\"" + portName + "\"";
-				msg += " is already the name of a Port.";
-				msg += " Cannot assign the same Port Name to multiple Ports.";
-				JOptionPane.showMessageDialog(null, msg);
-				return false;
-			}
-		}
 		return true;
 	}
 	

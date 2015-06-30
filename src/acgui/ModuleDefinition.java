@@ -2,6 +2,8 @@ package acgui;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * @author Thomas
@@ -29,7 +31,9 @@ public class ModuleDefinition implements Serializable
 	private ArrayList<ACComponentDefinition> visibleVariables;
 	private ArrayList<ACComponentDefinition> equivalences;
 	private ArrayList<Module> instances;
-
+	private Set<String> portRefNames;
+	private Set<String> portNames;
+	
 	/**
 	 * 
 	 */
@@ -41,6 +45,8 @@ public class ModuleDefinition implements Serializable
 		visibleVariables = new ArrayList<ACComponentDefinition>();
 		equivalences = new ArrayList<ACComponentDefinition>();
 		instances = new ArrayList<Module>();
+		portRefNames = new HashSet<String>();
+		portNames = new HashSet<String>();
 	}
 	
 	public ModuleDefinition(String iName)
@@ -189,6 +195,9 @@ public class ModuleDefinition implements Serializable
 	public void addPort(PortDefinition port)
 	{
 		ports.add(port);
+		String extendedRefName = port.getRefName() + " - " + port.getVariableType();
+		portRefNames.add(extendedRefName);
+		portNames.add(port.getName());
 	}
 	
 	/**
@@ -198,6 +207,9 @@ public class ModuleDefinition implements Serializable
 	public void removePort(PortDefinition port)
 	{
 		ports.remove(port);
+		String extendedRefName = port.getRefName() + " - " + port.getVariableType();
+		portRefNames.remove(extendedRefName);
+		portNames.remove(port.getName());
 		/*
 		if(port.getRowIndex() != ports.size())
 		{
@@ -287,6 +299,40 @@ public class ModuleDefinition implements Serializable
 	public ArrayList<Module> getInstances()
 	{
 		return instances;
+	}
+	
+	public void updatePortRefName(String oldName, String newName)
+	{
+		portRefNames.remove(oldName);
+		portRefNames.add(newName);
+	}
+	
+	/**
+	 * Check if the given String is the ref name of a port.
+	 * @param name the name to check
+	 * @return true if there exists a port with the given ref name,
+	 * otherwise false.
+	 */
+	public boolean checkPortRefName(String name)
+	{
+		return portRefNames.contains(name);
+	}
+	
+	public void updatePortName(String oldName, String newName)
+	{
+		portNames.remove(oldName);
+		portNames.add(newName);
+	}
+	
+	/**
+	 * Check if the given String is the name of a port.
+	 * @param name the name to check
+	 * @return true if there exists a port with the given name,
+	 * otherwise false.
+	 */
+	public boolean checkPortName(String name)
+	{
+		return portNames.contains(name);
 	}
 	
 	@Override
