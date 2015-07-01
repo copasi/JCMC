@@ -144,7 +144,8 @@ public class SBMLParser {
 			//System.out.println("Document Level: " + sdoc.getLevel());
 			//System.out.println("Document Version: " + sdoc.getVersion());
 
-			if (document.getNumErrors() > 0) {
+			if (document.getNumErrors() > 0)
+			{
 				String msg = "This SBML file contains errors. Please try to open a valid SBML file.";
 				JOptionPane.showMessageDialog(null,
 					    msg,
@@ -157,6 +158,7 @@ public class SBMLParser {
 				*/
 				return null;
 			}
+			
 			if (document.getLevel() < 3)
 			{
 				String msg = "SBML level " + document.getLevel() + " is not currently supported.";
@@ -175,6 +177,11 @@ public class SBMLParser {
 		}
 		
 		mod = importContainerModule(document, parent);
+		if (mod == null)
+		{
+			// there was an error importing the module
+			return null;
+		}
 		mod.getModuleDefinition().setExternal(external);
 		if (external)
 		{
@@ -335,7 +342,7 @@ public class SBMLParser {
 		}
 		//setSBMLNamespaces(sdoc, tempDoc.getNamespaces());
 		document.getModel().setId(containerDefinition.getID());
-		document.getModel().setName(containerModule.getName());
+		document.getModel().setName(containerDefinition.getName());
 		/*
 		System.out.println();
 		System.out.println();
@@ -1177,14 +1184,23 @@ public class SBMLParser {
 			System.err.println("Error in SBMLParser.importContainerModule: There is no Model in the SBML document.");
 			return null;
 		}
-		if (!validateContainerModuleName(doc))
+		if (!validateModuleDefinitionName(doc))
 		{
-			System.err.println("Error in SBMLParser.importContainerModule: validateContainerModuleName() returns false.");
+			System.err.println("Error in SBMLParser.importContainerModule: validateModuleDefinitionName() returns false.");
 			return null;
 		}
 		containerMod = doc.getModel();
-		moduleName = containerMod.getName();
-		definitionName = generateContainerModuleDefinitionName(moduleName);
+		definitionName = containerMod.getName();
+		if (parent == null)
+		{
+			// imported module will be the root module
+			moduleName = definitionName;
+		}
+		else
+		{
+			// imported module will be a submodule
+			moduleName = AC_Utility.promptUserForNewModuleName(parent, "Enter a Module name:");
+		}
 		sbmlID = containerMod.getId();
 		
 		if (doc.getLevel() < 3)

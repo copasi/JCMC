@@ -727,7 +727,16 @@ public class AC_IO
 		data.put("drawingCellGeometry_Module", packCellGeometry(mod.getDrawingCellGeometryModule()));
 		data.put("drawingCellGeometry_Submodule", packCellGeometry(mod.getDrawingCellGeometrySubmodule()));
 		data.put("drawingCellStyle", mod.getDrawingCellStyle());
-		data.put("name", mod.getName());
+		if (mod.getParent() == null)
+		{
+			// mod is the root module
+			data.put("name", mod.getModuleDefinition().getName());
+		}
+		else
+		{
+			// mod is a submodule
+			data.put("name", mod.getName());
+		}
 		data.put("id", mod.getID());
 		
 		// pack the PortNodes
