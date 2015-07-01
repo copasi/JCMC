@@ -340,13 +340,13 @@ public class CopasiUtility
 			String message = "The imported Module Definition does not have a name.";
 			JOptionPane.showMessageDialog(null, message, "Invalid Name", JOptionPane.WARNING_MESSAGE);
 			
-			modelName = AC_Utility.promptUserForNewModuleName("Enter a Module Definition name:");
+			modelName = AC_Utility.promptUserForNewModuleDefinitionName("Enter a Module Definition name:");
 		}
 		else
 		{
-			if (!AC_Utility.moduleNameValidation(modelName, true))
+			if (!AC_Utility.moduleDefinitionNameValidation(modelName, true))
 			{
-				modelName = AC_Utility.promptUserForNewModuleName("Enter a Module Definition name:");
+				modelName = AC_Utility.promptUserForNewModuleDefinitionName("Enter a Module Definition name:");
 			}
 		}
 		

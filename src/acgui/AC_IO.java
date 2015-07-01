@@ -233,7 +233,7 @@ public class AC_IO
 		}
 		
 		//ModuleDefinition definition = new ModuleDefinition(name, parent, msmbData);
-		//name = validateModuleName(name);
+		name = validateModuleDefinitionName(name);
 		if (name == null)
 		{
 			return null;
@@ -1455,6 +1455,15 @@ public class AC_IO
 		if (!AC_Utility.newModuleNameValidation(parent, name, true))
 		{
 			return AC_Utility.promptUserForNewModuleName(parent, "Enter Module name:");	
+		}
+		return name;
+	}
+	
+	private static String validateModuleDefinitionName(String name)
+	{
+		if (!AC_Utility.moduleDefinitionNameValidation(name, true))
+		{
+			return AC_Utility.promptUserForNewModuleDefinitionName("Enter Module Template name:");	
 		}
 		return name;
 	}

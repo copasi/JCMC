@@ -33,10 +33,10 @@ public class ACTreeModelListener implements TreeModelListener
 		
 		String newName = (String)node.getUserObject();
 		Module currentModule = AC_GUI.selectedModule;
-		if (AC_Utility.moduleNameValidation(newName, true))
+		if (AC_Utility.editModuleNameValidation(currentModule, newName, true))
 		{
 			AC_Utility.changeModuleName(currentModule, newName, false);
-			System.out.println("Name changed to: " + newName);
+			//System.out.println("Name changed to: " + newName);
 		}
 		node.setUserObject(currentModule);
 		AC_GUI.treeView.getTree().setEditable(false);

@@ -1,7 +1,9 @@
 package acgui;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.ListIterator;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import javax.swing.JOptionPane;
@@ -18,6 +20,7 @@ import com.mxgraph.model.mxGeometry;
 public class AC_Utility
 {
 	public static String eol = System.getProperty("line.separator");
+	private static Set<String> moduleDefinitionNameSet = new HashSet<String>();
 	private static ArrayList<String> moduleNameList = new ArrayList<String>();
 	private static ArrayList<ModuleDefinition> submoduleList = new ArrayList<ModuleDefinition>();
 	//private static ArrayList<ModuleDefinition> moduleDefinitionList = new ArrayList<ModuleDefinition>();
@@ -837,7 +840,7 @@ public class AC_Utility
 		String name;
 		if (newName == null)
 		{
-			name = promptUserForNewModuleName("Please enter a new Module Definition name:");
+			name = promptUserForNewModuleName(module.getParent(), "Please enter a new Module Template name:");
 			if (name == null)
 			{
 				System.err.println("No new definition created.");
@@ -924,6 +927,21 @@ public class AC_Utility
 		}
 		
 		return module;
+	}
+	
+	public static String promptUserForNewModuleDefinitionName(String message)
+	{
+		//String message = "Enter Module Template name:";
+		String newName = JOptionPane.showInputDialog(message, "");
+		while (newName != null)
+		{
+			if (moduleDefinitionNameValidation(newName, true))
+			{
+				return newName;
+			}
+			newName = JOptionPane.showInputDialog(message, "");
+		}
+		return null;
 	}
 	
 	public static String promptUserForNewModuleName(String message)
@@ -1016,7 +1034,7 @@ public class AC_Utility
 				{
 					message = "There already exists a Module with the name \"" + name + "\"." + eol;
 					message += "Please enter a different name.";
-					JOptionPane.showMessageDialog(null, message, "Invalid Name", JOptionPane.ERROR_MESSAGE);
+					JOptionPane.showMessageDialog(null, message, "Invalid Name", JOptionPane.WARNING_MESSAGE);
 				}
 				return false;
 			}
@@ -1092,6 +1110,42 @@ public class AC_Utility
 		return false;
 	}
 	
+	public static boolean moduleDefinitionNameValidation(String name, boolean displayMessage)
+	{
+		if (isNameEmpty(name, displayMessage))
+		{
+			return false;
+		}
+		
+		if (sbmlNameValidation(name, displayMessage))
+		{
+			if (moduleDefinitionNameConflict(name, displayMessage))
+			{
+				return false;
+			}
+			return true;
+		}
+		
+		return false;
+	}
+	
+	public static boolean moduleDefinitionNameConflict(String name, boolean displayMessage)
+	{
+		if (moduleDefinitionNameSet.contains(name))
+		{
+			if (displayMessage)
+			{
+				String message = "A module template with the name \"" + name + "\" already exists." + eol;
+				message += "Module template names must be unique." + eol;
+				message += "Please enter a different name.";
+				JOptionPane.showMessageDialog(null, message, "Invalid Name", JOptionPane.WARNING_MESSAGE);
+			}
+			return true;
+		}
+		
+		return false;
+	}
+	
 	public static boolean isNameEmpty(String name, boolean displayMessage)
 	{
 		if ((name == null) || (name.isEmpty()))
@@ -1106,6 +1160,7 @@ public class AC_Utility
 		return false;
 	}
 	
+
 	public static boolean moduleNameConflictParent(Module parent, String name, boolean displayMessage)
 	{
 		if (parent.getName().equals(name))
@@ -1116,7 +1171,7 @@ public class AC_Utility
 				String message = "The container module is already named \"" + name + "\"." + eol;
 				message += "A submodule cannot have the same name as its container module." + eol;
 				message += "Please enter a different name.";
-				JOptionPane.showMessageDialog(null, message, "Invalid Name", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(null, message, "Invalid Name", JOptionPane.WARNING_MESSAGE);
 			}
 			return true;
 		}
@@ -1132,7 +1187,7 @@ public class AC_Utility
 				String message = "A submodule with the name \"" + name + "\" already exists." + eol;
 				message += "Submodules on the same hierarchical level must have unique names." + eol;
 				message += "Please enter a different name.";
-				JOptionPane.showMessageDialog(null, message, "Invalid Name", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(null, message, "Invalid Name", JOptionPane.WARNING_MESSAGE);
 			}
 			return true;
 		}
@@ -1149,7 +1204,7 @@ public class AC_Utility
 				message += " already contains a submodule with the name \"" + name + "\"." + eol;
 				message += "A container cannot have the same name as one of its submodules." + eol;
 				message += "Please enter a different name.";
-				JOptionPane.showMessageDialog(null, message, "Invalid Name", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(null, message, "Invalid Name", JOptionPane.WARNING_MESSAGE);
 			}
 			return true;
 		}
@@ -1306,7 +1361,7 @@ public class AC_Utility
 			message += " is already visible." + eol;
 			message += "Cannot show the same " + vType.toString().toLowerCase() + " multiple times.";
 			//JOptionPane.showMessageDialog(null, message);
-			JOptionPane.showMessageDialog(null, message, "Invalid Operation", JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(null, message, "Invalid Operation", JOptionPane.WARNING_MESSAGE);
 			return false;
 		}
 		
@@ -1346,7 +1401,7 @@ public class AC_Utility
 			message += " is already associated with a Port." + eol;
 			message += "Cannot associate the same " + vType.toString().toLowerCase() + " with multiple Ports.";
 			//JOptionPane.showMessageDialog(null, message);
-			JOptionPane.showMessageDialog(null, message, "Invalid Name", JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(null, message, "Invalid Name", JOptionPane.WARNING_MESSAGE);
 			return false;
 		}
 		
@@ -1363,7 +1418,7 @@ public class AC_Utility
 			message += " is already the name of a Port." + eol;
 			message += "Cannot assign the same name to multiple Ports.";
 			//JOptionPane.showMessageDialog(null, message);
-			JOptionPane.showMessageDialog(null, message, "Invalid Name", JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(null, message, "Invalid Name", JOptionPane.WARNING_MESSAGE);
 			return false;
 		}
 		
@@ -1484,6 +1539,8 @@ public class AC_Utility
 		}
 		moduleNameList.remove(oldName);
 		moduleNameList.add(newName);
+		moduleDefinitionNameSet.remove(oldName);
+		moduleDefinitionNameSet.add(newName);
 		AC_GUI.setSavedInACFile(false);
 	}
 	
@@ -1570,6 +1627,7 @@ public class AC_Utility
 	{
 		submoduleList.clear();
 		moduleNameList.clear();
+		moduleDefinitionNameSet.clear();
 	}
 	
 	public static boolean createUniqueIDs(Module module)
@@ -1852,6 +1910,7 @@ public class AC_Utility
 		}
 		
 		moduleNameList.add(definitionName);
+		moduleDefinitionNameSet.add(definitionName);
 		return mDefinition;
 	}
 	
@@ -1872,6 +1931,7 @@ public class AC_Utility
 		}
 		parent.addChild(mDefinition);
 		moduleNameList.add(definitionName);
+		moduleDefinitionNameSet.add(definitionName);
 		return mDefinition;
 	}
 	
@@ -1897,6 +1957,7 @@ public class AC_Utility
 			parent.addChild(mDefinition);
 		}
 		moduleNameList.add(definitionName);
+		moduleDefinitionNameSet.add(definitionName);
 		return mDefinition;
 	}
 	
@@ -1916,6 +1977,7 @@ public class AC_Utility
 			parent.addChild(mDefinition);
 		}
 		moduleNameList.add(definitionName);
+		moduleDefinitionNameSet.add(definitionName);
 		return mDefinition;
 	}
 	
@@ -1933,6 +1995,7 @@ public class AC_Utility
 			parent.addChild(maDefinition);
 		}
 		moduleNameList.add(definitionName);
+		moduleDefinitionNameSet.add(definitionName);
 		return maDefinition;
 	}
 	
@@ -1948,6 +2011,7 @@ public class AC_Utility
 		MathematicalAggregatorDefinition maDefinition = new MathematicalAggregatorDefinition(definitionName, sbmlID, parent, terms, op);
 		parent.addChild(maDefinition);
 		moduleNameList.add(definitionName);
+		moduleDefinitionNameSet.add(definitionName);
 		return maDefinition;
 	}
 	
@@ -1962,23 +2026,25 @@ public class AC_Utility
 		MathematicalAggregatorDefinition maDefinition = new MathematicalAggregatorDefinition(definitionName, parent, msmbData, terms, op);
 		parent.addChild(maDefinition);
 		moduleNameList.add(definitionName);
+		moduleDefinitionNameSet.add(definitionName);
 		return maDefinition;
 	}
 	
-	private static void deleteModuleDefinition(ModuleDefinition modDef)
+	private static void deleteModuleDefinition(ModuleDefinition definition)
 	{
-		if (modDef.getParent() != null)
+		if (definition.getParent() != null)
 		{
-			modDef.getParent().removeChild(modDef);
+			definition.getParent().removeChild(definition);
 		}
 		System.out.println("Number of Copasi data models: " + CopasiUtility.getNumberOfModels());
-		if (!CopasiUtility.removeDataModel(modDef.getName()))
+		if (!CopasiUtility.removeDataModel(definition.getName()))
 		{
 			// the Copasi data model was not successfully removed
-			displayErrorMessage("The module " + modDef.getName() + " was not completely removed.");
+			displayErrorMessage("The module " + definition.getName() + " was not completely removed.");
 		}
-		moduleNameList.remove(modDef.getName());
-		removeSubmoduleDefinition(modDef);
+		moduleNameList.remove(definition.getName());
+		moduleDefinitionNameSet.remove(definition.getName());
+		removeSubmoduleDefinition(definition);
 		System.out.println("Number of Copasi data models: " + CopasiUtility.getNumberOfModels());
 	}
 	
@@ -2276,7 +2342,7 @@ public class AC_Utility
 			message += "The name \"" + name + "\" is invalid." + eol;
 			message += "Please enter a different name.";
 			//JOptionPane.showMessageDialog(null, message);
-			JOptionPane.showMessageDialog(null, message, "Invalid Name", JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(null, message, "Invalid Name", JOptionPane.WARNING_MESSAGE);
 		}
 		
 		return valid;
@@ -2295,11 +2361,11 @@ public class AC_Utility
 	private static String generateModuleDefinitionName()
 	{
 		int index = 0;
-		String candidate = "Module_" + index;
+		String candidate = "ModuleDefinition_" + index;
 		while (moduleNameList.contains(candidate))
 		{
 			index++;
-			candidate = "Module_" + index;
+			candidate = "ModuleDefinition_" + index;
 		}
 		return candidate;
 	}
@@ -2355,6 +2421,7 @@ public class AC_Utility
 		// sync connection nodes to connection definitions
 		syncConnections(module.getConnections(), newDefinition.getConnections());
 		moduleNameList.add(newName);
+		moduleDefinitionNameSet.add(newName);
 		newDefinition.setExternal(false);
 		return newDefinition;
 	}

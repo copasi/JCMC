@@ -1438,7 +1438,7 @@ public class SBMLParser {
 				return;
 			}
 			
-			name = validateModuleName(name);
+			name = validateModuleName(parent, name);
 			if (name == null)
 			{
 				System.err.println("Error in SBMLParser.importSubmodules: validateModuleName() returns null.");
@@ -2380,20 +2380,20 @@ public class SBMLParser {
 		}
 	}
 	
-	private static String validateModuleName(String name)
+	private static String validateModuleName(Module parent, String name)
 	{		
 		if (name == null || name.isEmpty())
 		{
 			String message = "The imported Module does not have a name.";
 			JOptionPane.showMessageDialog(null, message, "Invalid Name", JOptionPane.WARNING_MESSAGE);
 			
-			name = AC_Utility.promptUserForNewModuleName("Enter a Module name:");
+			name = AC_Utility.promptUserForNewModuleName(parent, "Enter a Module name:");
 		}
 		else
 		{
-			if (!AC_Utility.moduleNameValidation(name, true))
+			if (!AC_Utility.newModuleNameValidation(parent, name, true))
 			{
-				name = AC_Utility.promptUserForNewModuleName("Enter a Module name:");	
+				name = AC_Utility.promptUserForNewModuleName(parent, "Enter a Module name:");	
 			}
 		}
 		
@@ -2406,16 +2406,16 @@ public class SBMLParser {
 		
 		if (name == null || name.isEmpty())
 		{
-			String message = "The imported Module Definition does not have a name.";
+			String message = "The imported Module Template does not have a name.";
 			JOptionPane.showMessageDialog(null, message, "Invalid Name", JOptionPane.WARNING_MESSAGE);
 			
-			name = AC_Utility.promptUserForNewModuleName("Enter a Module Definition name:");
+			name = AC_Utility.promptUserForNewModuleDefinitionName("Enter a Module Template name:");
 		}
 		else
 		{
-			if (!AC_Utility.moduleNameValidation(name, true))
+			if (!AC_Utility.moduleDefinitionNameValidation(name, true))
 			{
-				name = AC_Utility.promptUserForNewModuleName("Enter a Module Definition name:");	
+				name = AC_Utility.promptUserForNewModuleDefinitionName("Enter a Module Template name:");	
 			}
 		}
 		
@@ -2437,13 +2437,13 @@ public class SBMLParser {
 			String message = "The imported Module does not have a name.";
 			JOptionPane.showMessageDialog(null, message, "Invalid Name", JOptionPane.WARNING_MESSAGE);
 			
-			name = AC_Utility.promptUserForNewModuleName("Enter a Module name:");
+			name = AC_Utility.promptUserForNewModuleName(null, "Enter a Module name:");
 		}
 		else
 		{
-			if (!AC_Utility.moduleNameValidation(name, true))
+			if (!AC_Utility.newModuleNameValidation(null, name, true))
 			{
-				name = AC_Utility.promptUserForNewModuleName("Enter a Module name:");	
+				name = AC_Utility.promptUserForNewModuleName(null, "Enter a Module name:");	
 			}
 		}
 		
@@ -2461,7 +2461,7 @@ public class SBMLParser {
 		int index = 0;
 		String base = moduleName + "Template";
 		String candidate = base;
-		while (!AC_Utility.moduleNameValidation(candidate, false))
+		while (!AC_Utility.moduleDefinitionNameValidation(candidate, false))
 		{
 			index++;
 			candidate = base + "_" + index;

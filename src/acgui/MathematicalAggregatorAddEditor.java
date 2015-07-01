@@ -41,13 +41,15 @@ public class MathematicalAggregatorAddEditor extends JDialog implements ActionLi
 	private mxGraphComponent graphComponent;
 	private String type;
 	private Operation op;
+	private Module parent;
 	
 	/**
 	 * 
 	 */
-	public MathematicalAggregatorAddEditor(mxGraphComponent iGraphComponent, Operation iOp)
+	public MathematicalAggregatorAddEditor(Module iParent, mxGraphComponent iGraphComponent, Operation iOp)
 	{
 		super();
+		parent = iParent;
 		graphComponent = iGraphComponent;
 		op = iOp;
 		
@@ -125,7 +127,7 @@ public class MathematicalAggregatorAddEditor extends JDialog implements ActionLi
 			}
 			else
 			{
-				if (AC_Utility.moduleNameValidation(name, true))
+				if (AC_Utility.newModuleNameValidation(parent, name, true))
 				{
 					AC_GUI.newMathematicalAggregator(textfield1.getText(), Integer.parseInt(textfield2.getText()), op);
 					dispose();

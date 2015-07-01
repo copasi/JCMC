@@ -600,7 +600,7 @@ public class ModelBuilder
 								return;
 							}
 						}
-						if (AC_Utility.moduleNameValidation(after.getName(), true))
+						if (AC_Utility.moduleDefinitionNameValidation(after.getName(), true))
 						{
 							if (AC_GUI.activeModule.getModuleDefinition().getInstances().size() > 1)
 							{

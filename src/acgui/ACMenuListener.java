@@ -446,7 +446,7 @@ public class ACMenuListener implements ActionListener
 				*/
 				if (AC_GUI.canModuleAddSubmodule(AC_GUI.activeModule))
 				{
-					mathAddEditor = new MathematicalAggregatorAddEditor(AC_GUI.drawingBoard.graphComponent, Operation.SUM);
+					mathAddEditor = new MathematicalAggregatorAddEditor(AC_GUI.activeModule, AC_GUI.drawingBoard.graphComponent, Operation.SUM);
 					mathAddEditor.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 					mathAddEditor.setModal(true);
 					mathAddEditor.setVisible(true);
@@ -477,7 +477,7 @@ public class ACMenuListener implements ActionListener
 				*/
 				if (AC_GUI.canModuleAddSubmodule(AC_GUI.activeModule))
 				{
-					mathAddEditor = new MathematicalAggregatorAddEditor(AC_GUI.drawingBoard.graphComponent, Operation.PRODUCT);
+					mathAddEditor = new MathematicalAggregatorAddEditor(AC_GUI.activeModule, AC_GUI.drawingBoard.graphComponent, Operation.PRODUCT);
 					mathAddEditor.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 					mathAddEditor.setModal(true);
 					mathAddEditor.setVisible(true);
