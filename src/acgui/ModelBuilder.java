@@ -331,6 +331,52 @@ public class ModelBuilder
 		return msmb.validateMSMB();
 	}
 	
+	private void containerModuleNameModification(MSMB_Element nameType, String oldName, String newName)
+	{
+		String message = "The root module is unique in that both the module name " + AC_Utility.eol;
+		message += "and module template name must be the same." + AC_Utility.eol;
+		AC_Utility.displayMessage(JOptionPane.INFORMATION_MESSAGE, "Root Module", message);
+		
+		if (AC_Utility.editModuleNameValidation(loadedModule, newName, true) &&
+				AC_Utility.moduleDefinitionNameValidation(newName, true))
+		{
+			// name change is valid
+			// first, set the names in modelbuilder
+			if (nameType == MSMB_Element.MODEL_NAME)
+			{
+				// the module name field has already been changed in modelbuilder,
+				// now set the module definition name field in modelbuilder
+				setModuleDefinitionName(newName);
+			}
+			else
+			{
+				// the module definition name field has already been changed in modelbuilder,
+				// now set the module name field in modelbuilder
+				setModuleDefinitionName(newName);
+			}
+			// next, set the names in the rest of JCMC
+			AC_Utility.changeModuleName(loadedModule, newName, true);
+			AC_Utility.changeModuleDefinitionName(loadedModule.getModuleDefinition(), newName, true);
+		}
+		else
+		{
+			// name change is invalid
+			// reset the appropriate name field in modelbuilder
+			if (nameType == MSMB_Element.MODEL_NAME)
+			{
+				// the module name field was changed,
+				// set it back to the previous name
+				setModuleName(oldName);
+			}
+			else
+			{
+				// the module definition name field was changed,
+				// set it back to the previous name
+				setModuleDefinitionName(oldName);
+			}
+		}
+	}
+	
 	/**
 	 * Display the Port tab with the rest of the MSMB panel.
 	 */
@@ -571,10 +617,12 @@ public class ModelBuilder
 								return;
 							}
 						}
-						if (AC_Utility.newModuleNameValidation(loadedModule.getParent(), after.getName(), true))
+						if (loadedModule == AC_GUI.rootModule)
 						{
-							System.out.println(loadedModule.getName());
-							System.out.println(AC_GUI.activeModule.getName());
+							containerModuleNameModification(MSMB_Element.MODEL_NAME, before.getName(), after.getName());
+						}
+						else if (AC_Utility.editModuleNameValidation(loadedModule, after.getName(), true))
+						{
 							AC_Utility.changeModuleName(loadedModule, after.getName(), true);
 						}
 						else
@@ -600,9 +648,13 @@ public class ModelBuilder
 								return;
 							}
 						}
-						if (AC_Utility.moduleDefinitionNameValidation(after.getName(), true))
+						if (loadedModule == AC_GUI.rootModule)
 						{
-							if (AC_GUI.activeModule.getModuleDefinition().getInstances().size() > 1)
+							containerModuleNameModification(MSMB_Element.MODEL_DEFINITION, before.getName(), after.getName());
+						}
+						else if (AC_Utility.moduleDefinitionNameValidation(after.getName(), true))
+						{
+							if (loadedModule.getModuleDefinition().getInstances().size() > 1)
 							{
 								int userInput = AC_Utility.promptUserSubmoduleChange(AC_GUI.activeModule);
 								
@@ -612,7 +664,7 @@ public class ModelBuilder
 									case JOptionPane.YES_OPTION:
 										// user chose to save a new module definition
 										// copy the current module definition
-										if (AC_Utility.copyDefinition(AC_GUI.activeModule, after.getName()))
+										if (AC_Utility.copyDefinition(loadedModule, after.getName()))
 										{
 											System.out.println("ModelBuilder.Model_Definition_Name_Changed: definition copy success.");
 											//setModuleDefinitionName(activeModule.getModuleDefinition().getName());
@@ -628,8 +680,8 @@ public class ModelBuilder
 										{
 											System.err.println("ModelBuilder.Model_Definition_Name_Changed: msmb data is NULL.");
 										}
-										AC_GUI.activeModule.getModuleDefinition().setMSMBData(code);
-										if (!saveToCopasi(AC_GUI.activeModule.getModuleDefinition().getName()))
+										loadedModule.getModuleDefinition().setMSMBData(code);
+										if (!saveToCopasi(loadedModule.getModuleDefinition().getName()))
 										{
 											System.err.println("ModelBuilder.Model_Definition_Name_Changed: copasi datamodel not saved.");
 										}
@@ -637,14 +689,14 @@ public class ModelBuilder
 									case JOptionPane.NO_OPTION:
 										// user chose to save the current module definition
 										// change the definition name
-										AC_Utility.changeModuleDefinitionName(AC_GUI.activeModule.getModuleDefinition(), after.getName(), true);
+										AC_Utility.changeModuleDefinitionName(loadedModule.getModuleDefinition(), after.getName(), true);
 										// save the updated msmb data
 										code = saveModel();
 										if (code == null || code.length == 0)
 										{
 											System.err.println("ModelBuilder.Model_Definition_Name_Changed: msmb data is NULL.");
 										}
-										AC_GUI.activeModule.getModuleDefinition().setMSMBData(code);
+										loadedModule.getModuleDefinition().setMSMBData(code);
 										break;
 									case JOptionPane.CANCEL_OPTION:
 										//loadModelBuilder(activeModule, false, true);
@@ -655,7 +707,7 @@ public class ModelBuilder
 							}
 							else
 							{
-								AC_Utility.changeModuleDefinitionName(AC_GUI.activeModule.getModuleDefinition(), after.getName(), true);
+								AC_Utility.changeModuleDefinitionName(loadedModule.getModuleDefinition(), after.getName(), true);
 							}
 						}
 						else

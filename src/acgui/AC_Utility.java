@@ -99,7 +99,8 @@ public class AC_Utility
 	public static Module createModule(String name, String definitionName, boolean createDatamodel)
 	{
 		// called from File->New
-		ModuleDefinition modDef = createModuleDefinition(definitionName, createDatamodel);
+		//ModuleDefinition modDef = createModuleDefinition(definitionName, createDatamodel);
+		ModuleDefinition modDef = createModuleDefinition(name, createDatamodel);
 		Module mod = new Module(name, modDef);
 		modDef.addInstance(mod);
 		setMSMBData(mod);
@@ -319,7 +320,8 @@ public class AC_Utility
 				break;
 			default:
 				System.err.println("AC_Utility.createConnection: " + sourceType + " is not a valid source TerminalType.");
-				displayErrorMessage("There was a problem while creating the connection.");
+				//displayErrorMessage("There was a problem while creating the connection.");
+				displayMessage(JOptionPane.ERROR_MESSAGE, "Connection Failure", "There was a problem while creating the connection.");
 				return null;
 		}
 		
@@ -337,7 +339,8 @@ public class AC_Utility
 				break;
 			default:
 				System.err.println("AC_Utility.createConnection: " + targetType + " is not a valid target TerminalType.");
-				displayErrorMessage("There was a problem while creating the connection.");
+				//displayErrorMessage("There was a problem while creating the connection.");
+				displayMessage(JOptionPane.ERROR_MESSAGE, "Connection Failure", "There was a problem while creating the connection.");
 				return null;
 		}
 		
@@ -367,7 +370,8 @@ public class AC_Utility
 				break;
 			default:
 				System.err.println("AC_Utility.createConnection: " + sourceType + " is not a valid source TerminalType.");
-				displayErrorMessage("There was a problem while creating the connection.");
+				//displayErrorMessage("There was a problem while creating the connection.");
+				displayMessage(JOptionPane.ERROR_MESSAGE, "Connection Failure", "There was a problem while creating the connection.");
 				return null;
 		}
 		
@@ -385,7 +389,8 @@ public class AC_Utility
 				break;
 			default:
 				System.err.println("AC_Utility.createConnection: " + targetType + " is not a valid target TerminalType.");
-				displayErrorMessage("There was a problem while creating the connection.");
+				//displayErrorMessage("There was a problem while creating the connection.");
+				displayMessage(JOptionPane.ERROR_MESSAGE, "Connection Failure", "There was a problem while creating the connection.");
 				return null;
 		}
 		
@@ -1138,7 +1143,8 @@ public class AC_Utility
 				String message = "A module template with the name \"" + name + "\" already exists." + eol;
 				message += "Module template names must be unique." + eol;
 				message += "Please enter a different name.";
-				JOptionPane.showMessageDialog(null, message, "Invalid Name", JOptionPane.WARNING_MESSAGE);
+				//JOptionPane.showMessageDialog(null, message, "Invalid Name", JOptionPane.WARNING_MESSAGE);
+				displayMessage(JOptionPane.WARNING_MESSAGE, "Invalid Name", message);
 			}
 			return true;
 		}
@@ -1153,7 +1159,8 @@ public class AC_Utility
 			if (displayMessage)
 			{
 				String message = "Please enter a name.";
-				JOptionPane.showMessageDialog(null, message, "Invalid Name", JOptionPane.WARNING_MESSAGE);
+				//JOptionPane.showMessageDialog(null, message, "Invalid Name", JOptionPane.WARNING_MESSAGE);
+				displayMessage(JOptionPane.WARNING_MESSAGE, "Invalid Name", message);
 			}
 			return true;
 		}
@@ -1171,7 +1178,8 @@ public class AC_Utility
 				String message = "The container module is already named \"" + name + "\"." + eol;
 				message += "A submodule cannot have the same name as its container module." + eol;
 				message += "Please enter a different name.";
-				JOptionPane.showMessageDialog(null, message, "Invalid Name", JOptionPane.WARNING_MESSAGE);
+				//JOptionPane.showMessageDialog(null, message, "Invalid Name", JOptionPane.WARNING_MESSAGE);
+				displayMessage(JOptionPane.WARNING_MESSAGE, "Invalid Name", message);
 			}
 			return true;
 		}
@@ -1187,7 +1195,8 @@ public class AC_Utility
 				String message = "A submodule with the name \"" + name + "\" already exists." + eol;
 				message += "Submodules on the same hierarchical level must have unique names." + eol;
 				message += "Please enter a different name.";
-				JOptionPane.showMessageDialog(null, message, "Invalid Name", JOptionPane.WARNING_MESSAGE);
+				//JOptionPane.showMessageDialog(null, message, "Invalid Name", JOptionPane.WARNING_MESSAGE);
+				displayMessage(JOptionPane.WARNING_MESSAGE, "Invalid Name", message);
 			}
 			return true;
 		}
@@ -1204,7 +1213,8 @@ public class AC_Utility
 				message += " already contains a submodule with the name \"" + name + "\"." + eol;
 				message += "A container cannot have the same name as one of its submodules." + eol;
 				message += "Please enter a different name.";
-				JOptionPane.showMessageDialog(null, message, "Invalid Name", JOptionPane.WARNING_MESSAGE);
+				//JOptionPane.showMessageDialog(null, message, "Invalid Name", JOptionPane.WARNING_MESSAGE);
+				displayMessage(JOptionPane.WARNING_MESSAGE, "Invalid Name", message);
 			}
 			return true;
 		}
@@ -1526,7 +1536,7 @@ public class AC_Utility
 		definition.setName(newName);
 		if (!fromModelBuilder)
 		{
-			AC_GUI.modelBuilder.setModuleName(newName);
+			AC_GUI.modelBuilder.setModuleDefinitionName(newName);
 		}
 		CCopasiDataModel dataModel = CopasiUtility.getCopasiModelFromModelName(oldName);
 		if (dataModel == null)
@@ -1771,6 +1781,14 @@ public class AC_Utility
 		// print the structures
 		System.out.println(output.toString());
 		CopasiUtility.printDataModelList();
+	}
+	
+	public static void displayMessage(int type, String title, String message)
+	{
+		JOptionPane.showMessageDialog(null,
+			    message,
+			    title,
+			    type);
 	}
 	
 	private static void getModuleDefinitionStructure(ModuleDefinition definition, int level, boolean includeInstances, StringBuilder msg)
@@ -2040,7 +2058,9 @@ public class AC_Utility
 		if (!CopasiUtility.removeDataModel(definition.getName()))
 		{
 			// the Copasi data model was not successfully removed
-			displayErrorMessage("The module " + definition.getName() + " was not completely removed.");
+			String message = "The module " + definition.getName() + " was not completely removed.";
+			//displayErrorMessage("The module " + definition.getName() + " was not completely removed.");
+			displayMessage(JOptionPane.WARNING_MESSAGE, "Remove Module", message);
 		}
 		moduleNameList.remove(definition.getName());
 		moduleDefinitionNameSet.remove(definition.getName());
@@ -2361,11 +2381,11 @@ public class AC_Utility
 	private static String generateModuleDefinitionName()
 	{
 		int index = 0;
-		String candidate = "ModuleDefinition_" + index;
-		while (moduleNameList.contains(candidate))
+		String candidate = "ModuleTemplate_" + index;
+		while (moduleDefinitionNameSet.contains(candidate))
 		{
 			index++;
-			candidate = "ModuleDefinition_" + index;
+			candidate = "ModuleTemplate_" + index;
 		}
 		return candidate;
 	}
