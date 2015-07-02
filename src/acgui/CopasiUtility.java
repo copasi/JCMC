@@ -283,7 +283,16 @@ public class CopasiUtility
 		String moduleName;
 		
 		moduleDefinitionName = validateModuleDefinitionName(dataModel, parent);
-		moduleName = validateModuleName(moduleDefinitionName, parent);
+		if (parent == null)
+		{
+			// new module will be the root
+			moduleName = moduleDefinitionName;
+		}
+		else
+		{
+			// new module will be a submodule
+			moduleName = validateModuleName(moduleDefinitionName, parent);
+		}
 		
 		if ((moduleDefinitionName == null) || (moduleName == null))
 		{
@@ -338,15 +347,15 @@ public class CopasiUtility
 		if (modelName == null || modelName.isEmpty())
 		{
 			String message = "The imported Module Definition does not have a name.";
-			JOptionPane.showMessageDialog(null, message, "Invalid Name", JOptionPane.WARNING_MESSAGE);
-			
-			modelName = AC_Utility.promptUserForNewModuleDefinitionName("Enter a Module Definition name:");
+			//JOptionPane.showMessageDialog(null, message, "Invalid Name", JOptionPane.WARNING_MESSAGE);
+			AC_Utility.displayMessage(JOptionPane.WARNING_MESSAGE, "Invalid Name", message);
+			modelName = AC_Utility.promptUserForNewModuleDefinitionName("Enter a Module Template name:");
 		}
 		else
 		{
 			if (!AC_Utility.moduleDefinitionNameValidation(modelName, true))
 			{
-				modelName = AC_Utility.promptUserForNewModuleDefinitionName("Enter a Module Definition name:");
+				modelName = AC_Utility.promptUserForNewModuleDefinitionName("Enter a Module Template name:");
 			}
 		}
 		
@@ -364,30 +373,8 @@ public class CopasiUtility
 		{
 			return null;
 		}
-		String newName = null;
-		String message;
-		boolean validName = false;
-		
-		while (!validName)
-		{
-			newName = AC_Utility.promptUserForNewModuleName(parent, "Enter a Module name:");
-			if (newName == null)
-			{
-				return null;
-			}
-			if (newName.equals(definitionName))
-			{
-				message = "A Module and a Module Definition cannot share the same name." + AC_Utility.eol;
-				message += "Please enter a different name.";
-				JOptionPane.showMessageDialog(null, message, "Invalid Name", JOptionPane.ERROR_MESSAGE);
-			}
-			else
-			{
-				validName = true;
-			}
-		}
-		
-		return newName;
+
+		return AC_Utility.promptUserForNewModuleName(parent, "Enter a Module name:");
 	}
 	/*
 	private void setLayout(Module mod)
