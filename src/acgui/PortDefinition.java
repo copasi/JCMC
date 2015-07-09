@@ -52,9 +52,9 @@ public class PortDefinition extends ACComponentDefinition
 	 */
 	public PortDefinition(ModuleDefinition iParent, String iRefName, String iName, PortType iPortType, VariableType iVariableType)
 	{
-		super(iParent, iRefName, iName);
+		super(iParent, iVariableType, iRefName, iName);
 		portType = iPortType;
-		variableType = iVariableType;
+		//variableType = iVariableType;
 		refNameSBMLid = "";
 	}
 	
@@ -67,7 +67,7 @@ public class PortDefinition extends ACComponentDefinition
 	{
 		return portType;
 	}
-	
+/*
 	public void setVariableType(VariableType iType)
 	{
 		variableType = iType;
@@ -77,7 +77,7 @@ public class PortDefinition extends ACComponentDefinition
 	{
 		return variableType;
 	}
-	
+*/
 	public void setRefNameSBMLID(String id)
 	{
 		refNameSBMLid = id;

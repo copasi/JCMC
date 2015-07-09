@@ -14,7 +14,7 @@ public class EquivalenceDefinition extends ACComponentDefinition
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	private VariableType variableType;
+	//private VariableType variableType;
 	
 	/**
 	 * @param iParent
@@ -41,8 +41,8 @@ public class EquivalenceDefinition extends ACComponentDefinition
 	 */
 	public EquivalenceDefinition(ModuleDefinition iParent, String iRefName, VariableType iVariableType)
 	{
-		super(iParent, iRefName);
-		variableType = iVariableType;
+		super(iParent, iVariableType, iRefName);
+		//variableType = iVariableType;
 	}
 
 	/**
@@ -55,7 +55,7 @@ public class EquivalenceDefinition extends ACComponentDefinition
 		super(iParent, iRefName, iName);
 		// TODO Auto-generated constructor stub
 	}
-
+/*
 	public void setVariableType(VariableType iType)
 	{
 		variableType = iType;
@@ -65,4 +65,5 @@ public class EquivalenceDefinition extends ACComponentDefinition
 	{
 		return variableType;
 	}
+*/
 }

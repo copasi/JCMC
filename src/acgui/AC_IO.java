@@ -309,14 +309,6 @@ public class AC_IO
 		return definition;
 	}
 	
-	private static void unpackAllConnectionDefinitions(Map<String, Object> data, ModuleDefinition definition)
-	{
-		ArrayList<Map<String, Object>> packedList;
-		ListIterator<Map<String, Object>> packedListIterator;
-		
-		
-	}
-	
 	private static Map<String, Object> packMathematicalAggregatorDefinition(Map<String, Object> data, MathematicalAggregatorDefinition definition)
 	{
 		ArrayList<Map<String, Object>> packedList;
@@ -403,39 +395,7 @@ public class AC_IO
 	private static Map<String, Object> packPortDefinition(PortDefinition definition)
 	{
 		Map<String, Object> data = new HashMap<String, Object>();
-		char portType;
-		char variableType;
-		
-		switch (definition.getType())
-		{
-			case INPUT:
-				portType = 'I';
-				break;
-			case OUTPUT:
-				portType = 'O';
-				break;
-			case EQUIVALENCE:
-				portType = 'E';
-				break;
-			default:
-				portType = '0';
-		}
-		
-		switch (definition.getVariableType())
-		{
-			case GLOBAL_QUANTITY:
-				variableType = 'G';
-				break;
-			case SPECIES:
-				variableType = 'S';
-				break;
-			default:
-				variableType = '0';
-		}
-		
-		//data.put("portType", portType);
 		data.put("portType", definition.getType().name());
-		//data.put("variableType", variableType);
 		packACComponentDefinition(data, definition);
 		return data;
 	}
@@ -445,44 +405,7 @@ public class AC_IO
 		PortDefinition definition = new PortDefinition(parent);
 		unpackACComponentDefinition(data, definition);
 		PortType portType = null;
-		VariableType variableType = null;
-		char pType = (Character)data.get("portType");
-		char vType = (Character)data.get("variableType");
 		
-		switch (pType)
-		{
-			case 'I':
-				portType = PortType.INPUT;
-				break;
-			case 'O':
-				portType = PortType.OUTPUT;
-				break;
-			case 'E':
-				portType = PortType.EQUIVALENCE;
-				break;
-			default:
-				// there is an error
-				System.err.println("unpackPortDefinition: " + pType + " is not a valid PortType.");
-				displayErrorMessage();
-				return null;
-		}
-		
-		switch (vType)
-		{
-			case 'G':
-				variableType = VariableType.GLOBAL_QUANTITY;
-				break;
-			case 'S':
-				variableType = VariableType.SPECIES;
-				break;
-			default:
-				// there is an error
-				System.err.println("unpackPortDefinition: " + vType + " is not a valid VariableType.");
-				displayErrorMessage();
-				return null;
-		}
-		
-		/*
 		try
 		{
 			String type = (String)data.get("portType");
@@ -492,10 +415,8 @@ public class AC_IO
 			   ex.printStackTrace();
 			   System.err.println("unpackPortDefinition failed");
 		}
-		*/
 		
 		definition.setType(portType);
-		definition.setVariableType(variableType);
 		
 		return definition;
 	}
@@ -503,20 +424,6 @@ public class AC_IO
 	private static Map<String, Object> packVisibleVariableDefinition(VisibleVariableDefinition definition)
 	{
 		Map<String, Object> data = new HashMap<String, Object>();
-		char variableType;
-		switch (definition.getVariableType())
-		{
-			case GLOBAL_QUANTITY:
-				variableType = 'G';
-				break;
-			case SPECIES:
-				variableType = 'S';
-				break;
-			default:
-				variableType = '0';
-		}
-		
-		//data.put("variableType", variableType);
 		packACComponentDefinition(data, definition);
 		return data;
 	}
@@ -524,47 +431,13 @@ public class AC_IO
 	private static VisibleVariableDefinition unpackVisibleVariableDefinition(Map<String, Object> data, ModuleDefinition parent)
 	{
 		VisibleVariableDefinition definition = new VisibleVariableDefinition(parent);
-		unpackACComponentDefinition(data, definition);
-		VariableType variableType = null;
-		char vType = (Character)data.get("variableType");
-		
-		switch (vType)
-		{
-			case 'G':
-				variableType = VariableType.GLOBAL_QUANTITY;
-				break;
-			case 'S':
-				variableType = VariableType.SPECIES;
-				break;
-			default:
-				// there is an error
-				System.err.println("unpackVisibleVariableDefinition: " + vType + " is not a valid VariableType.");
-				displayErrorMessage();
-				return null;
-		}
-		
-		definition.setVariableType(variableType);
-		
+		unpackACComponentDefinition(data, definition);	
 		return definition;
 	}
 	
 	private static Map<String, Object> packEquivalenceDefinition(EquivalenceDefinition definition)
 	{
 		Map<String, Object> data = new HashMap<String, Object>();
-		char variableType;
-		switch (definition.getVariableType())
-		{
-			case GLOBAL_QUANTITY:
-				variableType = 'G';
-				break;
-			case SPECIES:
-				variableType = 'S';
-				break;
-			default:
-				variableType = '0';
-		}
-		
-		//data.put("variableType", variableType);
 		packACComponentDefinition(data, definition);
 		return data;
 	}
@@ -573,67 +446,12 @@ public class AC_IO
 	{
 		EquivalenceDefinition definition = new EquivalenceDefinition(parent);
 		unpackACComponentDefinition(data, definition);
-		VariableType variableType = null;
-		char vType = (Character)data.get("variableType");
-		
-		switch (vType)
-		{
-			case 'G':
-				variableType = VariableType.GLOBAL_QUANTITY;
-				break;
-			case 'S':
-				variableType = VariableType.SPECIES;
-				break;
-			default:
-				// there is an error
-				System.err.println("unpackEquivalenceDefinition: " + vType + " is not a valid VariableType.");
-				displayErrorMessage();
-				return null;
-		}
-		
-		definition.setVariableType(variableType);
-		
 		return definition;
 	}
 	
 	private static Map<String, Object> packConnectionDefinition(ConnectionDefinition definition)
 	{
 		Map<String, Object> data = new HashMap<String, Object>();		
-		char sourceType;
-		char targetType;
-		
-		switch(definition.getSourceType())
-		{
-			case EQUIVALENCE:
-				sourceType = 'E';
-				break;
-			case PORT:
-				sourceType = 'P';
-				break;
-			case VISIBLEVARIABLE:
-				sourceType = 'V';
-				break;
-			default:
-				sourceType = '0';
-		}
-		
-		switch(definition.getTargetType())
-		{
-			case EQUIVALENCE:
-				targetType = 'E';
-				break;
-			case PORT:
-				targetType = 'P';
-				break;
-			case VISIBLEVARIABLE:
-				targetType = 'V';
-				break;
-			default:
-				targetType = '0';
-		}
-		
-		//data.put("sourceParent", definition.getSourceDefinition().getParent().getName());
-		//data.put("targetParent", definition.getTargetDefinition().getParent().getName());
 		data.put("sourceParent", definition.getSourceDefinition().getParent().getID());
 		data.put("targetParent", definition.getTargetDefinition().getParent().getID());
 		data.put("sourceRefName", definition.getSourceDefinition().getRefName());
@@ -651,51 +469,11 @@ public class AC_IO
 		String targetParent = (String)data.get("targetParent");
 		String sourceRefName = (String)data.get("sourceRefName");
 		String targetRefName = (String)data.get("targetRefName");
-		char sType = (Character)data.get("sourceType");
-		char tType = (Character)data.get("targetType");
 		VariableType sourceVariableType = null;
 		VariableType targetVariableType = null;
 		TerminalType sourceTerminalType = null;
 		TerminalType targetTerminalType = null;
-		TerminalType sourceType = null;
-		TerminalType targetType = null;
-		
-		switch (sType)
-		{
-			case 'E':
-				sourceType = TerminalType.EQUIVALENCE;
-				break;
-			case 'P':
-				sourceType = TerminalType.PORT;
-				break;
-			case 'V':
-				sourceType = TerminalType.VISIBLEVARIABLE;
-				break;
-			default:
-				// there is an error
-				System.err.println("unpackConnectionDefinition: " + sType + " is not a valid source TerminalType.");
-				displayErrorMessage();
-				return null;
-		}
-		
-		switch (tType)
-		{
-			case 'E':
-				targetType = TerminalType.EQUIVALENCE;
-				break;
-			case 'P':
-				targetType = TerminalType.PORT;
-				break;
-			case 'V':
-				targetType = TerminalType.VISIBLEVARIABLE;
-				break;
-			default:
-				// there is an error
-				System.err.println("unpackConnectionDefinition: " + tType + " is not a valid target TerminalType.");
-				displayErrorMessage();
-				return null;
-		}
-		/*
+
 		try
 		{
 			String type = (String)data.get("sourceVariableType");
@@ -735,12 +513,9 @@ public class AC_IO
 			   ex.printStackTrace();
 			   System.err.println("unpackConnectionDefinition failed, targetTerminalType");
 		}
-		*/
 		
-		ACComponentDefinition source = getTerminalDefinition(parent, sourceParent, sourceType, sourceRefName);
-		ACComponentDefinition target = getTerminalDefinition(parent, targetParent, targetType, targetRefName);
-		//ACComponentDefinition source = getTerminalDefinition(parent, sourceParent, sourceVariableType, sourceTerminalType, sourceRefName);
-		//ACComponentDefinition target = getTerminalDefinition(parent, targetParent, targetVariableType, targetTerminalType, targetRefName);
+		ACComponentDefinition source = getTerminalDefinition(parent, sourceParent, sourceVariableType, sourceTerminalType, sourceRefName);
+		ACComponentDefinition target = getTerminalDefinition(parent, targetParent, targetVariableType, targetTerminalType, targetRefName);
 		
 		if (source == null)
 		{
@@ -758,7 +533,7 @@ public class AC_IO
 			return null;
 		}
 		
-		return new ConnectionDefinition(parent, source, sourceType, target, targetType);
+		return new ConnectionDefinition(parent, source, sourceTerminalType, target, targetTerminalType);
 	}
 		
 	private static void packACComponentDefinition(Map<String, Object> data, ACComponentDefinition definition)
@@ -770,7 +545,6 @@ public class AC_IO
 	
 	private static void unpackACComponentDefinition(Map<String, Object> data, ACComponentDefinition definition)
 	{
-		/*
 		VariableType variableType = null;
 		try
 		{
@@ -781,10 +555,10 @@ public class AC_IO
 			   ex.printStackTrace();
 			   System.err.println("unpackACComponentDefinition failed");
 		}
-		*/
+		
 		String refName = (String)data.get("refName");
 		String name = (String)data.get("name");
-		//definition.setVariableType(variableType);
+		definition.setVariableType(variableType);
 		definition.setRefName(refName);
 		definition.setName(name);
 	}
@@ -1039,7 +813,7 @@ public class AC_IO
 	private static PortNode unpackPortNode(Map<String, Object> data, Module parent)
 	{
 		String refName = (String)data.get("refName");
-		/*
+		
 		VariableType variableType = null;
 		try
 		{
@@ -1050,9 +824,8 @@ public class AC_IO
 			   ex.printStackTrace();
 			   System.err.println("unpackPortNode failed");
 		}
-		*/
-		ACComponentDefinition definition = getACComponentDefinition(parent.getModuleDefinition().getPorts().listIterator(), refName);
-		//ACComponentDefinition definition = getACComponentDefinition(parent.getModuleDefinition().getPorts().listIterator(), refName, variableType);
+		
+		ACComponentDefinition definition = getACComponentDefinition(parent.getModuleDefinition().getPorts().listIterator(), refName, variableType);
 		if (definition == null)
 		{
 			// there is an error
@@ -1077,7 +850,7 @@ public class AC_IO
 	private static VisibleVariableNode unpackVisibleVariableNode(Map<String, Object> data, Module parent)
 	{
 		String refName = (String)data.get("refName");
-		/*
+		
 		VariableType variableType = null;
 		try
 		{
@@ -1088,9 +861,8 @@ public class AC_IO
 			   ex.printStackTrace();
 			   System.err.println("unpackVisibleVariableNode failed");
 		}
-		*/
-		ACComponentDefinition definition = getACComponentDefinition(parent.getModuleDefinition().getVisibleVariables().listIterator(), refName);
-		//ACComponentDefinition definition = getACComponentDefinition(parent.getModuleDefinition().getVisibleVariables().listIterator(), refName, variableType);
+		
+		ACComponentDefinition definition = getACComponentDefinition(parent.getModuleDefinition().getVisibleVariables().listIterator(), refName, variableType);
 		if (definition == null)
 		{
 			// there is an error
@@ -1115,7 +887,7 @@ public class AC_IO
 	private static EquivalenceNode unpackEquivalenceNode(Map<String, Object> data, Module parent)
 	{
 		String refName = (String)data.get("refName");
-		/*
+		
 		VariableType variableType = null;
 		try
 		{
@@ -1126,9 +898,8 @@ public class AC_IO
 			   ex.printStackTrace();
 			   System.err.println("unpackEquivalenceNode failed");
 		}
-		*/
-		ACComponentDefinition definition = getACComponentDefinition(parent.getModuleDefinition().getEquivalences().listIterator(), refName);
-		//ACComponentDefinition definition = getACComponentDefinition(parent.getModuleDefinition().getEquivalences().listIterator(), refName, variableType);
+		
+		ACComponentDefinition definition = getACComponentDefinition(parent.getModuleDefinition().getEquivalences().listIterator(), refName, variableType);
 		if (definition == null)
 		{
 			// there is an error
@@ -1145,38 +916,6 @@ public class AC_IO
 	{
 		Map<String, Object> data = new HashMap<String, Object>();
 		// how to connect a ConnectionNode to a ConnectionDefinition?
-		char sourceType;
-		char targetType;
-		
-		switch(connection.getConnectionDefinition().getSourceType())
-		{
-			case EQUIVALENCE:
-				sourceType = 'E';
-				break;
-			case PORT:
-				sourceType = 'P';
-				break;
-			case VISIBLEVARIABLE:
-				sourceType = 'V';
-				break;
-			default:
-				sourceType = '0';
-		}
-		
-		switch(connection.getConnectionDefinition().getTargetType())
-		{
-			case EQUIVALENCE:
-				targetType = 'E';
-				break;
-			case PORT:
-				targetType = 'P';
-				break;
-			case VISIBLEVARIABLE:
-				targetType = 'V';
-				break;
-			default:
-				targetType = '0';
-		}
 		String sourceParentID = ((ACComponentNode)connection.getDrawingCell().getSource().getValue()).getParent().getID();
 		String targetParentID = ((ACComponentNode)connection.getDrawingCell().getTarget().getValue()).getParent().getID();
 		data.put("sourceParent", connection.getConnectionDefinition().getSourceDefinition().getParent().getName());
@@ -1189,10 +928,7 @@ public class AC_IO
 		data.put("targetVariableType", connection.getConnectionDefinition().getTargetDefinition().getVariableType().name());
 		data.put("sourceTerminalType", connection.getConnectionDefinition().getSourceType().name());
 		data.put("targetTerminalType", connection.getConnectionDefinition().getTargetType().name());
-		//data.put("sourceType", sourceType);
-		//data.put("targetType", targetType);
 		packACComponentNode(data, connection);
-		// pack source/target node id's
 		return data;
 	}
 	
@@ -1203,52 +939,11 @@ public class AC_IO
 		String sourceRefName = (String)data.get("sourceRefName");
 		String targetRefName = (String)data.get("targetRefName");
 		String drawingCellStyle = (String)data.get("drawingCellStyle");
-		char sType = (Character)data.get("sourceType");
-		char tType = (Character)data.get("targetType");
 		VariableType sourceVariableType = null;
 		VariableType targetVariableType = null;
 		TerminalType sourceTerminalType = null;
 		TerminalType targetTerminalType = null;
-		TerminalType sourceType = null;
-		TerminalType targetType = null;
 		
-		switch (sType)
-		{
-			case 'E':
-				sourceType = TerminalType.EQUIVALENCE;
-				break;
-			case 'P':
-				sourceType = TerminalType.PORT;
-				break;
-			case 'V':
-				sourceType = TerminalType.VISIBLEVARIABLE;
-				break;
-			default:
-				// there is an error
-				System.err.println("unpackConnectionNode: " + sType + " is not a valid source TerminalType.");
-				displayErrorMessage();
-				return null;
-		}
-		
-		switch (tType)
-		{
-			case 'E':
-				targetType = TerminalType.EQUIVALENCE;
-				break;
-			case 'P':
-				targetType = TerminalType.PORT;
-				break;
-			case 'V':
-				targetType = TerminalType.VISIBLEVARIABLE;
-				break;
-			default:
-				// there is an error
-				System.err.println("unpackConnectionNode: " + tType + " is not a valid target TerminalType.");
-				displayErrorMessage();
-				return null;
-		}
-		
-		/*
 		try
 		{
 			String type = (String)data.get("sourceVariableType");
@@ -1288,14 +983,10 @@ public class AC_IO
 			   ex.printStackTrace();
 			   System.err.println("unpackConnectionDefinition failed, targetTerminalType");
 		}
-		*/
 		
-		ConnectionDefinition definition = getConnectionDefinition(parent.getModuleDefinition().getConnections().listIterator(), sourceType, sourceRefName, targetType, targetRefName);
-		ACComponentNode source = getTerminalNode(parent, sourceParentID, sourceType, sourceRefName);
-		ACComponentNode target = getTerminalNode(parent, targetParentID, targetType, targetRefName);
-		//ConnectionDefinition definition = getConnectionDefinition(parent.getModuleDefinition().getConnections().listIterator(), sourceVariableType, sourceTerminalType, sourceRefName, targetVariableType, targetTerminalType, targetRefName);
-		//ACComponentNode source = getTerminalNode(parent, sourceParentID, sourceVariableType, sourceTerminalType, sourceRefName);
-		//ACComponentNode target = getTerminalNode(parent, targetParentID, targetVariableType, targetTerminalType, targetRefName);
+		ConnectionDefinition definition = getConnectionDefinition(parent.getModuleDefinition().getConnections().listIterator(), sourceVariableType, sourceTerminalType, sourceRefName, targetVariableType, targetTerminalType, targetRefName);
+		ACComponentNode source = getTerminalNode(parent, sourceParentID, sourceVariableType, sourceTerminalType, sourceRefName);
+		ACComponentNode target = getTerminalNode(parent, targetParentID, targetVariableType, targetTerminalType, targetRefName);
 		
 		if (definition == null)
 		{
@@ -1321,7 +1012,6 @@ public class AC_IO
 			return null;
 		}
 		
-		//unpackACComponentNode(data, node);
 		ConnectionNode node = new ConnectionNode(parent, definition, drawingCellStyle);
 		AC_GUI.drawingBoard.createConnection(node, source.getDrawingCell(), target.getDrawingCell());
 		return node;
@@ -1370,86 +1060,12 @@ public class AC_IO
 		return geo;
 	}
 	
-	private static ACComponentDefinition getTerminalDefinition(ModuleDefinition parent, String parentID, TerminalType type, String refName)
-	{
-		ACComponentDefinition definition;
-		ModuleDefinition terminalParent;
-		ListIterator<ACComponentDefinition> list;
-		
-		/*
-		if (parent.getName().equals(parentName))
-		{
-			terminalParent = parent;
-		}
-		else
-		{
-			// the terminal must belong to a child of parent
-			terminalParent = getModuleDefinition(parent.getChildren().listIterator(), parentName);
-			if (terminalParent == null)
-			{
-				// there is an error
-				return null;
-			}
-		}
-		*/
-		if (parent.getID().equals(parentID))
-		{
-			terminalParent = parent;
-		}
-		else
-		{
-			// the terminal must belong to a child of parent
-			terminalParent = getModuleDefinitionfromID(parent.getChildren().listIterator(), parentID);
-			if (terminalParent == null)
-			{
-				// there is an error
-				return null;
-			}
-		}
-		switch (type)
-		{
-			case EQUIVALENCE:
-				list = terminalParent.getEquivalences().listIterator();
-				break;
-			case PORT:
-				list = terminalParent.getPorts().listIterator();
-				break;
-			case VISIBLEVARIABLE:
-				list = terminalParent.getVisibleVariables().listIterator();
-				break;
-			default:
-				// there is an error
-				System.err.println("getTerminalDefinition: " + type + " is not a valid TerminalType.");
-				displayErrorMessage();
-				return null;
-		}
-		
-		definition = getACComponentDefinition(list, refName);
-		return definition;
-	}
-	
 	private static ACComponentDefinition getTerminalDefinition(ModuleDefinition parent, String parentID, VariableType variableType, TerminalType terminalType, String refName)
 	{
 		ACComponentDefinition definition;
 		ModuleDefinition terminalParent;
 		ListIterator<ACComponentDefinition> list;
 		
-		/*
-		if (parent.getName().equals(parentName))
-		{
-			terminalParent = parent;
-		}
-		else
-		{
-			// the terminal must belong to a child of parent
-			terminalParent = getModuleDefinition(parent.getChildren().listIterator(), parentName);
-			if (terminalParent == null)
-			{
-				// there is an error
-				return null;
-			}
-		}
-		*/
 		if (parent.getID().equals(parentID))
 		{
 			terminalParent = parent;
@@ -1486,41 +1102,6 @@ public class AC_IO
 		return definition;
 	}
 	
-	private static ACComponentNode getTerminalNode(Module parent, String parentID, TerminalType type, String refName)
-	{
-		Module terminalParent;
-		
-		if (parent.getID().equals(parentID))
-		{
-			terminalParent = parent;
-		}
-		else
-		{
-			// the terminal must belong to a child of parent
-			terminalParent = getModule(parent.getChildren().listIterator(), parentID);
-			if (terminalParent == null)
-			{
-				// there is an error
-				return null;
-			}
-		}
-		
-		switch (type)
-		{
-			case EQUIVALENCE:
-				return getEquivalenceNode(terminalParent, refName);
-			case PORT:
-				return getPortNode(terminalParent, refName);
-			case VISIBLEVARIABLE:
-				return getVisibleVariableNode(terminalParent, refName);
-			default:
-				// there is an error
-				System.err.println("getTerminalNode: " + type + " is not a valid TerminalType.");
-				displayErrorMessage();
-				return null;
-		}
-	}
-	
 	private static ACComponentNode getTerminalNode(Module parent, String parentID, VariableType variableType, TerminalType terminalType, String refName)
 	{
 		Module terminalParent;
@@ -1554,30 +1135,6 @@ public class AC_IO
 				displayErrorMessage();
 				return null;
 		}
-	}
-	
-	private static ModuleDefinition getModuleDefinitionfromName(ListIterator<ModuleDefinition> list, String name)
-	{
-		ModuleDefinition currentDefinition;
-		while (list.hasNext())
-		{
-			currentDefinition = list.next();
-			if (currentDefinition.getName().equals(name))
-			{
-				return currentDefinition;
-			}
-		}
-		
-		ListIterator<ModuleDefinition> backupList = definitionList.listIterator();
-		while (backupList.hasNext())
-		{
-			currentDefinition = backupList.next();
-			if (currentDefinition.getName().equals(name))
-			{
-				return currentDefinition;
-			}
-		}
-		return null;
 	}
 	
 	private static ModuleDefinition getModuleDefinitionfromID(ListIterator<ModuleDefinition> list, String id)
@@ -1618,49 +1175,6 @@ public class AC_IO
 		return null;
 	}
 	
-	/*
-	private static EquivalenceDefinition getEquivalenceDefinition(ListIterator<EquivalenceDefinition> list, String refName)
-	{
-		EquivalenceDefinition currentDefinition;
-		while (list.hasNext())
-		{
-			currentDefinition = list.next();
-			if (currentDefinition.getRefName().equals(refName))
-			{
-				return currentDefinition;
-			}
-		}
-		return null;
-	}
-	
-	private static PortDefinition getPortDefinition(ListIterator<PortDefinition> list, String refName)
-	{
-		PortDefinition currentDefinition;
-		while (list.hasNext())
-		{
-			currentDefinition = list.next();
-			if (currentDefinition.getRefName().equals(refName))
-			{
-				return currentDefinition;
-			}
-		}
-		return null;
-	}
-	*/
-	private static ACComponentDefinition getACComponentDefinition(ListIterator<ACComponentDefinition> list, String refName)
-	{
-		ACComponentDefinition currentDefinition;
-		while (list.hasNext())
-		{
-			currentDefinition = list.next();
-			if (currentDefinition.getRefName().equals(refName))
-			{
-				return currentDefinition;
-			}
-		}
-		return null;
-	}
-	
 	private static ACComponentDefinition getACComponentDefinition(ListIterator<ACComponentDefinition> list, String refName, VariableType variableType)
 	{
 		ACComponentDefinition currentDefinition;
@@ -1670,51 +1184,6 @@ public class AC_IO
 			if ((currentDefinition.getRefName().equals(refName)) && (currentDefinition.getVariableType() == variableType))
 			{
 				return currentDefinition;
-			}
-		}
-		return null;
-	}
-	
-	private static ACComponentNode getPortNode(Module parent, String refName)
-	{
-		ListIterator<ACComponentNode> list = parent.getPorts().listIterator();
-		PortNode currentNode;
-		while (list.hasNext())
-		{
-			currentNode = (PortNode)list.next();
-			if (currentNode.getPortDefinition().getRefName().equals(refName))
-			{
-				return currentNode;
-			}
-		}
-		return null;
-	}
-	
-	private static ACComponentNode getEquivalenceNode(Module parent, String refName)
-	{
-		ListIterator<ACComponentNode> list = parent.getEquivalences().listIterator();
-		EquivalenceNode currentNode;
-		while (list.hasNext())
-		{
-			currentNode = (EquivalenceNode)list.next();
-			if (currentNode.getEquivalenceDefinition().getRefName().equals(refName))
-			{
-				return currentNode;
-			}
-		}
-		return null;
-	}
-	
-	private static ACComponentNode getVisibleVariableNode(Module parent, String refName)
-	{
-		ListIterator<ACComponentNode> list = parent.getVisibleVariables().listIterator();
-		VisibleVariableNode currentNode;
-		while (list.hasNext())
-		{
-			currentNode = (VisibleVariableNode)list.next();
-			if (currentNode.getVisibleVariableDefinition().getRefName().equals(refName))
-			{
-				return currentNode;
 			}
 		}
 		return null;
@@ -1763,23 +1232,6 @@ public class AC_IO
 					&& (currentNode.getVisibleVariableDefinition().getVariableType() == variableType))
 			{
 				return currentNode;
-			}
-		}
-		return null;
-	}
-	
-	private static ConnectionDefinition getConnectionDefinition(ListIterator<ConnectionDefinition> list, TerminalType sourceType, String sourceRefName, TerminalType targetType, String targetRefName)
-	{
-		ConnectionDefinition currentDefinition;
-		while (list.hasNext())
-		{
-			currentDefinition = list.next();
-			if ((sourceType == currentDefinition.getSourceType()) 
-					&& (targetType == currentDefinition.getTargetType())
-					&& (sourceRefName.equals(currentDefinition.getSourceDefinition().getRefName()))
-					&& (targetRefName.equals(currentDefinition.getTargetDefinition().getRefName())))
-			{
-				return currentDefinition;
 			}
 		}
 		return null;

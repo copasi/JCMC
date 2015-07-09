@@ -352,7 +352,7 @@ public class ModelBuilder
 			{
 				// the module definition name field has already been changed in modelbuilder,
 				// now set the module name field in modelbuilder
-				setModuleDefinitionName(newName);
+				setModuleName(newName);
 			}
 			// next, set the names in the rest of JCMC
 			AC_Utility.changeModuleName(loadedModule, newName, true);
