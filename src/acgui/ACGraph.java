@@ -108,7 +108,7 @@ public class ACGraph extends mxGraph
 		{
 			if(((PortNode)((mxCell)cell).getValue()).getParent() == AC_GUI.activeModule)
 			{
-				return ((PortNode)((mxCell)cell).getValue()).getPortDefinition().getRefName() + " = " + AC_GUI.modelBuilder.getValue(((PortNode)((mxCell)cell).getValue()).getPortDefinition().getRefName());
+				return ((PortNode)((mxCell)cell).getValue()).getDefinition().getRefName() + " = " + AC_GUI.modelBuilder.getValue(((PortNode)((mxCell)cell).getValue()).getDefinition().getRefName());
 			}
 		}
 		
@@ -439,7 +439,7 @@ public class ACGraph extends mxGraph
 		String shapeColor = "";
 
 		PortNode port = (PortNode) ((mxCell) cell).getValue();
-		PortType portType = port.getPortDefinition().getType();
+		PortType portType = ((PortDefinition)port.getDefinition()).getType();
 
 		if (portType == PortType.OUTPUT)
 		{
@@ -582,7 +582,7 @@ public class ACGraph extends mxGraph
 				style += "_standard";
 				break;
 			case PORT:
-				portType = ((PortNode)terminal).getPortDefinition().getType();
+				portType = ((PortDefinition)terminal.getDefinition()).getType();
 				switch (portType)
 				{
 				case INPUT:
@@ -725,7 +725,7 @@ public class ACGraph extends mxGraph
 				// the source is a visible variable
 				// the target is a port
 				PortNode targetPort = (PortNode)targetObject;
-				PortType targetPortType = ((PortNode)targetObject).getPortDefinition().getType();
+				PortType targetPortType = ((PortDefinition)targetPort.getDefinition()).getType();
 				Module targetModule = targetPort.getParent();
 				
 				if(targetModule == AC_GUI.activeModule)
@@ -809,7 +809,7 @@ public class ACGraph extends mxGraph
 				// the source is an equivalence node
 				// the target is a port
 				PortNode targetPort = (PortNode)targetObject;
-				PortType targetPortType = ((PortNode)targetObject).getPortDefinition().getType();
+				PortType targetPortType = ((PortDefinition)targetPort.getDefinition()).getType();
 				Module targetModule = targetPort.getParent();
 				
 				if (targetModule == AC_GUI.activeModule)
@@ -868,7 +868,7 @@ public class ACGraph extends mxGraph
 		{
 			// the source is a port
 			PortNode sourcePort = (PortNode)sourceObject;
-			PortType sourcePortType = sourcePort.getPortDefinition().getType();
+			PortType sourcePortType = ((PortDefinition)sourcePort.getDefinition()).getType();
 			Module sourceModule = sourcePort.getParent();
 			
 			if (sourceModule == AC_GUI.activeModule)
@@ -921,7 +921,7 @@ public class ACGraph extends mxGraph
 					// the sourceModule is the active module
 					// the target is a port
 					PortNode targetPort = (PortNode)targetObject;
-					PortType targetPortType = targetPort.getPortDefinition().getType();
+					PortType targetPortType = ((PortDefinition)targetPort.getDefinition()).getType();
 					Module targetModule = targetPort.getParent();
 					
 					if (sourceModule == targetModule)
@@ -1037,7 +1037,7 @@ public class ACGraph extends mxGraph
 					// the sourceModule is a submodule
 					// the target is a port
 					PortNode targetPort = (PortNode)targetObject;
-					PortType targetPortType = targetPort.getPortDefinition().getType();
+					PortType targetPortType = ((PortDefinition)targetPort.getDefinition()).getType();
 					Module targetModule = targetPort.getParent();
 					
 					if (targetModule == AC_GUI.activeModule)

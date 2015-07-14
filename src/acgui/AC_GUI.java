@@ -587,14 +587,15 @@ public class AC_GUI extends JFrame
 			mxCell target = null;
 			TerminalType targetType = null;
 			String drawingCellStyle = null;
+			PortType portType = ((PortDefinition)port.getDefinition()).getType();
 			boolean noProblems = true;
 			// the variable to show is linked to a PortNode
-			switch (port.getPortDefinition().getType())
+			switch (portType)
 			{
 				case INPUT:
 					node = AC_Utility.createVisibleVariable(refName, vType, activeModule);
 					drawingBoard.addComponentNodeCell(node);
-					if (!AC_Utility.addNodetoRemainingInstances(activeModule, ((VisibleVariableNode)node).getVisibleVariableDefinition()))
+					if (!AC_Utility.addVNodetoRemainingInstances(activeModule, node.getDefinition()))
 					{
 						System.err.println("Error AC_GUI.showVariable(): VisibleVariableNodes were not successfully added to all Module instances.");
 					}
@@ -607,7 +608,7 @@ public class AC_GUI extends JFrame
 				case OUTPUT:
 					node = AC_Utility.createVisibleVariable(refName, vType, activeModule);
 					drawingBoard.addComponentNodeCell(node);
-					if (!AC_Utility.addNodetoRemainingInstances(activeModule, ((VisibleVariableNode)node).getVisibleVariableDefinition()))
+					if (!AC_Utility.addVNodetoRemainingInstances(activeModule, node.getDefinition()))
 					{
 						System.err.println("Error AC_GUI.showVariable(): VisibleVariableNodes were not successfully added to all Module instances.");
 					}
@@ -620,7 +621,7 @@ public class AC_GUI extends JFrame
 				case EQUIVALENCE:
 					node = AC_Utility.createEquivalence(refName, vType, activeModule);
 					drawingBoard.addComponentNodeCell(node);
-					if (!AC_Utility.addNodetoRemainingInstances(activeModule, ((EquivalenceNode)node).getEquivalenceDefinition()))
+					if (!AC_Utility.addENodetoRemainingInstances(activeModule, node.getDefinition()))
 					{
 						System.err.println("Error AC_GUI.showVariable(): EquivalenceNodes were not successfully added to all Module instances.");
 					}
@@ -660,7 +661,7 @@ public class AC_GUI extends JFrame
 			// species is not listed, add a new species to msmb
 			modelBuilder.addSpecies(refName);
 		}
-		if (!AC_Utility.addNodetoRemainingInstances(activeModule, eNode.getEquivalenceDefinition()))
+		if (!AC_Utility.addENodetoRemainingInstances(activeModule, eNode.getDefinition()))
 		{
 			System.err.println("Error AC_GUI.addEquivalenceNode(): EquivalenceNodes were not successfully added to all Module instances.");
 		}
@@ -718,7 +719,7 @@ public class AC_GUI extends JFrame
 		
 		VisibleVariableNode variableNode = AC_Utility.createVisibleVariable(refName, vType, activeModule);
 		drawingBoard.addComponentNodeCell(variableNode);
-		if (!AC_Utility.addNodetoRemainingInstances(activeModule, variableNode.getVisibleVariableDefinition()))
+		if (!AC_Utility.addVNodetoRemainingInstances(activeModule, variableNode.getDefinition()))
 		{
 			System.err.println("Error AC_GUI.addVisibleVariable(): VisibleVariableNodes were not successfully added to all Module instances.");
 		}
@@ -738,7 +739,7 @@ public class AC_GUI extends JFrame
 			// species is not listed, add a new species to msmb
 			modelBuilder.addSpecies(refName);
 		}
-		if (!AC_Utility.addNodetoRemainingInstances(activeModule, variableNode.getVisibleVariableDefinition()))
+		if (!AC_Utility.addVNodetoRemainingInstances(activeModule, variableNode.getDefinition()))
 		{
 			System.err.println("Error AC_GUI.addVisibleVariable(): VisibleVariableNodes were not successfully added to all Module instances.");
 		}
@@ -817,7 +818,7 @@ public class AC_GUI extends JFrame
 		modelBuilder.addPort(pNode);
 		drawingBoard.addPort(pNode);
 		//drawingBoard.addPort(parentMod, pNode);
-		if (!AC_Utility.addNodetoRemainingInstances(parentMod, pNode.getPortDefinition()))
+		if (!AC_Utility.addPNodetoRemainingInstances(parentMod, pNode.getDefinition()))
 		{
 			System.err.println("Error AC_GUI.addPort(): PortNodes were not successfully added to all Module instances.");
 		}
@@ -906,7 +907,7 @@ public class AC_GUI extends JFrame
 		if (containerModule != null)
 		{
 			// find connections attached to the port in the container module
-			PortDefinition portDefinition = pNode.getPortDefinition();
+			ACComponentDefinition portDefinition = pNode.getDefinition();
 			ListIterator<ConnectionNode> nodeList = containerModule.getConnections().listIterator();
 			ConnectionNode connectionNode;
 			ConnectionDefinition connectionDefinition;
@@ -989,7 +990,7 @@ public class AC_GUI extends JFrame
 	
 	public static void updatePort(PortNode port, String value, int col)
 	{
-		PortDefinition portDefinition = port.getPortDefinition();
+		PortDefinition portDefinition = (PortDefinition)port.getDefinition();
 		ModuleDefinition moduleDefinition = portDefinition.getParent();
 		
 		switch (col)
@@ -1016,7 +1017,7 @@ public class AC_GUI extends JFrame
 	
 	public static void updatePortInstantiations(PortNode port, String value, int col)
 	{
-		ModuleDefinition moduleDefinition = port.getPortDefinition().getParent();
+		ModuleDefinition moduleDefinition = port.getDefinition().getParent();
 		/*
 		ListIterator<Module> instanceList = moduleDefinition.getInstances().listIterator();
 		Module module;
@@ -1095,7 +1096,7 @@ public class AC_GUI extends JFrame
 		while(vars.hasNext())
 		{
 			currentVar = (VisibleVariableNode)vars.next();
-			if ((currentVar.getVisibleVariableDefinition().getVariableType() == vType) && currentVar.getVisibleVariableDefinition().getRefName().equalsIgnoreCase(refName))
+			if ((currentVar.getDefinition().getVariableType() == vType) && currentVar.getDefinition().getRefName().equals(refName))
 			{
 				drawingBoard.setSelected(currentVar.getDrawingCell());
 				return;
@@ -1106,7 +1107,7 @@ public class AC_GUI extends JFrame
 		while(eNodes.hasNext())
 		{
 			currenteNode = (EquivalenceNode)eNodes.next();
-			if((vType == VariableType.SPECIES) && currenteNode.getEquivalenceDefinition().getRefName().equalsIgnoreCase(refName))
+			if((vType == VariableType.SPECIES) && currenteNode.getDefinition().getRefName().equals(refName))
 			{
 				drawingBoard.setSelected(currenteNode.getDrawingCell());
 				return;

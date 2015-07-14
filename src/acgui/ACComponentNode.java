@@ -18,6 +18,7 @@ public class ACComponentNode implements Serializable
 	private static final long serialVersionUID = 1L;
 
 	private Module parent;
+	private ACComponentDefinition definition;
 	private mxCell drawingCell;
 	private mxGeometry drawingCellGeometry;
 	private String drawingCellStyle;
@@ -25,6 +26,16 @@ public class ACComponentNode implements Serializable
 	public ACComponentNode(Module iParent)
 	{
 		parent = iParent;
+		definition = null;
+		drawingCell = null;
+		drawingCellGeometry = null;
+		drawingCellStyle = null;
+	}
+	
+	public ACComponentNode(Module iParent, ACComponentDefinition iDefinition)
+	{
+		parent = iParent;
+		definition = iDefinition;
 		drawingCell = null;
 		drawingCellGeometry = null;
 		drawingCellStyle = null;
@@ -38,9 +49,10 @@ public class ACComponentNode implements Serializable
 		drawingCellStyle = null;
 	}
 	
-	public ACComponentNode(Module iParent, mxCell iCell, mxGeometry iGeo)
+	public ACComponentNode(Module iParent, ACComponentDefinition iDefinition, mxCell iCell, mxGeometry iGeo)
 	{
 		parent = iParent;
+		definition = iDefinition;
 		drawingCell = iCell;
 		drawingCellGeometry = iGeo;
 		drawingCellStyle = null;
@@ -57,6 +69,16 @@ public class ACComponentNode implements Serializable
 	public Module getParent()
 	{
 		return parent;
+	}
+	
+	public void setDefinition(ACComponentDefinition iDefinition)
+	{
+		definition = iDefinition;
+	}
+	
+	public ACComponentDefinition getDefinition()
+	{
+		return definition;
 	}
 	
 	public void setDrawingCell(mxCell iCell)

@@ -12,7 +12,6 @@ public class PortDefinition extends ACComponentDefinition
 	 */
 	private static final long serialVersionUID = 1L;
 	private PortType portType;
-	private VariableType variableType;
 	private String refNameSBMLid;
 	
 	/**
@@ -54,7 +53,6 @@ public class PortDefinition extends ACComponentDefinition
 	{
 		super(iParent, iVariableType, iRefName, iName);
 		portType = iPortType;
-		//variableType = iVariableType;
 		refNameSBMLid = "";
 	}
 	
@@ -67,17 +65,7 @@ public class PortDefinition extends ACComponentDefinition
 	{
 		return portType;
 	}
-/*
-	public void setVariableType(VariableType iType)
-	{
-		variableType = iType;
-	}
-	
-	public VariableType getVariableType()
-	{
-		return variableType;
-	}
-*/
+
 	public void setRefNameSBMLID(String id)
 	{
 		refNameSBMLid = id;

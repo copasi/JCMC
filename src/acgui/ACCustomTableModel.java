@@ -51,7 +51,7 @@ public class ACCustomTableModel extends CustomTableModel
 	{
 		String refName = "";
 		
-		refName = newPort.getPortDefinition().getRefName();
+		refName = newPort.getDefinition().getRefName();
 		
 		if (newPort.getParent() != AC_GUI.activeModule)
 		{
@@ -60,8 +60,8 @@ public class ACCustomTableModel extends CustomTableModel
 		
 		Vector portInfo = new Vector();
 		portInfo.add(refName);
-		portInfo.add(newPort.getPortDefinition().getType());
-		portInfo.add(newPort.getPortDefinition().getName());
+		portInfo.add(((PortDefinition)newPort.getDefinition()).getType());
+		portInfo.add(newPort.getDefinition().getName());
 		this.addRow(portInfo);
 		portsListed.add(newPort);
 	}
@@ -139,7 +139,7 @@ public class ACCustomTableModel extends CustomTableModel
 		switch (col)
 		{
 			case 1:
-				if (value.equals(changed.getPortDefinition().getRefName() + " - " + changed.getPortDefinition().getVariableType().toString()))
+				if (value.equals(changed.getDefinition().getRefName() + " - " + changed.getDefinition().getVariableType().toString()))
 				{
 					// no change was made, the original refName was reselected
 					return;
@@ -171,7 +171,7 @@ public class ACCustomTableModel extends CustomTableModel
 				}
 				break;
 			case 2:
-				if (value.equals(changed.getPortDefinition().getType().toString()))
+				if (value.equals(((PortDefinition)changed.getDefinition()).getType().toString()))
 				{
 					// no change was made
 					return;
@@ -200,7 +200,7 @@ public class ACCustomTableModel extends CustomTableModel
 				}
 				break;
 			case 3:
-				if (value.equals(changed.getPortDefinition().getName()))
+				if (value.equals(changed.getDefinition().getName()))
 				{
 					// no change was made
 					return;

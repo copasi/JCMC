@@ -804,8 +804,8 @@ public class AC_IO
 	private static Map<String, Object> packPortNode(PortNode port)
 	{
 		Map<String, Object> data = new HashMap<String, Object>();
-		data.put("refName", port.getPortDefinition().getRefName());
-		data.put("variableType", port.getPortDefinition().getVariableType().name());
+		data.put("refName", port.getDefinition().getRefName());
+		data.put("variableType", port.getDefinition().getVariableType().name());
 		packACComponentNode(data, port);
 		return data;
 	}
@@ -841,8 +841,8 @@ public class AC_IO
 	private static Map<String, Object> packVisibleVariableNode(VisibleVariableNode visibleVariable)
 	{
 		Map<String, Object> data = new HashMap<String, Object>();
-		data.put("refName", visibleVariable.getVisibleVariableDefinition().getRefName());
-		data.put("variableType", visibleVariable.getVisibleVariableDefinition().getVariableType().name());
+		data.put("refName", visibleVariable.getDefinition().getRefName());
+		data.put("variableType", visibleVariable.getDefinition().getVariableType().name());
 		packACComponentNode(data, visibleVariable);
 		return data;
 	}
@@ -878,8 +878,8 @@ public class AC_IO
 	private static Map<String, Object> packEquivalenceNode(EquivalenceNode eNode)
 	{
 		Map<String, Object> data = new HashMap<String, Object>();
-		data.put("refName", eNode.getEquivalenceDefinition().getRefName());
-		data.put("variableType", eNode.getEquivalenceDefinition().getVariableType().name());
+		data.put("refName", eNode.getDefinition().getRefName());
+		data.put("variableType", eNode.getDefinition().getVariableType().name());
 		packACComponentNode(data, eNode);
 		return data;
 	}
@@ -1196,8 +1196,8 @@ public class AC_IO
 		while (list.hasNext())
 		{
 			currentNode = (PortNode)list.next();
-			if ((currentNode.getPortDefinition().getRefName().equals(refName))
-					&& (currentNode.getPortDefinition().getVariableType() == variableType))
+			if ((currentNode.getDefinition().getRefName().equals(refName))
+					&& (currentNode.getDefinition().getVariableType() == variableType))
 			{
 				return currentNode;
 			}
@@ -1212,8 +1212,8 @@ public class AC_IO
 		while (list.hasNext())
 		{
 			currentNode = (EquivalenceNode)list.next();
-			if ((currentNode.getEquivalenceDefinition().getRefName().equals(refName))
-					&& (currentNode.getEquivalenceDefinition().getVariableType() == variableType))
+			if ((currentNode.getDefinition().getRefName().equals(refName))
+					&& (currentNode.getDefinition().getVariableType() == variableType))
 			{
 				return currentNode;
 			}
@@ -1228,8 +1228,8 @@ public class AC_IO
 		while (list.hasNext())
 		{
 			currentNode = (VisibleVariableNode)list.next();
-			if ((currentNode.getVisibleVariableDefinition().getRefName().equals(refName))
-					&& (currentNode.getVisibleVariableDefinition().getVariableType() == variableType))
+			if ((currentNode.getDefinition().getRefName().equals(refName))
+					&& (currentNode.getDefinition().getVariableType() == variableType))
 			{
 				return currentNode;
 			}

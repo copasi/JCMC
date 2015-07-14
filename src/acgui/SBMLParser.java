@@ -760,7 +760,7 @@ public class SBMLParser {
 		while(vars.hasNext())
 		{
 			vNode = (VisibleVariableNode)vars.next();
-			if (name.equals(vNode.getVisibleVariableDefinition().getRefName()))
+			if (name.equals(vNode.getDefinition().getRefName()))
 			{
 				return vNode;
 			}
@@ -771,7 +771,7 @@ public class SBMLParser {
 		while(eNodes.hasNext())
 		{
 			eNode = (EquivalenceNode)eNodes.next();
-			if (name.equals(eNode.getEquivalenceDefinition().getRefName()))
+			if (name.equals(eNode.getDefinition().getRefName()))
 			{
 				return eNode;
 			}
@@ -842,7 +842,7 @@ public class SBMLParser {
 		{
 			return true;
 		}
-		variableName = node.getVisibleVariableDefinition().getRefName();
+		variableName = node.getDefinition().getRefName();
 		
 		//Species species = getSpecies(model.getListOfSpecies(), node.getVisibleVariableDefinition().getRefName());
 		Species species = getSpecies(model.getListOfSpecies(), variableName);
@@ -878,12 +878,12 @@ public class SBMLParser {
 				// <comp:replacedElement comp:portRef="S" comp:submodelRef="A"/>
 				port = (PortNode)((mxCell)outgoingEdges[i]).getTarget().getValue();
 				parent = port.getParent();
-				if ((parent == node.getParent()) && (variableName.equals(port.getPortDefinition().getRefName())))
+				if ((parent == node.getParent()) && (variableName.equals(port.getDefinition().getRefName())))
 				{
 					// this variable is already assigned to the port
 					continue;
 				}
-				portRef = port.getPortDefinition().getName();
+				portRef = port.getDefinition().getName();
 				//submodelRef = port.getPortDefinition().getParent().getID();
 				submodelRef = port.getParent().getID();
 				replacedElement = new ReplacedElement();
@@ -898,9 +898,9 @@ public class SBMLParser {
 			// <comp:replacedBy comp:portRef="D_port" comp:submodelRef="B"/>
 			port = (PortNode)((mxCell)incomingEdges[0]).getSource().getValue();
 			parent = port.getParent();
-			if (!((parent == node.getParent()) && (variableName.equals(port.getPortDefinition().getRefName()))))
+			if (!((parent == node.getParent()) && (variableName.equals(port.getDefinition().getRefName()))))
 			{
-				portRef = port.getPortDefinition().getName();
+				portRef = port.getDefinition().getName();
 				//submodelRef = port.getPortDefinition().getParent().getID();
 				submodelRef = port.getParent().getID();
 				replacedElement = new ReplacedElement();
@@ -938,13 +938,13 @@ public class SBMLParser {
 		{
 			return true;
 		}
-		variableName = eNode.getEquivalenceDefinition().getRefName();
+		variableName = eNode.getDefinition().getRefName();
 		
 		//Species species = getSpecies(model.getListOfSpecies(), eNode.getEquivalenceDefinition().getRefName());
 		Species species = getSpecies(model.getListOfSpecies(), variableName);
 		if (species == null)
 		{
-			System.err.println("Error SBMLParser.addEquivalenceNodeReplacements(): Species " + eNode.getEquivalenceDefinition().getRefName() + " not found.");
+			System.err.println("Error SBMLParser.addEquivalenceNodeReplacements(): Species " + eNode.getDefinition().getRefName() + " not found.");
 			return false;
 		}
 		CompSBasePlugin speciesPlugin = (CompSBasePlugin)species.getPlugin("comp");
@@ -957,7 +957,7 @@ public class SBMLParser {
 		{
 			// <comp:replacedElement comp:portRef="S" comp:submodelRef="A"/>
 			port = (PortNode)((mxCell)outgoingEdges[i]).getTarget().getValue();
-			portRef = port.getPortDefinition().getName();
+			portRef = port.getDefinition().getName();
 			//submodelRef = port.getPortDefinition().getParent().getID();
 			submodelRef = port.getParent().getID();
 			replacedElement = new ReplacedElement();
@@ -1787,7 +1787,7 @@ public class SBMLParser {
 				return;
 			}
 			
-			switch(currentPort.getPortDefinition().getType())
+			switch(((PortDefinition)currentPort.getDefinition()).getType())
 			{
 			case INPUT:
 				if (currentPort.getParent() == var.getParent())
@@ -1942,7 +1942,7 @@ public class SBMLParser {
 		while(listOfPorts.hasNext())
 		{
 			node = (PortNode)listOfPorts.next();
-			definition = node.getPortDefinition();
+			definition = (PortDefinition)node.getDefinition();
 			point = new Point();
 			box = new BoundingBox();
 			gly = new GeneralGlyph();
@@ -1969,7 +1969,7 @@ public class SBMLParser {
 	private static void addVisibleVariableLayoutInformation(Module mod, GeneralGlyph parentGly)
 	{
 		VisibleVariableNode node;
-		VisibleVariableDefinition definition;
+		ACComponentDefinition definition;
 		Point point;
 		BoundingBox box;
 		GeneralGlyph gly;
@@ -1978,7 +1978,7 @@ public class SBMLParser {
 		while(vars.hasNext())
 		{
 			node = (VisibleVariableNode)vars.next();
-			definition = node.getVisibleVariableDefinition();
+			definition = node.getDefinition();
 			point = new Point();
 			box = new BoundingBox();
 			gly = new GeneralGlyph();
@@ -2003,7 +2003,7 @@ public class SBMLParser {
 	private static void addEquivalenceLayoutInformation(Module mod, GeneralGlyph parentGly)
 	{
 		EquivalenceNode node;
-		EquivalenceDefinition definition;
+		ACComponentDefinition definition;
 		Point point;
 		BoundingBox box;
 		GeneralGlyph gly;
@@ -2012,7 +2012,7 @@ public class SBMLParser {
 		while(eNodes.hasNext())
 		{
 			node = (EquivalenceNode)eNodes.next();
-			definition = node.getEquivalenceDefinition();
+			definition = node.getDefinition();
 			point = new Point();
 			box = new BoundingBox();
 			gly = new GeneralGlyph();
@@ -2205,7 +2205,7 @@ public class SBMLParser {
 		while(portList.hasNext())
 		{
 			port = (PortNode)portList.next();
-			if (portName.equals(port.getPortDefinition().getName()))
+			if (portName.equals(port.getDefinition().getName()))
 			{
 				return port;
 			}

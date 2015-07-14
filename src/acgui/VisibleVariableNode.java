@@ -17,7 +17,6 @@ public class VisibleVariableNode extends ACComponentNode
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	private VisibleVariableDefinition definition;
 	
 	/**
 	 * @param iParent
@@ -34,8 +33,7 @@ public class VisibleVariableNode extends ACComponentNode
 	 */
 	public VisibleVariableNode(Module iParent, VisibleVariableDefinition iDefinition)
 	{
-		super(iParent);
-		definition = iDefinition;
+		super(iParent, iDefinition);
 	}
 	
 	/**
@@ -45,8 +43,7 @@ public class VisibleVariableNode extends ACComponentNode
 	 */
 	public VisibleVariableNode(Module iParent, VisibleVariableDefinition iDefinition, mxCell iCell, mxGeometry iGeo)
 	{
-		super(iParent, iCell, iGeo);
-		definition = iDefinition;
+		super(iParent, iDefinition, iCell, iGeo);
 	}
 
 	/**
@@ -61,19 +58,9 @@ public class VisibleVariableNode extends ACComponentNode
 		// TODO Auto-generated constructor stub
 	}
 
-	public void setVisibleVariableDefinition(VisibleVariableDefinition iDef)
-	{
-		definition = iDef;
-	}
-	
-	public VisibleVariableDefinition getVisibleVariableDefinition()
-	{
-		return definition;
-	}
-	
 	@Override
 	public String toString()
 	{
-		return definition.getRefName();
+		return this.getDefinition().getRefName();
 	}
 }

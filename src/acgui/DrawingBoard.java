@@ -2070,7 +2070,7 @@ public class DrawingBoard extends JPanel
 		{
 			currentPNode = (PortNode)ports.next();
 
-			switch(currentPNode.getPortDefinition().getType())
+			switch(((PortDefinition)currentPNode.getDefinition()).getType())
 			{
 			case INPUT:
 				x = 0;
@@ -3457,31 +3457,33 @@ public class DrawingBoard extends JPanel
 						{
 							source = "Port ";
 							source += ((PortNode)sourceValue).getParent().getModuleDefinition().getName();
-							source += "." + ((PortNode)sourceValue).getPortDefinition().getName();
+							source += ".";// + ((PortNode)sourceValue).getPortDefinition().getName();
 						} else if (sourceValue instanceof VisibleVariableNode)
 						{
 							source = "Variable ";
-							source += ((VisibleVariableNode)sourceValue).getVisibleVariableDefinition().getRefName();
+							//source += ((VisibleVariableNode)sourceValue).getVisibleVariableDefinition().getRefName();
 						} else if (sourceValue instanceof EquivalenceNode)
 						{
 							source = "Equivalence Node ";
-							source += ((EquivalenceNode)sourceValue).getEquivalenceDefinition().getRefName();
+							//source += ((EquivalenceNode)sourceValue).getEquivalenceDefinition().getRefName();
 						}
+						source += ((ACComponentNode)sourceValue).getDefinition().getRefName();
 						
 						if (targetValue instanceof PortNode)
 						{
 							target = "Port ";
 							target += ((PortNode)targetValue).getParent().getModuleDefinition().getName();
-							target += "." + ((PortNode)targetValue).getPortDefinition().getName();
+							target += ".";// + ((PortNode)targetValue).getPortDefinition().getName();
 						} else if (targetValue instanceof VisibleVariableNode)
 						{
 							target = "Variable ";
-							target += ((VisibleVariableNode)targetValue).getVisibleVariableDefinition().getRefName();
+							//target += ((VisibleVariableNode)targetValue).getVisibleVariableDefinition().getRefName();
 						} else if (targetValue instanceof EquivalenceNode)
 						{
 							target = "Equivalence Node ";
-							target += ((EquivalenceNode)targetValue).getEquivalenceDefinition().getRefName();
+							//target += ((EquivalenceNode)targetValue).getEquivalenceDefinition().getRefName();
 						}
+						target += ((ACComponentNode)targetValue).getDefinition().getRefName();
 						
 						String msg = "Source = " + source;
 						msg += AC_Utility.eol;
@@ -3751,12 +3753,12 @@ public class DrawingBoard extends JPanel
 						if (cell.getValue() instanceof VisibleVariableNode)
 						{
 							VisibleVariableNode var = (VisibleVariableNode)cell.getValue();
-							AC_GUI.setSelectedModelBuilderVariable(var.getVisibleVariableDefinition().getRefName(), var.getVisibleVariableDefinition().getVariableType());
+							AC_GUI.setSelectedModelBuilderVariable(var.getDefinition().getRefName(), var.getDefinition().getVariableType());
 						}
 						
 						if (cell.getValue() instanceof EquivalenceNode)
 						{
-							AC_GUI.setSelectedModelBuilderVariable(((EquivalenceNode)cell.getValue()).getEquivalenceDefinition().getRefName(), VariableType.SPECIES);
+							AC_GUI.setSelectedModelBuilderVariable(((EquivalenceNode)cell.getValue()).getDefinition().getRefName(), VariableType.SPECIES);
 						}
 						
 						if (cell.getValue() instanceof PortNode)
@@ -3895,7 +3897,7 @@ public class DrawingBoard extends JPanel
 						// the source is a visible variable
 						// the target is a port
 						PortNode targetPort = (PortNode)targetObject;
-						PortType targetPortType = ((PortNode)targetObject).getPortDefinition().getType();
+						PortType targetPortType = ((PortDefinition)targetPort.getDefinition()).getType();
 						Module targetModule = targetPort.getParent();
 						
 						if(targetModule == AC_GUI.activeModule)
@@ -3987,7 +3989,7 @@ public class DrawingBoard extends JPanel
 						sourceType = TerminalType.EQUIVALENCE;
 						targetType = TerminalType.PORT;
 						PortNode targetPort = (PortNode)targetObject;
-						PortType targetPortType = ((PortNode)targetObject).getPortDefinition().getType();
+						PortType targetPortType = ((PortDefinition)targetPort.getDefinition()).getType();
 						Module targetModule = targetPort.getParent();
 						
 						if (targetModule == AC_GUI.activeModule)
@@ -4066,7 +4068,7 @@ public class DrawingBoard extends JPanel
 				{
 					// the source is a port
 					PortNode sourcePort = (PortNode)sourceObject;
-					PortType sourcePortType = sourcePort.getPortDefinition().getType();
+					PortType sourcePortType = ((PortDefinition)sourcePort.getDefinition()).getType();
 					Module sourceModule = sourcePort.getParent();
 					
 					if (sourceModule == AC_GUI.activeModule)
@@ -4125,7 +4127,7 @@ public class DrawingBoard extends JPanel
 							sourceType = TerminalType.PORT;
 							targetType = TerminalType.PORT;
 							PortNode targetPort = (PortNode)targetObject;
-							PortType targetPortType = targetPort.getPortDefinition().getType();
+							PortType targetPortType = ((PortDefinition)targetPort.getDefinition()).getType();
 							Module targetModule = targetPort.getParent();
 							
 							if (sourceModule == targetModule)
@@ -4171,7 +4173,7 @@ public class DrawingBoard extends JPanel
 									mxCell varCell = (mxCell)createVisibleVariableCell(null);
 									addCell(null, varCell);
 									setCellGeometryToCenterOfEdge(varCell, cell);
-									AC_GUI.addVisibleVariable(activeModule, sourcePort.getPortDefinition().getRefName(), varCell);
+									AC_GUI.addVisibleVariable(activeModule, sourcePort.getDefinition().getRefName(), varCell);
 									mxCell sourceToVarCell = (mxCell)createConnectionCell(null, source, varCell, "DashedConnectionEdge");
 									AC_GUI.addConnection(activeModule, sourceToVarCell, sourceType, TerminalType.VISIBLEVARIABLE);
 									mxCell varToTargetCell = (mxCell)createConnectionCell(null, varCell, target, "ConnectionEdge");
@@ -4254,7 +4256,7 @@ public class DrawingBoard extends JPanel
 									eNodeCell = (mxCell)createEquivalenceNodeCell(null);
 									addCell(null, eNodeCell);
 									setCellGeometryToCenterOfEdge(eNodeCell, cell);
-									AC_GUI.addEquivalenceNode(activeModule, sourcePort.getPortDefinition().getRefName(), eNodeCell);
+									AC_GUI.addEquivalenceNode(activeModule, sourcePort.getDefinition().getRefName(), eNodeCell);
 									sourceToeNodeCell = (mxCell)createConnectionCell(null, eNodeCell, source, "ConnectionEdge");
 									AC_GUI.addConnection(activeModule, sourceToeNodeCell, TerminalType.EQUIVALENCE, sourceType);
 									eNodeToTargetCell = (mxCell)createConnectionCell(null, eNodeCell, target, "ConnectionEdge");
@@ -4314,7 +4316,7 @@ public class DrawingBoard extends JPanel
 										eNodeCell = (mxCell)createEquivalenceNodeCell(null);
 										addCell(null, eNodeCell);
 										setCellGeometryToCenterOfEdge(eNodeCell, cell);
-										AC_GUI.addEquivalenceNode(activeModule, sourcePort.getPortDefinition().getRefName(), eNodeCell);
+										AC_GUI.addEquivalenceNode(activeModule, sourcePort.getDefinition().getRefName(), eNodeCell);
 										sourceToeNodeCell = (mxCell)createConnectionCell(null, eNodeCell, source, "ConnectionEdge");
 										AC_GUI.addConnection(activeModule, sourceToeNodeCell, TerminalType.EQUIVALENCE, sourceType);
 										eNodeToTargetCell = (mxCell)createConnectionCell(null, eNodeCell, target, "ConnectionEdge");
@@ -4471,7 +4473,7 @@ public class DrawingBoard extends JPanel
 							// the target is a port
 							targetType = TerminalType.PORT;
 							PortNode targetPort = (PortNode)targetObject;
-							PortType targetPortType = targetPort.getPortDefinition().getType();
+							PortType targetPortType = ((PortDefinition)targetPort.getDefinition()).getType();
 							Module targetModule = targetPort.getParent();
 							
 							if (targetModule == AC_GUI.activeModule)
@@ -4542,7 +4544,7 @@ public class DrawingBoard extends JPanel
 										mxCell varCell = (mxCell)createVisibleVariableCell(null);
 										addCell(null, varCell);
 										setCellGeometryToCenterOfEdge(varCell, cell);
-										AC_GUI.addVisibleVariable(activeModule, targetPort.getPortDefinition().getRefName(), varCell);
+										AC_GUI.addVisibleVariable(activeModule, targetPort.getDefinition().getRefName(), varCell);
 										mxCell sourceToVarCell = (mxCell)createConnectionCell(null, source, varCell, "DashedConnectionEdge");
 										AC_GUI.addConnection(activeModule, sourceToVarCell, sourceType, TerminalType.VISIBLEVARIABLE);
 										mxCell varToTargetCell = (mxCell)createConnectionCell(null, varCell, target, "ConnectionEdge");
@@ -4630,7 +4632,7 @@ public class DrawingBoard extends JPanel
 											eNodeCell = (mxCell)createEquivalenceNodeCell(null);
 											addCell(null, eNodeCell);
 											setCellGeometryToCenterOfEdge(eNodeCell, cell);
-											AC_GUI.addEquivalenceNode(activeModule, targetPort.getPortDefinition().getRefName(), eNodeCell);
+											AC_GUI.addEquivalenceNode(activeModule, targetPort.getDefinition().getRefName(), eNodeCell);
 											mxCell sourceToeNodeCell = (mxCell)createConnectionCell(null, eNodeCell, source, "ConnectionEdge");
 											AC_GUI.addConnection(activeModule, sourceToeNodeCell, TerminalType.EQUIVALENCE, sourceType);
 											mxCell eNodeToTargetCell = (mxCell)createConnectionCell(null, eNodeCell, target, "ConnectionEdge");
@@ -4800,7 +4802,7 @@ public class DrawingBoard extends JPanel
 										// the source has no existing outgoing edges
 										System.out.println("Source has no existing edges.");
 										// create a visible variable
-										newName = generateName(sourcePort.getPortDefinition().getRefName());
+										newName = generateName(sourcePort.getDefinition().getRefName());
 										mxCell varCell = (mxCell)createVisibleVariableCell(null);
 										addCell(null, varCell);
 										setCellGeometryToCenterOfEdge(varCell, cell);
@@ -4874,7 +4876,7 @@ public class DrawingBoard extends JPanel
 										// the source has no existing outgoing edges
 										System.out.println("Source has no existing edges.");
 										// create an equivalence node
-										newName = generateName(sourcePort.getPortDefinition().getRefName());
+										newName = generateName(sourcePort.getDefinition().getRefName());
 										eNodeCell = (mxCell)createEquivalenceNodeCell(null);
 										addCell(null, eNodeCell);
 										setCellGeometryToCenterOfEdge(eNodeCell, cell);
@@ -4949,7 +4951,7 @@ public class DrawingBoard extends JPanel
 											sourceType = TerminalType.PORT;
 											targetType = TerminalType.PORT;
 											// create an equivalence node
-											newName = generateName(sourcePort.getPortDefinition().getRefName());
+											newName = generateName(sourcePort.getDefinition().getRefName());
 											eNodeCell = (mxCell)createEquivalenceNodeCell(null);
 											addCell(null, eNodeCell);
 											setCellGeometryToCenterOfEdge(eNodeCell, cell);

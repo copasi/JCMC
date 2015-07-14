@@ -307,6 +307,8 @@ public class AC_Utility
 	public static ConnectionNode createConnection(Module parent, mxCell drawingCell, TerminalType sourceType, TerminalType targetType)
 	{
 		ACComponentDefinition sourceDefinition;
+		sourceDefinition = ((ACComponentNode)drawingCell.getSource().getValue()).getDefinition();
+/*
 		switch(sourceType)
 		{
 			case EQUIVALENCE:
@@ -324,8 +326,11 @@ public class AC_Utility
 				displayMessage(JOptionPane.ERROR_MESSAGE, "Connection Failure", "There was a problem while creating the connection.");
 				return null;
 		}
+*/
 		
 		ACComponentDefinition targetDefinition;
+		targetDefinition = ((ACComponentNode)drawingCell.getTarget().getValue()).getDefinition();
+/*		
 		switch(targetType)
 		{
 			case EQUIVALENCE:
@@ -343,6 +348,7 @@ public class AC_Utility
 				displayMessage(JOptionPane.ERROR_MESSAGE, "Connection Failure", "There was a problem while creating the connection.");
 				return null;
 		}
+*/
 		
 		ConnectionDefinition cDefinition = createConnectionDefinition(parent.getModuleDefinition(), sourceDefinition, sourceType, targetDefinition, targetType);
 		ConnectionNode cNode = new ConnectionNode(parent, cDefinition, drawingCell);
@@ -357,6 +363,8 @@ public class AC_Utility
 	public static ConnectionNode createConnection(Module parent, mxCell source, TerminalType sourceType, mxCell target, TerminalType targetType, String drawingCellStyle)
 	{
 		ACComponentDefinition sourceDefinition;
+		sourceDefinition = ((ACComponentNode)source.getValue()).getDefinition();
+/*		
 		switch(sourceType)
 		{
 			case EQUIVALENCE:
@@ -374,8 +382,11 @@ public class AC_Utility
 				displayMessage(JOptionPane.ERROR_MESSAGE, "Connection Failure", "There was a problem while creating the connection.");
 				return null;
 		}
+*/
 		
 		ACComponentDefinition targetDefinition;
+		targetDefinition = ((ACComponentNode)target.getValue()).getDefinition();
+/*		
 		switch(targetType)
 		{
 			case EQUIVALENCE:
@@ -393,6 +404,7 @@ public class AC_Utility
 				displayMessage(JOptionPane.ERROR_MESSAGE, "Connection Failure", "There was a problem while creating the connection.");
 				return null;
 		}
+*/
 		
 		ConnectionDefinition cDefinition = createConnectionDefinition(parent.getModuleDefinition(), sourceDefinition, sourceType, targetDefinition, targetType);
 		ConnectionNode cNode = new ConnectionNode(parent, cDefinition, drawingCellStyle);
@@ -540,7 +552,7 @@ public class AC_Utility
 		return eNode;
 	}
 	
-	public static boolean addNodetoRemainingInstances(Module module, EquivalenceDefinition eDefinition)
+	public static boolean addENodetoRemainingInstances(Module module, ACComponentDefinition eDefinition)
 	{
 		boolean success = true;
 		ModuleDefinition definition = module.getModuleDefinition();
@@ -559,7 +571,7 @@ public class AC_Utility
 			}
 			else
 			{
-				if (createEquivalenceNode(parent, eDefinition) == null)
+				if (createEquivalenceNode(parent, (EquivalenceDefinition)eDefinition) == null)
 				{
 					success = false;
 				}
@@ -570,7 +582,7 @@ public class AC_Utility
 	
 	public static void deleteEquivalence(EquivalenceNode eNode)
 	{
-		EquivalenceDefinition eDefinition = eNode.getEquivalenceDefinition();
+		ACComponentDefinition eDefinition = eNode.getDefinition();
 		ModuleDefinition definition = eNode.getParent().getModuleDefinition();
 		if (definition.getInstances().size() == 1)
 		{
@@ -604,7 +616,7 @@ public class AC_Utility
 		}
 
 		// delete the equivalence definition
-		deleteEquivalenceDefinition(eNode.getEquivalenceDefinition());
+		deleteEquivalenceDefinition(eNode.getDefinition());
 	}
 	
 	public static PortNode createPort(Module parent, String refName, String name, PortType pType, VariableType vType)
@@ -649,7 +661,7 @@ public class AC_Utility
 		return pNode;
 	}
 	
-	public static boolean addNodetoRemainingInstances(Module module, PortDefinition pDefinition)
+	public static boolean addPNodetoRemainingInstances(Module module, ACComponentDefinition pDefinition)
 	{
 		boolean success = true;
 		ModuleDefinition definition = module.getModuleDefinition();
@@ -668,7 +680,7 @@ public class AC_Utility
 			}
 			else
 			{
-				if (createPortNode(parent, pDefinition) == null)
+				if (createPortNode(parent, (PortDefinition)pDefinition) == null)
 				{
 					success = false;
 				}
@@ -679,7 +691,7 @@ public class AC_Utility
 	
 	public static void deletePort(PortNode pNode)
 	{
-		PortDefinition pDefinition = pNode.getPortDefinition();
+		ACComponentDefinition pDefinition = pNode.getDefinition();
 		ModuleDefinition definition = pNode.getParent().getModuleDefinition();
 		if (definition.getInstances().size() == 1)
 		{
@@ -769,7 +781,7 @@ public class AC_Utility
 		return vNode;
 	}
 	
-	public static boolean addNodetoRemainingInstances(Module module, VisibleVariableDefinition vDefinition)
+	public static boolean addVNodetoRemainingInstances(Module module, ACComponentDefinition vDefinition)
 	{
 		boolean success = true;
 		ModuleDefinition definition = module.getModuleDefinition();
@@ -788,7 +800,7 @@ public class AC_Utility
 			}
 			else
 			{
-				if (createVisibleVariableNode(parent, vDefinition) == null)
+				if (createVisibleVariableNode(parent, (VisibleVariableDefinition)vDefinition) == null)
 				{
 					success = false;
 				}
@@ -799,7 +811,7 @@ public class AC_Utility
 	
 	public static void deleteVisibleVariable(VisibleVariableNode vNode)
 	{
-		VisibleVariableDefinition vDefinition = vNode.getVisibleVariableDefinition();
+		ACComponentDefinition vDefinition = vNode.getDefinition();
 		ModuleDefinition definition = vNode.getParent().getModuleDefinition();
 		if (definition.getInstances().size() == 1)
 		{
@@ -890,7 +902,7 @@ public class AC_Utility
 		while (iterator.hasNext())
 		{
 			templatePNode = (PortNode)iterator.next();
-			PortNode pNode = new PortNode(module, templatePNode.getPortDefinition());
+			PortNode pNode = new PortNode(module, (PortDefinition)templatePNode.getDefinition());
 			AC_GUI.drawingBoard.createPort(pNode, templatePNode.getDrawingCellGeometry());
 			pNode.setDrawingCellStyle(templatePNode.getDrawingCellStyle());
 			module.addPort(pNode);
@@ -901,7 +913,7 @@ public class AC_Utility
 		while (iterator.hasNext())
 		{
 			templateENode = (EquivalenceNode)iterator.next();
-			EquivalenceNode eNode = new EquivalenceNode(module, templateENode.getEquivalenceDefinition());
+			EquivalenceNode eNode = new EquivalenceNode(module, (EquivalenceDefinition)templateENode.getDefinition());
 			AC_GUI.drawingBoard.createEquivalenceNode(eNode, templateENode.getDrawingCellGeometry());
 			eNode.setDrawingCellStyle(templateENode.getDrawingCellStyle());
 			module.addEquivalence(eNode);
@@ -912,7 +924,7 @@ public class AC_Utility
 		while (iterator.hasNext())
 		{
 			templateVNode = (VisibleVariableNode)iterator.next();
-			VisibleVariableNode vNode = new VisibleVariableNode(module, templateVNode.getVisibleVariableDefinition());
+			VisibleVariableNode vNode = new VisibleVariableNode(module, (VisibleVariableDefinition)templateVNode.getDefinition());
 			AC_GUI.drawingBoard.createVisibleVariable(vNode, templateVNode.getDrawingCellGeometry());
 			vNode.setDrawingCellStyle(templateVNode.getDrawingCellStyle());
 			module.addVisibleVariable(vNode);
@@ -1442,7 +1454,7 @@ public class AC_Utility
 		while (list.hasNext())
 		{
 			currentPort = (PortNode)list.next();
-			if ((currentPort.getPortDefinition().getVariableType() == vType) && (currentPort.getPortDefinition().getRefName().equals(refName)))
+			if ((currentPort.getDefinition().getVariableType() == vType) && (currentPort.getDefinition().getRefName().equals(refName)))
 			{
 				return currentPort;
 			}
@@ -1471,9 +1483,9 @@ public class AC_Utility
 		while(ports.hasNext())
 		{
 			currentPort = (PortNode)ports.next();
-			if (before.equalsIgnoreCase(currentPort.getPortDefinition().getRefName()))
+			if (before.equalsIgnoreCase(currentPort.getDefinition().getRefName()))
 			{
-				currentPort.getPortDefinition().setRefName(after);
+				currentPort.getDefinition().setRefName(after);
 				changeRequired = true;
 			}
 		}
@@ -1483,9 +1495,9 @@ public class AC_Utility
 		while(vars.hasNext())
 		{
 			currentVar = (VisibleVariableNode)vars.next();
-			if (before.equalsIgnoreCase(currentVar.getVisibleVariableDefinition().getRefName()))
+			if (before.equalsIgnoreCase(currentVar.getDefinition().getRefName()))
 			{
-				currentVar.getVisibleVariableDefinition().setRefName(after);
+				currentVar.getDefinition().setRefName(after);
 				changeRequired = true;
 			}
 		}
@@ -1495,9 +1507,9 @@ public class AC_Utility
 		while(eNodes.hasNext())
 		{
 			currenteNode = (EquivalenceNode)eNodes.next();
-			if (before.equalsIgnoreCase(currenteNode.getEquivalenceDefinition().getRefName()))
+			if (before.equalsIgnoreCase(currenteNode.getDefinition().getRefName()))
 			{
-				currenteNode.getEquivalenceDefinition().setRefName(after);
+				currenteNode.getDefinition().setRefName(after);
 				changeRequired = true;
 			}
 		}
@@ -2087,7 +2099,7 @@ public class AC_Utility
 		return eDefinition;
 	}
 	
-	private static void deleteEquivalenceDefinition(EquivalenceDefinition eDefinition)
+	private static void deleteEquivalenceDefinition(ACComponentDefinition eDefinition)
 	{
 		eDefinition.getParent().removeEquivalence(eDefinition);
 	}
@@ -2099,7 +2111,7 @@ public class AC_Utility
 		return pDefinition;
 	}
 	
-	private static void deletePortDefinition(PortDefinition pDefinition)
+	private static void deletePortDefinition(ACComponentDefinition pDefinition)
 	{
 		pDefinition.getParent().removePort(pDefinition);
 	}
@@ -2111,7 +2123,7 @@ public class AC_Utility
 		return vDefinition;
 	}
 	
-	private static void deleteVisibleVariableDefinition(VisibleVariableDefinition vDefinition)
+	private static void deleteVisibleVariableDefinition(ACComponentDefinition vDefinition)
 	{
 		vDefinition.getParent().removeVisibleVariable(vDefinition);
 	}
@@ -2188,7 +2200,7 @@ public class AC_Utility
 		while (list.hasNext())
 		{
 			currentNode = (PortNode)list.next();
-			if (currentNode.getPortDefinition().getRefName().equals(refName))
+			if (currentNode.getDefinition().getRefName().equals(refName))
 			{
 				return currentNode;
 			}
@@ -2203,7 +2215,7 @@ public class AC_Utility
 		while (list.hasNext())
 		{
 			currentNode = (EquivalenceNode)list.next();
-			if (currentNode.getEquivalenceDefinition().getRefName().equals(refName))
+			if (currentNode.getDefinition().getRefName().equals(refName))
 			{
 				return currentNode;
 			}
@@ -2218,7 +2230,7 @@ public class AC_Utility
 		while (list.hasNext())
 		{
 			currentNode = (VisibleVariableNode)list.next();
-			if (currentNode.getVisibleVariableDefinition().getRefName().equals(refName))
+			if (currentNode.getDefinition().getRefName().equals(refName))
 			{
 				return currentNode;
 			}
@@ -2554,13 +2566,13 @@ public class AC_Utility
 		{
 			definition = null;
 			node = (PortNode)nodeIterator.next();
-			refName = node.getPortDefinition().getRefName();
+			refName = node.getDefinition().getRefName();
 			definition = (PortDefinition)getACComponentDefinition(definitionList, refName);
 			if (definition == null)
 			{
 				System.err.println("Error AC_Utility.syncPorts: definition is null.");
 			}
-			node.setPortDefinition(definition);
+			node.setDefinition(definition);
 		}
 	}
 	
@@ -2574,13 +2586,13 @@ public class AC_Utility
 		{
 			definition = null;
 			node = (VisibleVariableNode)nodeIterator.next();
-			refName = node.getVisibleVariableDefinition().getRefName();
+			refName = node.getDefinition().getRefName();
 			definition = (VisibleVariableDefinition)getACComponentDefinition(definitionList, refName);
 			if (definition == null)
 			{
 				System.err.println("Error AC_Utility.syncVisibleVariables: definition is null.");
 			}
-			node.setVisibleVariableDefinition(definition);
+			node.setDefinition(definition);
 		}
 	}
 	
@@ -2594,13 +2606,13 @@ public class AC_Utility
 		{
 			definition = null;
 			node = (EquivalenceNode)nodeIterator.next();
-			refName = node.getEquivalenceDefinition().getRefName();
+			refName = node.getDefinition().getRefName();
 			definition = (EquivalenceDefinition)getACComponentDefinition(definitionList, refName);
 			if (definition == null)
 			{
 				System.err.println("Error AC_Utility.syncEquivalences: definition is null.");
 			}
-			node.setEquivalenceDefinition(definition);
+			node.setDefinition(definition);
 		}
 	}
 	

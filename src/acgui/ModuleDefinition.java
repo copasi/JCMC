@@ -194,7 +194,7 @@ public class ModuleDefinition implements Serializable
 	 * Add the given port to the module.
 	 * @param port the port to add
 	 */
-	public void addPort(PortDefinition port)
+	public void addPort(ACComponentDefinition port)
 	{
 		ports.add(port);
 		String extendedRefName = port.getRefName() + " - " + port.getVariableType();
@@ -206,7 +206,7 @@ public class ModuleDefinition implements Serializable
 	 * Remove the given port from the list of ports.
 	 * @param port the port to be removed
 	 */
-	public void removePort(PortDefinition port)
+	public void removePort(ACComponentDefinition port)
 	{
 		ports.remove(port);
 		String extendedRefName = port.getRefName() + " - " + port.getVariableType();
@@ -258,17 +258,17 @@ public class ModuleDefinition implements Serializable
 		return connections;
 	}
 	
-	public void addVisibleVariable(VisibleVariableDefinition var)
+	public void addVisibleVariable(ACComponentDefinition definition)
 	{
-		visibleVariables.add(var);
-		String extendedRefName = var.getRefName() + " - " + var.getVariableType();
+		visibleVariables.add(definition);
+		String extendedRefName = definition.getRefName() + " - " + definition.getVariableType();
 		displayedVariables.add(extendedRefName);
 	}
 	
-	public void removeVisibleVariable(VisibleVariableDefinition var)
+	public void removeVisibleVariable(ACComponentDefinition definition)
 	{
-		visibleVariables.remove(var);
-		String extendedRefName = var.getRefName() + " - " + var.getVariableType();
+		visibleVariables.remove(definition);
+		String extendedRefName = definition.getRefName() + " - " + definition.getVariableType();
 		displayedVariables.remove(extendedRefName);
 	}
 	
@@ -277,17 +277,17 @@ public class ModuleDefinition implements Serializable
 		return visibleVariables;
 	}
 	
-	public void addEquivalence(EquivalenceDefinition eNode)
+	public void addEquivalence(ACComponentDefinition definition)
 	{
-		equivalences.add(eNode);
-		String extendedRefName = eNode.getRefName() + " - " + eNode.getVariableType();
+		equivalences.add(definition);
+		String extendedRefName = definition.getRefName() + " - " + definition.getVariableType();
 		displayedVariables.add(extendedRefName);
 	}
 	
-	public void removeEquivalence(EquivalenceDefinition eNode)
+	public void removeEquivalence(ACComponentDefinition definition)
 	{
-		equivalences.remove(eNode);
-		String extendedRefName = eNode.getRefName() + " - " + eNode.getVariableType();
+		equivalences.remove(definition);
+		String extendedRefName = definition.getRefName() + " - " + definition.getVariableType();
 		displayedVariables.remove(extendedRefName);
 	}
 	

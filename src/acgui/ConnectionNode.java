@@ -53,16 +53,6 @@ public class ConnectionNode extends ACComponentNode
 		definition = iDefinition;
 	}
 	
-	/**
-	 * @param iParent
-	 * @param iCell
-	 * @param iGeo
-	 */
-	public ConnectionNode(Module iParent, mxCell iCell, mxGeometry iGeo)
-	{
-		super(iParent, iCell, iGeo);
-		// TODO Auto-generated constructor stub
-	}
 	
 	/**
 	 * @param iParent

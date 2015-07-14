@@ -14,7 +14,6 @@ public class EquivalenceNode extends ACComponentNode
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	private EquivalenceDefinition definition;
 	
 	/**
 	 * @param iParent
@@ -29,19 +28,7 @@ public class EquivalenceNode extends ACComponentNode
 	 */
 	public EquivalenceNode(Module iParent, EquivalenceDefinition iDefinition)
 	{
-		super(iParent);
-		definition = iDefinition;
-	}
-	
-	/**
-	 * @param iParent
-	 * @param iCell
-	 * @param iGeo
-	 */
-	public EquivalenceNode(Module iParent, mxCell iCell, mxGeometry iGeo)
-	{
-		super(iParent, iCell, iGeo);
-		// TODO Auto-generated constructor stub
+		super(iParent, iDefinition);
 	}
 
 	/**
@@ -56,19 +43,9 @@ public class EquivalenceNode extends ACComponentNode
 		// TODO Auto-generated constructor stub
 	}
 
-	public void setEquivalenceDefinition(EquivalenceDefinition iDef)
-	{
-		definition = iDef;
-	}
-	
-	public EquivalenceDefinition getEquivalenceDefinition()
-	{
-		return definition;
-	}
-	
 	@Override
 	public String toString()
 	{
-		return definition.getRefName();
+		return this.getDefinition().getRefName();
 	}
 }

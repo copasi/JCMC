@@ -11,7 +11,6 @@ public class VisibleVariableDefinition extends ACComponentDefinition
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	//private VariableType variableType;
 	
 	/**
 	 * @param iParent
@@ -39,7 +38,6 @@ public class VisibleVariableDefinition extends ACComponentDefinition
 	public VisibleVariableDefinition(ModuleDefinition iParent, String iRefName, VariableType iVariableType)
 	{
 		super(iParent, iVariableType, iRefName);
-		//variableType = iVariableType;
 	}
 
 	/**
@@ -52,15 +50,4 @@ public class VisibleVariableDefinition extends ACComponentDefinition
 		super(iParent, iRefName, iName);
 		// TODO Auto-generated constructor stub
 	}
-/*
-	public void setVariableType(VariableType iType)
-	{
-		variableType = iType;
-	}
-	
-	public VariableType getVariableType()
-	{
-		return variableType;
-	}
-*/
 }
