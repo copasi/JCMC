@@ -584,7 +584,8 @@ public class ModelBuilder
 						ChangedElement after = (((MSMB_InterfaceChange)e.getSource()).getElementAfter());
 						if(before!=null) System.out.println("Species before = " + before.getName());
 						if(after!=null)  System.out.println("Species after = " + after.getName());
-						AC_Utility.changeName(before, after);
+						System.err.println("Here we are Species!");
+						AC_Utility.changeName(before, after, VariableType.SPECIES);
 					}
 				}, 
 				MSMB_Element.SPECIES);
@@ -597,7 +598,8 @@ public class ModelBuilder
 						ChangedElement after = (((MSMB_InterfaceChange)e.getSource()).getElementAfter());
 						if(before!=null) System.out.println("Global Quantity before = " + before.getName());
 						if(after!=null)  System.out.println("Global Quantity after = " + after.getName());
-						AC_Utility.changeName(before, after);
+						System.err.println("Here we are Global Quantity!");
+						AC_Utility.changeName(before, after, VariableType.GLOBAL_QUANTITY);
 					}
 				}, 
 				MSMB_Element.GLOBAL_QUANTITY);

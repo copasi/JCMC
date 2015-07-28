@@ -10,6 +10,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JTextArea;
 
 import msmb.commonUtilities.ChangedElement;
+import msmb.commonUtilities.MSMB_Element;
 
 import org.COPASI.CCopasiDataModel;
 import org.sbml.libsbml.GeneralGlyph;
@@ -417,9 +418,13 @@ public class AC_Utility
 	
 	public static ConnectionNode createConnectionNode(Module parent, ConnectionNode templateNode)
 	{
-		ACComponentNode sourceNode = getTerminalNode(parent, templateNode.getConnectionDefinition().getSourceType(), templateNode.getConnectionDefinition().getSourceDefinition().getRefName());
-		ACComponentNode targetNode = getTerminalNode(parent, templateNode.getConnectionDefinition().getTargetType(), templateNode.getConnectionDefinition().getTargetDefinition().getRefName());
-		ConnectionNode node = new ConnectionNode(parent, templateNode.getConnectionDefinition(), templateNode.getDrawingCellStyle());
+		ConnectionDefinition connectionDefinition = templateNode.getConnectionDefinition();
+		ACComponentDefinition sourceDefinition = connectionDefinition.getSourceDefinition();
+		ACComponentDefinition targetDefinition = connectionDefinition.getTargetDefinition();
+		
+		ACComponentNode sourceNode = getTerminalNode(parent, connectionDefinition.getSourceType(), sourceDefinition.getRefName(), sourceDefinition.getVariableType());
+		ACComponentNode targetNode = getTerminalNode(parent, connectionDefinition.getTargetType(), targetDefinition.getRefName(), targetDefinition.getVariableType());
+		ConnectionNode node = new ConnectionNode(parent, connectionDefinition, templateNode.getDrawingCellStyle());
 		AC_GUI.drawingBoard.createConnection(node, sourceNode.getDrawingCell(), targetNode.getDrawingCell());
 		parent.addConnection(node);
 		
@@ -600,7 +605,8 @@ public class AC_Utility
 			while (moduleList.hasNext())
 			{
 				parent = moduleList.next();
-				node = (EquivalenceNode)getEquivalenceNode(parent, eDefinition.getRefName());
+				//node = (EquivalenceNode)getEquivalenceNode(parent, eDefinition.getRefName());
+				node = (EquivalenceNode)getACComponentNode(parent.getEquivalences(), eDefinition.getRefName(), eDefinition.getVariableType());
 				if (node == null)
 				{
 					String msg = eol;
@@ -709,7 +715,8 @@ public class AC_Utility
 			while (moduleList.hasNext())
 			{
 				parent = moduleList.next();
-				node = (PortNode)getPortNode(parent, pDefinition.getRefName());
+				//node = (PortNode)getPortNode(parent, pDefinition.getRefName());
+				node = (PortNode)getACComponentNode(parent.getPorts(), pDefinition.getRefName(), pDefinition.getVariableType());
 				if (node == null)
 				{
 					String msg = eol;
@@ -829,7 +836,8 @@ public class AC_Utility
 			while (moduleList.hasNext())
 			{
 				parent = moduleList.next();
-				node = (VisibleVariableNode)getVisibleVariableNode(parent, vDefinition.getRefName());
+				//node = (VisibleVariableNode)getVisibleVariableNode(parent, vDefinition.getRefName());
+				node = (VisibleVariableNode)getACComponentNode(parent.getVisibleVariables(), vDefinition.getRefName(), vDefinition.getVariableType());
 				if (node == null)
 				{
 					String msg = eol;
@@ -842,7 +850,8 @@ public class AC_Utility
 					while (node != null)
 					{
 						parent.removeVisibleVariable(node);
-						node = (VisibleVariableNode)getVisibleVariableNode(parent, vDefinition.getRefName());
+						//node = (VisibleVariableNode)getVisibleVariableNode(parent, vDefinition.getRefName());
+						node = (VisibleVariableNode)getACComponentNode(parent.getVisibleVariables(), vDefinition.getRefName(), vDefinition.getVariableType());
 					}
 				}
 			}
@@ -930,14 +939,24 @@ public class AC_Utility
 			module.addVisibleVariable(vNode);
 		}
 		
-		ConnectionNode templateCNode;
 		ListIterator<ConnectionNode> connections = templateModule.getConnections().listIterator();
+		ConnectionNode templateCNode;
+		ConnectionDefinition connectionDefinition;
+		ACComponentDefinition sourceDefinition;
+		ACComponentDefinition targetDefinition;
+		ACComponentNode sourceNode;
+		ACComponentNode targetNode;
 		while (connections.hasNext())
 		{
 			templateCNode = connections.next();
-			ACComponentNode sourceNode = getTerminalNode(module, templateCNode.getConnectionDefinition().getSourceType(), templateCNode.getConnectionDefinition().getSourceDefinition().getRefName());
-			ACComponentNode targetNode = getTerminalNode(module, templateCNode.getConnectionDefinition().getTargetType(), templateCNode.getConnectionDefinition().getTargetDefinition().getRefName());
-			ConnectionNode node = new ConnectionNode(module, templateCNode.getConnectionDefinition(), templateCNode.getDrawingCellStyle());
+			connectionDefinition = templateCNode.getConnectionDefinition();
+			sourceDefinition = connectionDefinition.getSourceDefinition();
+			targetDefinition = connectionDefinition.getTargetDefinition();
+			
+			sourceNode = getTerminalNode(module, connectionDefinition.getSourceType(), sourceDefinition.getRefName(), sourceDefinition.getVariableType());			
+			targetNode = getTerminalNode(module, connectionDefinition.getTargetType(), targetDefinition.getRefName(), targetDefinition.getVariableType());
+			
+			ConnectionNode node = new ConnectionNode(module, connectionDefinition, templateCNode.getDrawingCellStyle());
 			AC_GUI.drawingBoard.createConnection(node, sourceNode.getDrawingCell(), targetNode.getDrawingCell());
 			//parent.addConnection(node);
 			module.addConnection(node);
@@ -1467,60 +1486,56 @@ public class AC_Utility
 		return AC_GUI.modelBuilder.isSpeciesName(name);
 	}
 	
-	public static void changeName(ChangedElement beforeE, ChangedElement afterE)
+	public static void changeName(ChangedElement beforeE, ChangedElement afterE, VariableType variableType)
 	{
 		if (beforeE == null || afterE == null)
 		{
 			return;
 		}
 		
-		boolean changeRequired = false;
+		ArrayList<ACComponentNode> list;
+		boolean changeForPorts = false;
+		boolean changeForVisibleVariables = false;
+		boolean changeForEquivalences = false;
 		String before = beforeE.getName();
 		String after = afterE.getName();
 		
-		ListIterator<ACComponentNode> ports = AC_GUI.activeModule.getPorts().listIterator();
-		PortNode currentPort;
-		while(ports.hasNext())
-		{
-			currentPort = (PortNode)ports.next();
-			if (before.equalsIgnoreCase(currentPort.getDefinition().getRefName()))
-			{
-				currentPort.getDefinition().setRefName(after);
-				changeRequired = true;
-			}
-		}
-		
-		ListIterator<ACComponentNode> vars = AC_GUI.activeModule.getVisibleVariables().listIterator();
-		VisibleVariableNode currentVar;
-		while(vars.hasNext())
-		{
-			currentVar = (VisibleVariableNode)vars.next();
-			if (before.equalsIgnoreCase(currentVar.getDefinition().getRefName()))
-			{
-				currentVar.getDefinition().setRefName(after);
-				changeRequired = true;
-			}
-		}
-		
-		ListIterator<ACComponentNode> eNodes = AC_GUI.activeModule.getEquivalences().listIterator();
-		EquivalenceNode currenteNode;
-		while(eNodes.hasNext())
-		{
-			currenteNode = (EquivalenceNode)eNodes.next();
-			if (before.equalsIgnoreCase(currenteNode.getDefinition().getRefName()))
-			{
-				currenteNode.getDefinition().setRefName(after);
-				changeRequired = true;
-			}
-		}
-		
-		if(changeRequired)
+		// check the ports
+		list = AC_GUI.activeModule.getPorts();
+		changeForPorts = changeVariableName(list, before, after, variableType);
+		// check the visible variables
+		list = AC_GUI.activeModule.getVisibleVariables();
+		changeForVisibleVariables = changeVariableName(list, before, after, variableType);
+		// check the equivalences
+		list = AC_GUI.activeModule.getEquivalences();
+		changeForEquivalences = changeVariableName(list, before, after, variableType);
+			
+		if(changeForPorts || changeForVisibleVariables || changeForEquivalences)
 		{
 			//changeActiveModule(activeModule);
 			AC_GUI.drawingBoard.changeModule(AC_GUI.activeModule);
 			AC_GUI.modelBuilder.updatePorts();
 			AC_GUI.setSavedInACFile(false);
 		}
+	}
+	
+	private static boolean changeVariableName(ArrayList<ACComponentNode> list, String oldName, String newName, VariableType variableType)
+	{
+		boolean changeRequired = false;
+		ListIterator<ACComponentNode> iterator = list.listIterator();
+		ACComponentNode currentNode;
+		while(iterator.hasNext())
+		{
+			currentNode = iterator.next();
+			if ((oldName.equals(currentNode.getDefinition().getRefName()))
+					&& (variableType == currentNode.getDefinition().getVariableType()))
+			{
+				currentNode.getDefinition().setRefName(newName);
+				changeRequired = true;
+			}
+		}
+		
+		return changeRequired;
 	}
 	
 	public static void changeModuleName(Module module, String newName, boolean fromModelBuilder)
@@ -2176,66 +2191,11 @@ public class AC_Utility
 		//modelBuilder.addPort(newPNode);
 	}
 	
-	private static ACComponentNode getTerminalNode(Module terminalParent, TerminalType type, String refName)
-	{		
-		switch (type)
-		{
-			case EQUIVALENCE:
-				return getEquivalenceNode(terminalParent, refName);
-			case PORT:
-				return getPortNode(terminalParent, refName);
-			case VISIBLEVARIABLE:
-				return getVisibleVariableNode(terminalParent, refName);
-			default:
-				// there is an error
-				System.err.println("getTerminalNode: " + type + " is not a valid TerminalType.");
-				return null;
-		}
-	}
-	
-	private static ACComponentNode getPortNode(Module parent, String refName)
-	{
-		ListIterator<ACComponentNode> list = parent.getPorts().listIterator();
-		PortNode currentNode;
-		while (list.hasNext())
-		{
-			currentNode = (PortNode)list.next();
-			if (currentNode.getDefinition().getRefName().equals(refName))
-			{
-				return currentNode;
-			}
-		}
-		return null;
-	}
-	
-	private static ACComponentNode getEquivalenceNode(Module parent, String refName)
-	{
-		ListIterator<ACComponentNode> list = parent.getEquivalences().listIterator();
-		EquivalenceNode currentNode;
-		while (list.hasNext())
-		{
-			currentNode = (EquivalenceNode)list.next();
-			if (currentNode.getDefinition().getRefName().equals(refName))
-			{
-				return currentNode;
-			}
-		}
-		return null;
-	}
-	
-	private static ACComponentNode getVisibleVariableNode(Module parent, String refName)
-	{
-		ListIterator<ACComponentNode> list = parent.getVisibleVariables().listIterator();
-		VisibleVariableNode currentNode;
-		while (list.hasNext())
-		{
-			currentNode = (VisibleVariableNode)list.next();
-			if (currentNode.getDefinition().getRefName().equals(refName))
-			{
-				return currentNode;
-			}
-		}
-		return null;
+	private static ACComponentNode getTerminalNode(Module terminalParent, TerminalType type, String refName, VariableType variableType)
+	{	
+		ArrayList<ACComponentNode> list = getACComponentNodeList(terminalParent, type);
+		
+		return getACComponentNode(list, refName, variableType);
 	}
 	
 	private static ConnectionNode getConnectionNode(Module parent, ConnectionDefinition definition)
@@ -2253,16 +2213,51 @@ public class AC_Utility
 		return null;
 	}
 	
-	private static ACComponentDefinition getACComponentDefinition(ArrayList<ACComponentDefinition> list, String refName)
+	/**
+	 * Search the given list and find the ACComponentNode with
+	 * the given refName and variableType.
+	 * @param list, a list containing ACComponentNodes to search
+	 * @param refName, the refName to match
+	 * @param variableType, the variableType to match
+	 * @return the ACComponentNode with the matching criteria.
+	 * If none found, return null.
+	 */
+	public static ACComponentNode getACComponentNode(ArrayList<ACComponentNode> list, String refName, VariableType variableType)
+	{
+		ListIterator<ACComponentNode> iterator = list.listIterator();
+		ACComponentNode node;
+		ACComponentDefinition definition;
+		while(iterator.hasNext())
+		{
+			node = iterator.next();
+			definition = node.getDefinition();
+			if (definition.equals(refName, variableType))
+			{
+				return node;
+			}
+		}
+		return null;
+	}
+	
+	/**
+	 * Search the given list and find the ACComponentDefinition with
+	 * the given refName and variableType.
+	 * @param list, a list containing ACComponentDefinitions to search
+	 * @param refName, the refName to match
+	 * @param variableType, the variableType to match
+	 * @return the ACComponentDefinition with the matching criteria.
+	 * If none found, return null.
+	 */
+	public static ACComponentDefinition getACComponentDefinition(ArrayList<ACComponentDefinition> list, String refName, VariableType variableType)
 	{
 		ListIterator<ACComponentDefinition> iterator = list.listIterator();
-		ACComponentDefinition currentDefinition;
+		ACComponentDefinition definition;
 		while (iterator.hasNext())
 		{
-			currentDefinition = iterator.next();
-			if (currentDefinition.getRefName().equals(refName))
+			definition = iterator.next();
+			if (definition.equals(refName, variableType))
 			{
-				return currentDefinition;
+				return definition;
 			}
 		}
 		return null;
@@ -2418,7 +2413,8 @@ public class AC_Utility
 			newDefinition.addPort(port);
 		}
 		// sync port nodes to port definitions
-		syncPorts(module.getPorts(), newDefinition.getPorts());
+		//syncPorts(module.getPorts(), newDefinition.getPorts());
+		syncNodesToDefinitions(module.getPorts(), newDefinition.getPorts());
 		
 		list = oldDefinition.getVisibleVariables().listIterator();
 		VisibleVariableDefinition variable;
@@ -2429,7 +2425,8 @@ public class AC_Utility
 			newDefinition.addVisibleVariable(variable);
 		}
 		// sync visible variable nodes to visible variable definitions
-		syncVisibleVariables(module.getVisibleVariables(), newDefinition.getVisibleVariables());
+		//syncVisibleVariables(module.getVisibleVariables(), newDefinition.getVisibleVariables());
+		syncNodesToDefinitions(module.getVisibleVariables(), newDefinition.getVisibleVariables());
 		
 		list = oldDefinition.getEquivalences().listIterator();
 		EquivalenceDefinition equivalence;
@@ -2440,7 +2437,8 @@ public class AC_Utility
 			newDefinition.addEquivalence(equivalence);
 		}
 		// sync equivalence nodes to equivalence definitions
-		syncEquivalences(module.getEquivalences(), newDefinition.getEquivalences());
+		//syncEquivalences(module.getEquivalences(), newDefinition.getEquivalences());
+		syncNodesToDefinitions(module.getEquivalences(), newDefinition.getEquivalences());
 		
 		ListIterator<ConnectionDefinition> connectionList = oldDefinition.getConnections().listIterator();
 		ConnectionDefinition connection;
@@ -2506,38 +2504,22 @@ public class AC_Utility
 	{
 		ArrayList<ACComponentDefinition> list = null;
 		ACComponentDefinition source = null;
-		String sourceName = oldDefinition.getSourceDefinition().getRefName();
+		ACComponentDefinition oldSource = oldDefinition.getSourceDefinition();
+		String sourceName = oldSource.getRefName();
+		VariableType sourceVariableType = oldSource.getVariableType();
 		TerminalType sourceType = oldDefinition.getSourceType();
-		switch (sourceType)
-		{
-			case EQUIVALENCE:
-				list = parent.getEquivalences();
-				break;
-			case PORT:
-				list = parent.getPorts();
-				break;
-			case VISIBLEVARIABLE:
-				list = parent.getVisibleVariables();
-				break;
-		}
-		source = getACComponentDefinition(list, sourceName);
+		
+		list = getACComponentDefinitionList(parent, sourceType);
+		source = getACComponentDefinition(list, sourceName, sourceVariableType);
 		
 		ACComponentDefinition target = null;
-		String targetName = oldDefinition.getTargetDefinition().getRefName();
+		ACComponentDefinition oldTarget = oldDefinition.getTargetDefinition();
+		String targetName = oldTarget.getRefName();
+		VariableType targetVariableType = oldTarget.getVariableType();
 		TerminalType targetType = oldDefinition.getTargetType();
-		switch (targetType)
-		{
-			case EQUIVALENCE:
-				list = parent.getEquivalences();
-				break;
-			case PORT:
-				list = parent.getPorts();
-				break;
-			case VISIBLEVARIABLE:
-				list = parent.getVisibleVariables();
-				break;
-		}
-		target = getACComponentDefinition(list, targetName);
+		
+		list = getACComponentDefinitionList(parent, targetType);
+		target = getACComponentDefinition(list, targetName, targetVariableType);
 		
 		// check if source or target are null
 		if ((source == null) || (target == null))
@@ -2556,58 +2538,80 @@ public class AC_Utility
 		return new ConnectionDefinition(parent, source, sourceType, target, targetType);
 	}
 	
-	private static void syncPorts(ArrayList<ACComponentNode> nodeList, ArrayList<ACComponentDefinition> definitionList)
+	/**
+	 * Return an ACComponentNode list of the given type from the
+	 * given Module.
+	 * @param module, the Module holding the lists
+	 * @param type, the TerminalType of list
+	 * @return an ACComponentNode list
+	 */
+	public static ArrayList<ACComponentNode> getACComponentNodeList(Module module, TerminalType type)
 	{
-		ListIterator<ACComponentNode> nodeIterator = nodeList.listIterator();
-		PortNode node;
-		PortDefinition definition;
-		String refName;
-		while (nodeIterator.hasNext())
+		ArrayList<ACComponentNode> list = null;
+		
+		switch (type)
 		{
-			definition = null;
-			node = (PortNode)nodeIterator.next();
-			refName = node.getDefinition().getRefName();
-			definition = (PortDefinition)getACComponentDefinition(definitionList, refName);
-			if (definition == null)
-			{
-				System.err.println("Error AC_Utility.syncPorts: definition is null.");
-			}
-			node.setDefinition(definition);
+			case EQUIVALENCE:
+				list = module.getEquivalences();
+				break;
+			case PORT:
+				list = module.getPorts();
+				break;
+			case VISIBLEVARIABLE:
+				list = module.getVisibleVariables();
+				break;
 		}
+		
+		return list;
 	}
 	
-	private static void syncVisibleVariables(ArrayList<ACComponentNode> nodeList, ArrayList<ACComponentDefinition> definitionList)
+	/**
+	 * Return an ACComponentDefinition list of the given type from the
+	 * given ModuleDefinition.
+	 * @param moduleDefinition, the ModuleDefinition holding the lists
+	 * @param type, the TerminalType of list
+	 * @return an ACComponentDefinition list
+	 */
+	public static ArrayList<ACComponentDefinition> getACComponentDefinitionList(ModuleDefinition moduleDefinition, TerminalType type)
 	{
-		ListIterator<ACComponentNode> nodeIterator = nodeList.listIterator();
-		VisibleVariableNode node;
-		VisibleVariableDefinition definition;
-		String refName;
-		while (nodeIterator.hasNext())
+		ArrayList<ACComponentDefinition> list = null;
+		
+		switch (type)
 		{
-			definition = null;
-			node = (VisibleVariableNode)nodeIterator.next();
-			refName = node.getDefinition().getRefName();
-			definition = (VisibleVariableDefinition)getACComponentDefinition(definitionList, refName);
-			if (definition == null)
-			{
-				System.err.println("Error AC_Utility.syncVisibleVariables: definition is null.");
-			}
-			node.setDefinition(definition);
+			case EQUIVALENCE:
+				list = moduleDefinition.getEquivalences();
+				break;
+			case PORT:
+				list = moduleDefinition.getPorts();
+				break;
+			case VISIBLEVARIABLE:
+				list = moduleDefinition.getVisibleVariables();
+				break;
 		}
+		
+		return list;
 	}
 	
-	private static void syncEquivalences(ArrayList<ACComponentNode> nodeList, ArrayList<ACComponentDefinition> definitionList)
+	/**
+	 * Replace the definitions of the nodes in the given nodeList with
+	 * the definitions in the given definitionList.
+	 * @param nodeList the list of ACComponentNodes
+	 * @param definitionList the list of ACComponentDefinitions
+	 */
+	private static void syncNodesToDefinitions(ArrayList<ACComponentNode> nodeList, ArrayList<ACComponentDefinition> definitionList)
 	{
 		ListIterator<ACComponentNode> nodeIterator = nodeList.listIterator();
-		EquivalenceNode node;
-		EquivalenceDefinition definition;
+		ACComponentNode node;
+		ACComponentDefinition definition;
 		String refName;
+		VariableType variableType;
 		while (nodeIterator.hasNext())
 		{
 			definition = null;
-			node = (EquivalenceNode)nodeIterator.next();
+			node = nodeIterator.next();
 			refName = node.getDefinition().getRefName();
-			definition = (EquivalenceDefinition)getACComponentDefinition(definitionList, refName);
+			variableType = node.getDefinition().getVariableType();
+			definition = getACComponentDefinition(definitionList, refName, variableType);
 			if (definition == null)
 			{
 				System.err.println("Error AC_Utility.syncEquivalences: definition is null.");

@@ -825,7 +825,8 @@ public class AC_IO
 			   System.err.println("unpackPortNode failed");
 		}
 		
-		ACComponentDefinition definition = getACComponentDefinition(parent.getModuleDefinition().getPorts().listIterator(), refName, variableType);
+		//ACComponentDefinition definition = getACComponentDefinition(parent.getModuleDefinition().getPorts().listIterator(), refName, variableType);
+		ACComponentDefinition definition = AC_Utility.getACComponentDefinition(parent.getModuleDefinition().getPorts(), refName, variableType);
 		if (definition == null)
 		{
 			// there is an error
@@ -862,7 +863,8 @@ public class AC_IO
 			   System.err.println("unpackVisibleVariableNode failed");
 		}
 		
-		ACComponentDefinition definition = getACComponentDefinition(parent.getModuleDefinition().getVisibleVariables().listIterator(), refName, variableType);
+		//ACComponentDefinition definition = getACComponentDefinition(parent.getModuleDefinition().getVisibleVariables().listIterator(), refName, variableType);
+		ACComponentDefinition definition = AC_Utility.getACComponentDefinition(parent.getModuleDefinition().getVisibleVariables(), refName, variableType);
 		if (definition == null)
 		{
 			// there is an error
@@ -899,7 +901,8 @@ public class AC_IO
 			   System.err.println("unpackEquivalenceNode failed");
 		}
 		
-		ACComponentDefinition definition = getACComponentDefinition(parent.getModuleDefinition().getEquivalences().listIterator(), refName, variableType);
+		//ACComponentDefinition definition = getACComponentDefinition(parent.getModuleDefinition().getEquivalences().listIterator(), refName, variableType);
+		ACComponentDefinition definition = AC_Utility.getACComponentDefinition(parent.getModuleDefinition().getEquivalences(), refName, variableType);
 		if (definition == null)
 		{
 			// there is an error
@@ -1064,7 +1067,7 @@ public class AC_IO
 	{
 		ACComponentDefinition definition;
 		ModuleDefinition terminalParent;
-		ListIterator<ACComponentDefinition> list;
+		ArrayList<ACComponentDefinition> list;
 		
 		if (parent.getID().equals(parentID))
 		{
@@ -1080,31 +1083,16 @@ public class AC_IO
 				return null;
 			}
 		}
-		switch (terminalType)
-		{
-			case EQUIVALENCE:
-				list = terminalParent.getEquivalences().listIterator();
-				break;
-			case PORT:
-				list = terminalParent.getPorts().listIterator();
-				break;
-			case VISIBLEVARIABLE:
-				list = terminalParent.getVisibleVariables().listIterator();
-				break;
-			default:
-				// there is an error
-				System.err.println("getTerminalDefinition: " + terminalType + " is not a valid TerminalType.");
-				displayErrorMessage();
-				return null;
-		}
 		
-		definition = getACComponentDefinition(list, refName, variableType);
+		list = AC_Utility.getACComponentDefinitionList(terminalParent, terminalType);
+		definition = AC_Utility.getACComponentDefinition(list, refName, variableType);
 		return definition;
 	}
 	
 	private static ACComponentNode getTerminalNode(Module parent, String parentID, VariableType variableType, TerminalType terminalType, String refName)
 	{
 		Module terminalParent;
+		ArrayList<ACComponentNode> list;
 		
 		if (parent.getID().equals(parentID))
 		{
@@ -1121,20 +1109,8 @@ public class AC_IO
 			}
 		}
 		
-		switch (terminalType)
-		{
-			case EQUIVALENCE:
-				return getEquivalenceNode(terminalParent, refName, variableType);
-			case PORT:
-				return getPortNode(terminalParent, refName, variableType);
-			case VISIBLEVARIABLE:
-				return getVisibleVariableNode(terminalParent, refName, variableType);
-			default:
-				// there is an error
-				System.err.println("getTerminalNode: " + terminalType + " is not a valid TerminalType.");
-				displayErrorMessage();
-				return null;
-		}
+		list = AC_Utility.getACComponentNodeList(terminalParent, terminalType);
+		return AC_Utility.getACComponentNode(list, refName, variableType);
 	}
 	
 	private static ModuleDefinition getModuleDefinitionfromID(ListIterator<ModuleDefinition> list, String id)
@@ -1170,68 +1146,6 @@ public class AC_IO
 			if (currentModule.getID().equals(id))
 			{
 				return currentModule;
-			}
-		}
-		return null;
-	}
-	
-	private static ACComponentDefinition getACComponentDefinition(ListIterator<ACComponentDefinition> list, String refName, VariableType variableType)
-	{
-		ACComponentDefinition currentDefinition;
-		while (list.hasNext())
-		{
-			currentDefinition = list.next();
-			if ((currentDefinition.getRefName().equals(refName)) && (currentDefinition.getVariableType() == variableType))
-			{
-				return currentDefinition;
-			}
-		}
-		return null;
-	}
-	
-	private static ACComponentNode getPortNode(Module parent, String refName, VariableType variableType)
-	{
-		ListIterator<ACComponentNode> list = parent.getPorts().listIterator();
-		PortNode currentNode;
-		while (list.hasNext())
-		{
-			currentNode = (PortNode)list.next();
-			if ((currentNode.getDefinition().getRefName().equals(refName))
-					&& (currentNode.getDefinition().getVariableType() == variableType))
-			{
-				return currentNode;
-			}
-		}
-		return null;
-	}
-	
-	private static ACComponentNode getEquivalenceNode(Module parent, String refName, VariableType variableType)
-	{
-		ListIterator<ACComponentNode> list = parent.getEquivalences().listIterator();
-		EquivalenceNode currentNode;
-		while (list.hasNext())
-		{
-			currentNode = (EquivalenceNode)list.next();
-			if ((currentNode.getDefinition().getRefName().equals(refName))
-					&& (currentNode.getDefinition().getVariableType() == variableType))
-			{
-				return currentNode;
-			}
-		}
-		return null;
-	}
-	
-	private static ACComponentNode getVisibleVariableNode(Module parent, String refName, VariableType variableType)
-	{
-		ListIterator<ACComponentNode> list = parent.getVisibleVariables().listIterator();
-		VisibleVariableNode currentNode;
-		while (list.hasNext())
-		{
-			currentNode = (VisibleVariableNode)list.next();
-			if ((currentNode.getDefinition().getRefName().equals(refName))
-					&& (currentNode.getDefinition().getVariableType() == variableType))
-			{
-				return currentNode;
 			}
 		}
 		return null;

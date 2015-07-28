@@ -93,6 +93,18 @@ public class ACComponentDefinition implements Serializable
 		return refName;
 	}
 	
+	/**
+	 * Check if the given parameters match the refName and VariableType of
+	 * this ACComponentDefinition.
+	 * @param iRefName, the String to compare to refName
+	 * @param iVariableType, the VariableType to compare to variableType
+	 * @return true if the parameters match, otherwise false.
+	 */
+	public boolean equals(String iRefName, VariableType iVariableType)
+	{
+		return this.refName.equals(iRefName) && this.variableType.equals(iVariableType);
+	}
+	
 	@Override
 	public String toString()
 	{
