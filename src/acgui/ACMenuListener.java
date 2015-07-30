@@ -63,7 +63,11 @@ public class ACMenuListener implements ActionListener
 				moduleAddEditor.setModal(true);
 				moduleAddEditor.setVisible(true);
 				*/
-				AC_Utility.promptUserForNewModuleName(null, "Please enter a name:");
+				name = AC_Utility.promptUserForNewModuleName(null, "Please enter a name:");
+				if (name != null)
+				{
+					AC_GUI.newModule(name);
+				}
 			}
 			break;
 		case OPEN:
@@ -355,7 +359,11 @@ public class ACMenuListener implements ActionListener
 					moduleAddEditor.setModal(true);
 					moduleAddEditor.setVisible(true);
 					*/
-					AC_Utility.promptUserForNewModuleName(AC_GUI.activeModule, "Please enter a name:");
+					name = AC_Utility.promptUserForNewModuleName(AC_GUI.activeModule, "Please enter a name:");
+					if (name != null)
+					{
+						AC_GUI.newSubmodule(name, AC_GUI.activeModule);
+					}
 				}
 			}
 			else

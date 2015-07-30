@@ -866,7 +866,7 @@ public class AC_Utility
 		String name;
 		if (newName == null)
 		{
-			name = promptUserForNewModuleName(module.getParent(), "Please enter a new Module Template name:");
+			name = promptUserForNewModuleDefinitionName("Please enter a new Module Template name:");
 			if (name == null)
 			{
 				System.err.println("No new definition created.");
@@ -967,15 +967,29 @@ public class AC_Utility
 	
 	public static String promptUserForNewModuleDefinitionName(String message)
 	{
+		String title = "New Module Template";
 		//String message = "Enter Module Template name:";
-		String newName = JOptionPane.showInputDialog(message, "");
-		while (newName != null)
+		//String name = JOptionPane.showInputDialog(message, "");
+		String name = (String)JOptionPane.showInputDialog(null,
+				message,
+				title,
+				JOptionPane.QUESTION_MESSAGE,
+				null,
+				null,
+				"");
+		while (name != null)
 		{
-			if (moduleDefinitionNameValidation(newName, true))
+			if (moduleDefinitionNameValidation(name, true))
 			{
-				return newName;
+				return name;
 			}
-			newName = JOptionPane.showInputDialog(message, "");
+			name = (String)JOptionPane.showInputDialog(null,
+					message,
+					title,
+					JOptionPane.QUESTION_MESSAGE,
+					null,
+					null,
+					"");
 		}
 		return null;
 	}
@@ -1005,10 +1019,11 @@ public class AC_Utility
 	
 	public static String promptUserForNewModuleName(Module parent, String message)
 	{
+		String title = "New Module";
 		//String message = "Enter " + moduleType + " name:";
 		String name = (String)JOptionPane.showInputDialog(null,
 				message,
-				"New Module Name",
+				title,
 				JOptionPane.QUESTION_MESSAGE,
 				null,
 				null,
@@ -1022,7 +1037,7 @@ public class AC_Utility
 			}
 			name = (String)JOptionPane.showInputDialog(null,
 					message,
-					"New Module Name",
+					title,
 					JOptionPane.QUESTION_MESSAGE,
 					null,
 					null,
@@ -1061,10 +1076,11 @@ public class AC_Utility
 	
 	public static void promptUserEditModuleName(Module module, String initialName)
 	{
+		String title = "Edit Module";
 		String message = "Please enter a name:";
 		String name = (String)JOptionPane.showInputDialog(null,
 				message,
-				"Edit Module Name",
+				title,
 				JOptionPane.QUESTION_MESSAGE,
 				null,
 				null,
@@ -1079,7 +1095,7 @@ public class AC_Utility
 			}
 			name = (String)JOptionPane.showInputDialog(null,
 					message,
-					"Edit Module Name",
+					title,
 					JOptionPane.QUESTION_MESSAGE,
 					null,
 					null,
