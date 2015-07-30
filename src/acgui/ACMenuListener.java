@@ -57,12 +57,6 @@ public class ACMenuListener implements ActionListener
 			}
 			else
 			{
-				/*
-				moduleAddEditor = new ModuleAddEditor(null, AC_GUI.drawingBoard.graphComponent, "Create", "Module");
-				moduleAddEditor.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-				moduleAddEditor.setModal(true);
-				moduleAddEditor.setVisible(true);
-				*/
 				name = AC_Utility.promptUserForNewModuleName(null, "Please enter a name:");
 				if (name != null)
 				{
@@ -140,12 +134,6 @@ public class ACMenuListener implements ActionListener
 								if (n == JOptionPane.OK_OPTION)
 								{
 									fileName = file.getAbsolutePath();
-									/*
-									if (!fileName.endsWith(".ac"))
-									{
-										fileName += ".ac";
-									}
-									*/
 									if (!fileName.endsWith(".jcmc"))
 									{
 										fileName += ".jcmc";
@@ -158,12 +146,6 @@ public class ACMenuListener implements ActionListener
 							else
 							{
 								fileName = file.getAbsolutePath();
-								/*
-								if (!fileName.endsWith(".ac"))
-								{
-									fileName += ".ac";
-								}
-								*/
 								if (!fileName.endsWith(".jcmc"))
 								{
 									fileName += ".jcmc";
@@ -222,12 +204,6 @@ public class ACMenuListener implements ActionListener
 							if (n == JOptionPane.OK_OPTION)
 							{
 								fileName = file.getAbsolutePath();
-								/*
-								if (!fileName.endsWith(".ac"))
-								{
-									fileName += ".ac";
-								}
-								*/
 								if (!fileName.endsWith(".jcmc"))
 								{
 									fileName += ".jcmc";
@@ -240,12 +216,6 @@ public class ACMenuListener implements ActionListener
 						else
 						{
 							fileName = file.getAbsolutePath();
-							/*
-							if (!fileName.endsWith(".ac"))
-							{
-								fileName += ".ac";
-							}
-							*/
 							if (!fileName.endsWith(".jcmc"))
 							{
 								fileName += ".jcmc";
@@ -342,23 +312,8 @@ public class ACMenuListener implements ActionListener
 			//JOptionPane.showMessageDialog(null, "Will add an empty submodule under the module selected in the TreeView (not yet implemented).");
 			if (AC_GUI.isModuleOpen())
 			{
-				/*
-				if (AC_GUI.canModuleBeModified(AC_GUI.activeModule))
-				{
-					moduleAddEditor = new ModuleAddEditor(AC_GUI.activeModule, AC_GUI.drawingBoard.graphComponent, "Add");
-					moduleAddEditor.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-					moduleAddEditor.setModal(true);
-					moduleAddEditor.setVisible(true);
-				}
-				*/
 				if (AC_GUI.canModuleAddSubmodule(AC_GUI.activeModule))
 				{
-					/*
-					moduleAddEditor = new ModuleAddEditor(AC_GUI.activeModule, AC_GUI.drawingBoard.graphComponent, "Add", "Submodule");
-					moduleAddEditor.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-					moduleAddEditor.setModal(true);
-					moduleAddEditor.setVisible(true);
-					*/
 					name = AC_Utility.promptUserForNewModuleName(AC_GUI.activeModule, "Please enter a name:");
 					if (name != null)
 					{
@@ -375,15 +330,6 @@ public class ACMenuListener implements ActionListener
 			//JOptionPane.showMessageDialog(null,"Will open up a file selection dialog box to select an already saved template model and will add that as a submodule under the selected module (not yet implemented).");
 			if (AC_GUI.isModuleOpen())
 			{
-				/*
-				if (AC_GUI.canModuleBeModified(AC_GUI.activeModule))
-				{
-					SubmoduleAddEditor tae = new SubmoduleAddEditor(AC_GUI.drawingBoard.graphComponent);
-					tae.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-					tae.setModal(true);
-					tae.setVisible(true);
-				}
-				*/
 				if (AC_GUI.canModuleAddSubmodule(AC_GUI.activeModule))
 				{
 					SubmoduleAddEditor tae = new SubmoduleAddEditor(AC_GUI.activeModule, AC_GUI.drawingBoard.graphComponent);
@@ -441,23 +387,8 @@ public class ACMenuListener implements ActionListener
 			*/
 			break;
 		case ADD_SUMMATION_MODULE:
-			/*
-			MathAggregatorAddEditor mathAdd1 = new MathAggregatorAddEditor(AC_GUI.drawingBoard.graphComponent, Operation.SUM);
-			mathAdd1.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-			mathAdd1.setModal(true);
-			mathAdd1.setVisible(true);
-			*/
 			if (AC_GUI.isModuleOpen())
 			{
-				/*
-				if (AC_GUI.canModuleBeModified(AC_GUI.activeModule))
-				{
-					mathAddEditor = new MathematicalAggregatorAddEditor(AC_GUI.drawingBoard.graphComponent, Operation.SUM);
-					mathAddEditor.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-					mathAddEditor.setModal(true);
-					mathAddEditor.setVisible(true);
-				}
-				*/
 				if (AC_GUI.canModuleAddSubmodule(AC_GUI.activeModule))
 				{
 					mathAddEditor = new MathematicalAggregatorAddEditor(AC_GUI.activeModule, AC_GUI.drawingBoard.graphComponent, Operation.SUM);
@@ -472,23 +403,8 @@ public class ACMenuListener implements ActionListener
 			}
 			break;
 		case ADD_PRODUCT_MODULE:
-			/*
-			MathAggregatorAddEditor mathAdd2 = new MathAggregatorAddEditor(AC_GUI.drawingBoard.graphComponent, Operation.PRODUCT);
-			mathAdd2.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-			mathAdd2.setModal(true);
-			mathAdd2.setVisible(true);
-			*/
 			if (AC_GUI.isModuleOpen())
 			{
-				/*
-				if (AC_GUI.canModuleBeModified(AC_GUI.activeModule))
-				{
-					mathAddEditor = new MathematicalAggregatorAddEditor(AC_GUI.drawingBoard.graphComponent, Operation.PRODUCT);
-					mathAddEditor.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-					mathAddEditor.setModal(true);
-					mathAddEditor.setVisible(true);
-				}
-				*/
 				if (AC_GUI.canModuleAddSubmodule(AC_GUI.activeModule))
 				{
 					mathAddEditor = new MathematicalAggregatorAddEditor(AC_GUI.activeModule, AC_GUI.drawingBoard.graphComponent, Operation.PRODUCT);
