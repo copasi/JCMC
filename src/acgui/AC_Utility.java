@@ -983,14 +983,22 @@ public class AC_Utility
 	public static String promptUserForNewModuleName(String message)
 	{
 		//String message = "Enter Module name:";
-		String newName = JOptionPane.showInputDialog(message, "");
-		while (newName != null)
+		//String newName = JOptionPane.showInputDialog(message, "");
+		Object[] options = {"Create", "Cancel"};
+		String name = (String)JOptionPane.showInputDialog(null,
+				message,
+				"New Module Name",
+				JOptionPane.QUESTION_MESSAGE,
+				null,
+				null,
+				"");
+		while (name != null)
 		{
-			if (moduleNameValidation(newName, true))
+			if (moduleNameValidation(name, true))
 			{
-				return newName;
+				return name;
 			}
-			newName = JOptionPane.showInputDialog(message, "");
+			name = JOptionPane.showInputDialog(message, "");
 		}
 		return null;
 	}
@@ -998,22 +1006,41 @@ public class AC_Utility
 	public static String promptUserForNewModuleName(Module parent, String message)
 	{
 		//String message = "Enter " + moduleType + " name:";
-		String newName = JOptionPane.showInputDialog(message, "");
-		while (newName != null)
+		String name = (String)JOptionPane.showInputDialog(null,
+				message,
+				"New Module Name",
+				JOptionPane.QUESTION_MESSAGE,
+				null,
+				null,
+				"");
+		while (name != null)
 		{
-			if (newModuleNameValidation(parent, newName, true))
+			name = name.trim();
+			if (newModuleNameValidation(parent, name, true))
 			{
-				return newName;
+				return name;
 			}
-			newName = JOptionPane.showInputDialog(message, "");
+			name = (String)JOptionPane.showInputDialog(null,
+					message,
+					"New Module Name",
+					JOptionPane.QUESTION_MESSAGE,
+					null,
+					null,
+					"");
 		}
 		return null;
 	}
 	
 	public static void promptUserEditModuleName(String initialName)
 	{
-		String msg = "Please enter a name:";
-		String name = (String)JOptionPane.showInputDialog(null, msg, "Edit Module Name", JOptionPane.QUESTION_MESSAGE, null, null, initialName);
+		String message = "Please enter a name:";
+		String name = (String)JOptionPane.showInputDialog(null,
+				message,
+				"Edit Module Name",
+				JOptionPane.QUESTION_MESSAGE,
+				null,
+				null,
+				initialName);
 		while (name != null)
 		{
 			name = name.trim();
@@ -1022,14 +1049,26 @@ public class AC_Utility
 				changeModuleName(AC_GUI.selectedModule, name, false);
 				return;
 			}
-			name = (String)JOptionPane.showInputDialog(null, msg, "Edit Module Name", JOptionPane.QUESTION_MESSAGE, null, null, initialName);
+			name = (String)JOptionPane.showInputDialog(null,
+					message,
+					"Edit Module Name",
+					JOptionPane.QUESTION_MESSAGE,
+					null,
+					null,
+					initialName);
 		}
 	}
 	
 	public static void promptUserEditModuleName(Module module, String initialName)
 	{
-		String msg = "Please enter a name:";
-		String name = (String)JOptionPane.showInputDialog(null, msg, "Edit Module Name", JOptionPane.QUESTION_MESSAGE, null, null, initialName);
+		String message = "Please enter a name:";
+		String name = (String)JOptionPane.showInputDialog(null,
+				message,
+				"Edit Module Name",
+				JOptionPane.QUESTION_MESSAGE,
+				null,
+				null,
+				initialName);
 		while (name != null)
 		{
 			name = name.trim();
@@ -1038,7 +1077,13 @@ public class AC_Utility
 				changeModuleName(module, name, false);
 				return;
 			}
-			name = (String)JOptionPane.showInputDialog(null, msg, "Edit Module Name", JOptionPane.QUESTION_MESSAGE, null, null, initialName);
+			name = (String)JOptionPane.showInputDialog(null,
+					message,
+					"Edit Module Name",
+					JOptionPane.QUESTION_MESSAGE,
+					null,
+					null,
+					initialName);
 		}
 	}
 	
