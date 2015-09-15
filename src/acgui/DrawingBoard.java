@@ -19,6 +19,7 @@ import javax.swing.JPopupMenu;
 import javax.swing.SwingUtilities;
 
 import org.sbml.libsbml.GeneralGlyph;
+import org.sbml.libsbml.GraphicalObject;
 
 import com.mxgraph.model.mxCell;
 import com.mxgraph.model.mxGeometry;
@@ -453,7 +454,7 @@ public class DrawingBoard extends JPanel
 		pNode.setDrawingCellStyle("Port");
 	}
 	
-	public void createPort(PortNode pNode, GeneralGlyph glyph)
+	public void createPort(PortNode pNode, GraphicalObject glyph)
 	{
 		mxCell portCell;
 		mxGeometry geo;
@@ -660,7 +661,7 @@ public class DrawingBoard extends JPanel
 		var.setDrawingCellGeometry(varCell.getGeometry());
 	}
 	
-	public void createVisibleVariable(VisibleVariableNode var, GeneralGlyph glyph)
+	public void createVisibleVariable(VisibleVariableNode var, GraphicalObject glyph)
 	{
 		Object parentCell = var.getParent().getDrawingCell();
 		mxCell varCell = null;
@@ -710,7 +711,7 @@ public class DrawingBoard extends JPanel
 		eNode.setDrawingCellGeometry(eNodeCell.getGeometry());
 	}
 	
-	public void createEquivalenceNode(EquivalenceNode eNode, GeneralGlyph glyph)
+	public void createEquivalenceNode(EquivalenceNode eNode, GraphicalObject glyph)
 	{
 		Object parentCell = eNode.getParent().getDrawingCell();
 		mxCell eNodeCell = null;

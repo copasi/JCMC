@@ -42,7 +42,6 @@ public class ACMenuListener implements ActionListener
 		Module parentMod;
 		DefaultMutableTreeNode node;
 		DefaultMutableTreeNode parent;
-		ModuleAddEditor moduleAddEditor;
 		MathematicalAggregatorAddEditor mathAddEditor;
 		
 		

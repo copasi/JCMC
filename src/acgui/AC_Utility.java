@@ -14,6 +14,7 @@ import msmb.commonUtilities.MSMB_Element;
 
 import org.COPASI.CCopasiDataModel;
 import org.sbml.libsbml.GeneralGlyph;
+import org.sbml.libsbml.GraphicalObject;
 
 import com.mxgraph.model.mxCell;
 import com.mxgraph.model.mxGeometry;
@@ -526,7 +527,7 @@ public class AC_Utility
 		return eNode;
 	}
 	
-	public static EquivalenceNode createEquivalence(String refName, VariableType vType, Module parent, GeneralGlyph glyph)
+	public static EquivalenceNode createEquivalence(String refName, VariableType vType, Module parent, GraphicalObject glyph)
 	{
 		EquivalenceDefinition eDefinition = createEquivalenceDefinition(parent.getModuleDefinition(), refName, vType);
 		EquivalenceNode eNode = new EquivalenceNode(parent, eDefinition);
@@ -547,7 +548,7 @@ public class AC_Utility
 		return eNode;
 	}
 	
-	public static EquivalenceNode createEquivalenceNode(Module parent, EquivalenceDefinition eDefinition, GeneralGlyph glyph)
+	public static EquivalenceNode createEquivalenceNode(Module parent, EquivalenceDefinition eDefinition, GraphicalObject glyph)
 	{
 		EquivalenceNode eNode = new EquivalenceNode(parent, eDefinition);
 		AC_GUI.drawingBoard.createEquivalenceNode(eNode, glyph);
@@ -636,7 +637,7 @@ public class AC_Utility
 		return pNode;
 	}
 	
-	public static PortNode createPort(Module parent, String refName, String name, PortType pType, VariableType vType, GeneralGlyph glyph)
+	public static PortNode createPort(Module parent, String refName, String name, PortType pType, VariableType vType, GraphicalObject glyph)
 	{
 		PortDefinition pDefinition = createPortDefinition(parent.getModuleDefinition(), refName, name, pType, vType);
 		PortNode pNode = new PortNode(parent, pDefinition);
@@ -657,7 +658,7 @@ public class AC_Utility
 		return pNode;
 	}
 	
-	public static PortNode createPortNode(Module parent, String name, PortDefinition definition, GeneralGlyph glyph)
+	public static PortNode createPortNode(Module parent, String name, PortDefinition definition, GraphicalObject glyph)
 	{
 		PortNode pNode = new PortNode(parent, definition);
 		AC_GUI.drawingBoard.createPort(pNode, glyph);
@@ -746,7 +747,7 @@ public class AC_Utility
 		return vNode;
 	}
 	
-	public static VisibleVariableNode createVisibleVariable(String refName, VariableType vType, Module parent, GeneralGlyph glyph)
+	public static VisibleVariableNode createVisibleVariable(String refName, VariableType vType, Module parent, GraphicalObject glyph)
 	{
 		VisibleVariableDefinition vDefinition = createVisibleVariableDefinition(parent.getModuleDefinition(), refName, vType);
 		VisibleVariableNode vNode = new VisibleVariableNode(parent, vDefinition);
@@ -778,7 +779,7 @@ public class AC_Utility
 		return vNode;
 	}
 	
-	public static VisibleVariableNode createVisibleVariableNode(Module parent, VisibleVariableDefinition vDefinition, GeneralGlyph glyph)
+	public static VisibleVariableNode createVisibleVariableNode(Module parent, VisibleVariableDefinition vDefinition, GraphicalObject glyph)
 	{
 		VisibleVariableNode vNode = new VisibleVariableNode(parent, vDefinition);
 		AC_GUI.drawingBoard.createVisibleVariable(vNode, glyph);
@@ -970,7 +971,7 @@ public class AC_Utility
 		String title = "New Module Template";
 		//String message = "Enter Module Template name:";
 		//String name = JOptionPane.showInputDialog(message, "");
-		String name = (String)JOptionPane.showInputDialog(null,
+		String name = (String)JOptionPane.showInputDialog(AC_GUI.drawingBoard.graphComponent,
 				message,
 				title,
 				JOptionPane.QUESTION_MESSAGE,
@@ -983,7 +984,7 @@ public class AC_Utility
 			{
 				return name;
 			}
-			name = (String)JOptionPane.showInputDialog(null,
+			name = (String)JOptionPane.showInputDialog(AC_GUI.drawingBoard.graphComponent,
 					message,
 					title,
 					JOptionPane.QUESTION_MESSAGE,
@@ -999,7 +1000,7 @@ public class AC_Utility
 		//String message = "Enter Module name:";
 		//String newName = JOptionPane.showInputDialog(message, "");
 		Object[] options = {"Create", "Cancel"};
-		String name = (String)JOptionPane.showInputDialog(null,
+		String name = (String)JOptionPane.showInputDialog(AC_GUI.drawingBoard.graphComponent,
 				message,
 				"New Module Name",
 				JOptionPane.QUESTION_MESSAGE,
@@ -1021,7 +1022,7 @@ public class AC_Utility
 	{
 		String title = "New Module";
 		//String message = "Enter " + moduleType + " name:";
-		String name = (String)JOptionPane.showInputDialog(null,
+		String name = (String)JOptionPane.showInputDialog(AC_GUI.drawingBoard.graphComponent,
 				message,
 				title,
 				JOptionPane.QUESTION_MESSAGE,
@@ -1035,7 +1036,7 @@ public class AC_Utility
 			{
 				return name;
 			}
-			name = (String)JOptionPane.showInputDialog(null,
+			name = (String)JOptionPane.showInputDialog(AC_GUI.drawingBoard.graphComponent,
 					message,
 					title,
 					JOptionPane.QUESTION_MESSAGE,
@@ -1049,7 +1050,7 @@ public class AC_Utility
 	public static void promptUserEditModuleName(String initialName)
 	{
 		String message = "Please enter a name:";
-		String name = (String)JOptionPane.showInputDialog(null,
+		String name = (String)JOptionPane.showInputDialog(AC_GUI.drawingBoard.graphComponent,
 				message,
 				"Edit Module Name",
 				JOptionPane.QUESTION_MESSAGE,
@@ -1064,7 +1065,7 @@ public class AC_Utility
 				changeModuleName(AC_GUI.selectedModule, name, false);
 				return;
 			}
-			name = (String)JOptionPane.showInputDialog(null,
+			name = (String)JOptionPane.showInputDialog(AC_GUI.drawingBoard.graphComponent,
 					message,
 					"Edit Module Name",
 					JOptionPane.QUESTION_MESSAGE,
@@ -1078,7 +1079,7 @@ public class AC_Utility
 	{
 		String title = "Edit Module";
 		String message = "Please enter a name:";
-		String name = (String)JOptionPane.showInputDialog(null,
+		String name = (String)JOptionPane.showInputDialog(AC_GUI.drawingBoard.graphComponent,
 				message,
 				title,
 				JOptionPane.QUESTION_MESSAGE,
@@ -1093,7 +1094,7 @@ public class AC_Utility
 				changeModuleName(module, name, false);
 				return;
 			}
-			name = (String)JOptionPane.showInputDialog(null,
+			name = (String)JOptionPane.showInputDialog(AC_GUI.drawingBoard.graphComponent,
 					message,
 					title,
 					JOptionPane.QUESTION_MESSAGE,
@@ -1118,7 +1119,7 @@ public class AC_Utility
 			if (displayMessage)
 			{
 				message = "Please enter a name.";
-				JOptionPane.showMessageDialog(null, message, "Invalid Name", JOptionPane.WARNING_MESSAGE);
+				JOptionPane.showMessageDialog(AC_GUI.drawingBoard.graphComponent, message, "Invalid Name", JOptionPane.WARNING_MESSAGE);
 			}
 			return false;
 		}
@@ -1131,7 +1132,7 @@ public class AC_Utility
 				{
 					message = "There already exists a Module with the name \"" + name + "\"." + eol;
 					message += "Please enter a different name.";
-					JOptionPane.showMessageDialog(null, message, "Invalid Name", JOptionPane.WARNING_MESSAGE);
+					JOptionPane.showMessageDialog(AC_GUI.drawingBoard.graphComponent, message, "Invalid Name", JOptionPane.WARNING_MESSAGE);
 				}
 				return false;
 			}
@@ -1320,7 +1321,7 @@ public class AC_Utility
 		msg += "New Module: Save changes as a new Module." + eol;
 		msg += "Cancel: Do not save changes." + eol;
 		Object[] options = {"New Module", "Cancel"};
-		int n = JOptionPane.showOptionDialog(null,
+		int n = JOptionPane.showOptionDialog(AC_GUI.drawingBoard.graphComponent,
 			    msg,
 			    "Warning",
 			    JOptionPane.YES_NO_OPTION,
@@ -1364,7 +1365,7 @@ public class AC_Utility
 			msg += "Current Module: Save changes to the current Module (change all instantiations)." + eol;
 			msg += "Cancel: Do not save changes." + eol;
 			Object[] options = {"New Module", "Current Module", "Cancel"};
-			int n = JOptionPane.showOptionDialog(null,
+			int n = JOptionPane.showOptionDialog(AC_GUI.drawingBoard.graphComponent,
 				    msg,
 				    "Warning",
 				    JOptionPane.YES_NO_CANCEL_OPTION,
@@ -1383,7 +1384,7 @@ public class AC_Utility
 					msg += instances + eol;
 					msg += "Are you sure?";
 					Object[] options2 = {"Yes", "No"};
-					int n2 = JOptionPane.showOptionDialog(null,
+					int n2 = JOptionPane.showOptionDialog(AC_GUI.drawingBoard.graphComponent,
 						    msg,
 						    "Warning",
 						    JOptionPane.YES_NO_OPTION,
@@ -1415,7 +1416,7 @@ public class AC_Utility
 	{
 		String msg = "To add a Submodule, the current Module must be saved as a new Module." + eol;
 		Object[] options = {"New Module", "Cancel"};
-		int n = JOptionPane.showOptionDialog(null,
+		int n = JOptionPane.showOptionDialog(AC_GUI.drawingBoard.graphComponent,
 			    msg,
 			    "Warning",
 			    JOptionPane.YES_NO_OPTION,
@@ -1463,7 +1464,7 @@ public class AC_Utility
 			message += " is already visible." + eol;
 			message += "Cannot show the same " + vType.toString().toLowerCase() + " multiple times.";
 			//JOptionPane.showMessageDialog(null, message);
-			JOptionPane.showMessageDialog(null, message, "Invalid Operation", JOptionPane.WARNING_MESSAGE);
+			JOptionPane.showMessageDialog(AC_GUI.drawingBoard.graphComponent, message, "Invalid Operation", JOptionPane.WARNING_MESSAGE);
 			return false;
 		}
 		
@@ -1503,7 +1504,7 @@ public class AC_Utility
 			message += " is already associated with a Port." + eol;
 			message += "Cannot associate the same " + vType.toString().toLowerCase() + " with multiple Ports.";
 			//JOptionPane.showMessageDialog(null, message);
-			JOptionPane.showMessageDialog(null, message, "Invalid Name", JOptionPane.WARNING_MESSAGE);
+			JOptionPane.showMessageDialog(AC_GUI.drawingBoard.graphComponent, message, "Invalid Name", JOptionPane.WARNING_MESSAGE);
 			return false;
 		}
 		
@@ -1520,7 +1521,7 @@ public class AC_Utility
 			message += " is already the name of a Port." + eol;
 			message += "Cannot assign the same name to multiple Ports.";
 			//JOptionPane.showMessageDialog(null, message);
-			JOptionPane.showMessageDialog(null, message, "Invalid Name", JOptionPane.WARNING_MESSAGE);
+			JOptionPane.showMessageDialog(AC_GUI.drawingBoard.graphComponent, message, "Invalid Name", JOptionPane.WARNING_MESSAGE);
 			return false;
 		}
 		
@@ -1763,7 +1764,7 @@ public class AC_Utility
 		AC_GUI.modelBuilder.loadModel(currentMSMBData, AC_GUI.activeModule);
 		AC_GUI.modelBuilder.updatePorts();
 		
-		JOptionPane.showMessageDialog(null,
+		JOptionPane.showMessageDialog(AC_GUI.drawingBoard.graphComponent,
 			    new JTextArea(message),
 			    "Module Validation",
 			    JOptionPane.INFORMATION_MESSAGE);
@@ -1873,7 +1874,7 @@ public class AC_Utility
 	
 	public static void displayMessage(int type, String title, String message)
 	{
-		JOptionPane.showMessageDialog(null,
+		JOptionPane.showMessageDialog(AC_GUI.drawingBoard.graphComponent,
 			    message,
 			    title,
 			    type);
@@ -2242,13 +2243,13 @@ public class AC_Utility
 		for(int i = 0; i < inputs; i++)
 		{
 			//newPNode = new PortNode(maModule, inputPrefix+i, PortType.INPUT, VariableType.GLOBAL_QUANTITY, inputPrefix+i+"Port");
-			newPNode = createPort(maModule, inputPrefix+i, inputPrefix+i+"Port", PortType.INPUT, VariableType.GLOBAL_QUANTITY);
+			newPNode = createPort(maModule, inputPrefix+i, inputPrefix+i, PortType.INPUT, VariableType.GLOBAL_QUANTITY);
 			//modelBuilder.addPort(newPNode);
 		}
 		
 		// create the output port
 		//newPNode = new PortNode(maModule, outputName, PortType.OUTPUT, VariableType.GLOBAL_QUANTITY, "TotalPort", mathAgg.getPorts().size());
-		newPNode = createPort(maModule, outputName, "TotalPort", PortType.OUTPUT, VariableType.GLOBAL_QUANTITY);
+		newPNode = createPort(maModule, outputName, "Total", PortType.OUTPUT, VariableType.GLOBAL_QUANTITY);
 		//modelBuilder.addPort(newPNode);
 	}
 	
@@ -2430,7 +2431,7 @@ public class AC_Utility
 			message += "The name \"" + name + "\" is invalid." + eol;
 			message += "Please enter a different name.";
 			//JOptionPane.showMessageDialog(null, message);
-			JOptionPane.showMessageDialog(null, message, "Invalid Name", JOptionPane.WARNING_MESSAGE);
+			JOptionPane.showMessageDialog(AC_GUI.drawingBoard.graphComponent, message, "Invalid Name", JOptionPane.WARNING_MESSAGE);
 		}
 		
 		return valid;
@@ -2701,7 +2702,7 @@ public class AC_Utility
 	
 	private static void displayErrorMessage(String msg)
 	{
-		JOptionPane.showMessageDialog(null,
+		JOptionPane.showMessageDialog(AC_GUI.drawingBoard.graphComponent,
 			    msg,
 			    "Error",
 			    JOptionPane.ERROR_MESSAGE);

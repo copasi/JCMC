@@ -21,10 +21,10 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
-
 import org.sbml.libsbml.*;
 
 import com.mxgraph.model.mxCell;
+import com.mxgraph.model.mxGeometry;
 import com.mxgraph.model.mxGraphModel;
 
 /**
@@ -176,7 +176,7 @@ public class SBMLParser {
 			return null;
 		}
 		
-		mod = importContainerModule(document, parent);
+		mod = newimportContainerModule(document, parent);
 		if (mod == null)
 		{
 			// there was an error importing the module
@@ -394,11 +394,14 @@ public class SBMLParser {
 		
 		System.out.println("addLayoutInformation start.");
 		
+		/*
 		if (!exportLayoutInformation(document.getModel(), containerModule))
 		{
 			System.err.println("Error SBMLParser.exportContainerDefinition: exportLayoutInformation failed.");
 			return null;
 		}
+		*/
+		newexportLayoutInformation(document.getModel(), containerModule);
 		
 		System.out.println("addLayoutInformation end.");
 		
@@ -594,6 +597,7 @@ public class SBMLParser {
 			modelPort = compModulePlugin.createPort();
 			modelPort.setIdRef(idRef);
 			modelPort.setId(id);
+			modelPort.setName(id);
 			
 			//compModulePlugin.addPort(modelPort);
 		}
@@ -1532,8 +1536,8 @@ public class SBMLParser {
 		{
 			// the submodule is a MathematicalAggregator
 			XMLNode modAnnotation = glyph.getAnnotation().getChild(0);
-			String inputNumber = modAnnotation.getAttrValue("inputs", "http://www.copasi.org/softwareprojects");
-			String op = modAnnotation.getAttrValue("type", "http://www.copasi.org/softwareprojects");
+			String inputNumber = modAnnotation.getAttrValue("inputs", "http://www.copasi.org/Projects/JigCell_Model_Connector");
+			String op = modAnnotation.getAttrValue("type", "http://www.copasi.org/Projects/JigCell_Model_Connector");
 			Operation operation;
 			if (op.equals(Operation.PRODUCT.toString()))
 			{
@@ -1592,9 +1596,9 @@ public class SBMLParser {
 			portAnnotation = portGlyph.getAnnotation().getChild(0);
 			//System.out.println("portAnnotation name: " + portAnnotation.getName());
 			//System.out.println("portAnnotation namespace uri: " + portAnnotation.getNamespaceURI());
-			portRefName = portAnnotation.getAttrValue("refName", "http://www.copasi.org/softwareprojects");
-			portType = portAnnotation.getAttrValue("pType", "http://www.copasi.org/softwareprojects");
-			varType = portAnnotation.getAttrValue("vType", "http://www.copasi.org/softwareprojects");
+			portRefName = portAnnotation.getAttrValue("refName", "http://www.copasi.org/Projects/JigCell_Model_Connector");
+			portType = portAnnotation.getAttrValue("pType", "http://www.copasi.org/Projects/JigCell_Model_Connector");
+			varType = portAnnotation.getAttrValue("vType", "http://www.copasi.org/Projects/JigCell_Model_Connector");
 			
 			// determine if the port definition has already been created
 			if (parentDefinition.getInstances().size() > 1)
@@ -1645,8 +1649,8 @@ public class SBMLParser {
 		ACComponentDefinition componentDefinition;
 		VisibleVariableDefinition visibleVariableDefinition;
 		XMLNode annotation = glyph.getAnnotation().getChild(0);
-		String refName = annotation.getAttrValue("name", "http://www.copasi.org/softwareprojects");
-		String varType = annotation.getAttrValue("vType", "http://www.copasi.org/softwareprojects");
+		String refName = annotation.getAttrValue("name", "http://www.copasi.org/Projects/JigCell_Model_Connector");
+		String varType = annotation.getAttrValue("vType", "http://www.copasi.org/Projects/JigCell_Model_Connector");
 		
 		// determine if the visible variable definition has already been created
 		if (parentDefinition.getInstances().size() > 1)
@@ -1693,8 +1697,8 @@ public class SBMLParser {
 		ACComponentDefinition componentDefinition;
 		EquivalenceDefinition equivalenceDefinition;
 		XMLNode annotation = glyph.getAnnotation().getChild(0);
-		String refName = annotation.getAttrValue("name", "http://www.copasi.org/softwareprojects");
-		String varType = annotation.getAttrValue("vType", "http://www.copasi.org/softwareprojects");
+		String refName = annotation.getAttrValue("name", "http://www.copasi.org/Projects/JigCell_Model_Connector");
+		String varType = annotation.getAttrValue("vType", "http://www.copasi.org/Projects/JigCell_Model_Connector");
 		
 		// determine if the equivalence definition has already been created
 		if (parentDefinition.getInstances().size() > 1)
@@ -1848,6 +1852,516 @@ public class SBMLParser {
 		}
 	}
 	
+	private static Module newimportContainerModule(SBMLDocument doc, Module parent)
+	{
+		String moduleName = "";
+		String definitionName = "";
+		String sbmlID = "";
+		String modString = "";
+		boolean hasCompPackage = false;
+		boolean hasLayoutPackage = false;
+		CompModelPlugin modelCompPlugin = null;
+		LayoutModelPlugin lplugin = null;
+		GeneralGlyph glyph = null;
+		Model containerMod;
+		
+		if (doc.getModel() == null)
+		{
+			// there is no Model in the sbml document
+			System.err.println("Error in SBMLParser.importContainerModule: There is no Model in the SBML document.");
+			return null;
+		}
+		if (!validateModuleDefinitionName(doc))
+		{
+			System.err.println("Error in SBMLParser.importContainerModule: validateModuleDefinitionName() returns false.");
+			return null;
+		}
+		containerMod = doc.getModel();
+		definitionName = containerMod.getName();
+		if (parent == null)
+		{
+			// imported module will be the root module
+			moduleName = definitionName;
+		}
+		else
+		{
+			// imported module will be a submodule
+			moduleName = AC_Utility.promptUserForNewModuleName(parent, "Enter a Module name:");
+		}
+		sbmlID = containerMod.getId();
+		
+		if (doc.getLevel() < 3)
+		{
+			hasCompPackage = false;
+			hasLayoutPackage = false;
+		}
+		else
+		{
+			// check if the document uses the comp package
+			/*
+			SBasePlugin plugin;
+			plugin = doc.getPlugin("comp");
+			if (plugin == null)
+			{
+				hasCompPackage = false;
+			}
+			*/
+			if (doc.isPackageEnabled("comp"))
+			{
+				hasCompPackage = true;
+			}
+			// check if the document uses the layout package
+			/*
+			plugin = doc.getPlugin("layout");
+			if (plugin == null)
+			{
+				hasLayoutPackage = false;
+			}
+			*/
+			if (doc.isPackageEnabled("layout"))
+			{
+				hasLayoutPackage = true;
+			}
+		}
+		
+		if (hasCompPackage)
+		{
+			modelCompPlugin = (CompModelPlugin)containerMod.getPlugin("comp");
+		}
+		
+		if (hasLayoutPackage)
+		{
+			lplugin = (LayoutModelPlugin)containerMod.getPlugin("layout");
+			ListOfLayouts layouts = lplugin.getListOfLayouts();
+			System.out.println("Number of layouts: " + layouts.size());
+			Layout layout = layouts.get(0);
+			//glyph = layout.getGeneralGlyph(name + "_glyph");
+			glyph = layout.getGeneralGlyph(0);
+		}
+		
+		/*
+		System.out.println("Submodules number = " + modelCompPlugin.getNumSubmodels());
+		System.out.println("Ports number = " + modelCompPlugin.getNumPorts());
+		System.out.println("Layouts number = " + layouts.size());
+		System.out.println("glyphID: " + glyph.getId());
+		System.out.println("Number of containerMod replacedElements = " + modelCompPlugin.getNumReplacedElements());
+		CompSBasePlugin compartmentCompPlugin = (CompSBasePlugin)containerMod.getListOfCompartments().get(0).getPlugin("comp");
+		System.out.println("Number of compartment replacedElements = " + compartmentCompPlugin.getNumReplacedElements());
+		// compartmentCompPlugin.getListOfReplacedElements().removeFromParentAndDelete();
+		//layout.getListOfAdditionalGraphicalObjects().removeFromParentAndDelete();
+		*/
+		SBMLNamespaces ns = new SBMLNamespaces();
+		ns.addNamespaces(doc.getNamespaces());
+		SBMLDocument newDoc = new SBMLDocument(ns);
+		int setModelCode = newDoc.setModel(containerMod);
+		if(setModelCode != 0)
+		{
+			System.err.println("Error in SBMLParser.importContainerModule: setModelCode = " + setModelCode);
+			return null;
+		}
+		
+		//newDoc.setPackageRequired("layout", false);
+		//newDoc.setPackageRequired("comp", false);
+		removePluginData(newDoc);
+		modString = libsbml.writeSBMLToString(newDoc);
+		//System.out.println(modString);
+		System.out.println("Validate container module: " + containerMod.getId());
+		if (!checkValidSBML(modString))
+		{
+			System.err.println("The container Model is invalid.");
+			return null;
+		}
+		System.out.println("Validation successful.");
+		//modString = modString.replace("comp:required=\"false\"", "comp:required=\"true\" render:required=\"false\"");
+		//modString = modString.replace("xmlns:comp=\"http://www.sbml.org/sbml/level3/version1/comp/version1\"", "");
+		//modString = modString.replace("comp:required=\"false\"", "");
+		//String name, GeneralGlyph glyph, boolean createDatamodel
+		//Module mod = AC_GUI.xnewModule(name, sbmlID, modString, parent, glyph, true);
+		ModuleDefinition definition;
+		Module module = null;
+		if (parent == null)
+		{
+			definition = AC_Utility.createModuleDefinition(sbmlID, definitionName, modString, null);
+		}
+		else
+		{
+			definition = AC_Utility.createModuleDefinition(sbmlID, definitionName, modString, parent.getModuleDefinition());
+		}
+		definitionList.add(definition);
+		
+		if (!hasCompPackage && !hasLayoutPackage)
+		{
+			module = AC_Utility.createInstance(moduleName, parent, definition);
+		}
+		
+		if (hasCompPackage && hasLayoutPackage)
+		{
+			String glyphID = glyph.getId();
+			String modulesbmlID = glyphID.substring(0, glyphID.length() - CONTAINER_MODULE_GLYPH_CODE.length());
+			module = AC_Utility.createInstance(moduleName, modulesbmlID, parent, definition, glyph);
+			// add visible variables and equivalence nodes
+			ListOfGraphicalObjects subGlyphs = glyph.getListOfSubGlyphs();
+			GraphicalObject subGlyph;
+			for (long i = 0; i < glyph.getNumSubGlyphs(); i++)
+			{
+				subGlyph = subGlyphs.get(i);
+				if (subGlyph.getId().endsWith("_VisibleVariableGlyph"))
+				{
+					newimportVisibleVariable(module, subGlyph);
+				}
+				else if (subGlyph.getId().endsWith("_EquivalenceNodeGlyph"))
+				{
+					newimportEquivalence(module, subGlyph);
+				}
+			}
+			// add ports
+			if(modelCompPlugin.getNumPorts() > 0)
+			{
+				newimportPorts(modelCompPlugin.getListOfPorts(), containerMod, glyph, module);
+			}
+			
+			// add submodules
+			if(modelCompPlugin.getNumSubmodels() > 0)
+			{
+				CompSBMLDocumentPlugin docCompPlugin = (CompSBMLDocumentPlugin)doc.getPlugin("comp");
+				SBMLNamespaces nameSpaces = new SBMLNamespaces();
+				nameSpaces.addNamespaces(doc.getNamespaces());
+				newimportSubmodules(modelCompPlugin.getListOfSubmodels(), docCompPlugin, nameSpaces, glyph, module);
+			}
+			// add connections
+			if (containerMod.getNumSpecies() > 0)
+			{
+				importReplacementsFromSpecies(containerMod.getListOfSpecies(), module, true);
+			}
+		}
+		//AC_GUI.changeActiveModule(mod);
+		return module;
+	}
+	
+	private static void newimportSubmodules(ListOfSubmodels submodules, CompSBMLDocumentPlugin docCompPlugin, SBMLNamespaces nameSpaces, GeneralGlyph parentGlyph, Module parent)
+	{
+		ListOfGraphicalObjects subGlyphs = parentGlyph.getListOfSubGlyphs();
+		//System.out.println("Number of subglyphs: " + subGlyphs.size());
+		ListOfModelDefinitions internalModuleDefinitions = docCompPlugin.getListOfModelDefinitions();
+		ListOfExternalModelDefinitions externalModuleDefinitions = docCompPlugin.getListOfExternalModelDefinitions();
+		String name = "";
+		String sbmlID = "";
+		String modelRef = "";
+		String modString = "";
+		String cellStyle = "";
+		Submodel submodule;
+		SBMLNamespaces ns;
+		SBMLDocument newDoc;
+		SBase genericDefinition;
+		ModelDefinition internalModuleDefinition;
+		ExternalModelDefinition externalModuleDefinition;
+		Model moduleDefinition = null;
+		ModuleDefinition definition;
+		Module module;
+		CompModelPlugin submodulePlugin;
+		GeneralGlyph glyph = null;
+		boolean externalDefinition;
+		for(long i = 0; i < submodules.size(); i++)
+		{
+			externalDefinition = false;
+			submodule = (Submodel)submodules.get(i);
+			name = submodule.getName();
+			sbmlID = submodule.getId();
+			modelRef = submodule.getModelRef();
+			internalModuleDefinition = internalModuleDefinitions.get(modelRef);
+			externalModuleDefinition = externalModuleDefinitions.get(modelRef);
+			glyph = (GeneralGlyph)subGlyphs.get(sbmlID + "_ModuleGlyph");
+			
+			/*
+			System.out.println("glyphID: " + glyph.getId());
+			System.out.println("sbmlID: " + sbmlID);
+			System.out.println("modelRef: " + modelRef);
+			System.out.println("module Ref name: " + moduleDefinition.getName());
+			System.out.println("module Ref model name: " + moduleDefinition.getModel().getName());
+			*/
+			
+			//modString = modString.replace("xmlns:comp=\"http://www.sbml.org/sbml/level3/version1/comp/version1\"", "");
+			//modString = modString.replace("comp:required=\"false\"", "");
+			definition = getModuleDefinition(modelRef);
+			if (definition == null)
+			{
+				if ((internalModuleDefinition != null) && (externalModuleDefinition == null))
+				{
+					// module definition is internal
+					moduleDefinition = internalModuleDefinition;
+					//System.out.println(moduleDefinition.toSBML());
+					definition = importModuleDefinition(moduleDefinition, parent.getModuleDefinition(), nameSpaces, glyph);
+				}
+				else if ((internalModuleDefinition == null) && (externalModuleDefinition != null))
+				{
+					// module definition is external
+					String externalSource = externalModuleDefinition.getSource();
+					String md5 = externalModuleDefinition.getMd5();
+					boolean validExternalFile = AC_Utility.validateExternalFile(externalSource, md5);
+					if (validExternalFile)
+					{
+						//definition = importExternalDefinition(externalSource, externalModelRef);
+						definition = importExternalDefinition(externalModuleDefinition, parent.getModuleDefinition(), nameSpaces, glyph);
+						moduleDefinition = externalModuleDefinition.getReferencedModel();
+						//System.out.println(moduleDefinition.toSBML());
+					}
+				}
+				else
+				{
+					// no definition
+					moduleDefinition = null;
+				}
+				
+				if (definition == null)
+				{
+					System.err.println("Error in SBMLParser.importSubmodules: module definition is null.");
+					return;
+				}
+				definitionList.add(definition);
+			}
+			if ((internalModuleDefinition != null) && (externalModuleDefinition == null))
+			{
+				// module definition is internal
+				moduleDefinition = internalModuleDefinition;
+			}
+			else if ((internalModuleDefinition == null) && (externalModuleDefinition != null))
+			{
+				// module definition is external
+				moduleDefinition = externalModuleDefinition.getReferencedModel();
+			}
+			else
+			{
+				// no definition
+				moduleDefinition = null;
+			}
+			
+			if (moduleDefinition == null)
+			{
+				System.err.println("Error in SBMLParser.importSubmodules: module definition is null.");
+				return;
+			}
+			
+			name = validateModuleName(parent, name);
+			if (name == null)
+			{
+				System.err.println("Error in SBMLParser.importSubmodules: validateModuleName() returns null.");
+				return;
+			}
+			module = AC_Utility.createInstance(name, sbmlID, parent, definition, glyph);
+			
+			// add visible variables and equivalence nodes
+			ListOfGraphicalObjects submoduleSubGlyphs = glyph.getListOfSubGlyphs();
+			GraphicalObject subGlyph;
+			for (long j = 0; j < glyph.getNumSubGlyphs(); j++)
+			{
+				subGlyph = submoduleSubGlyphs.get(j);
+				if (subGlyph.getId().endsWith("_VisibleVariableGlyph"))
+				{
+					newimportVisibleVariable(module, subGlyph);
+				}
+				else if (subGlyph.getId().endsWith("_EquivalenceNodeGlyph"))
+				{
+					newimportEquivalence(module, subGlyph);
+				}
+			}
+			
+			submodulePlugin = (CompModelPlugin)moduleDefinition.getPlugin("comp");
+			// add ports
+			if(submodulePlugin.getNumPorts() > 0)
+			{
+				newimportPorts(submodulePlugin.getListOfPorts(), moduleDefinition, glyph, module);
+			}
+			// add submodules
+			if(submodulePlugin.getNumSubmodels() > 0)
+			{
+				newimportSubmodules(submodulePlugin.getListOfSubmodels(), docCompPlugin, nameSpaces, glyph, module);
+			}
+			// add connections
+			if (moduleDefinition.getNumSpecies() > 0)
+			{
+				importReplacementsFromSpecies(moduleDefinition.getListOfSpecies(), module, false);
+			}
+		}
+	}
+	
+	private static void newimportVisibleVariable(Module parent, GraphicalObject glyph)
+	{
+		ModuleDefinition parentDefinition = parent.getModuleDefinition();
+		ACComponentDefinition componentDefinition;
+		VisibleVariableDefinition visibleVariableDefinition;
+		XMLNode annotation = glyph.getAnnotation().getChild(0);
+		String refName = annotation.getAttrValue("name", "http://www.copasi.org/Projects/JigCell_Model_Connector");
+		String varType = annotation.getAttrValue("vType", "http://www.copasi.org/Projects/JigCell_Model_Connector");
+		
+		// determine if the visible variable definition has already been created
+		if (parentDefinition.getInstances().size() > 1)
+		{
+			// this is not the first instantiation of the module definition
+			// a visible variable definition should already exist
+			// only a visible variable node needs to be created
+			componentDefinition = getACComponentDefinition(parentDefinition.getVisibleVariables().listIterator(), refName);
+			if (componentDefinition == null)
+			{
+				System.err.println("Error in SBMLParser.importVisiableVariable: componentDefinition for VisibleVariable " + refName + " is null.");
+				return;
+			}
+			else
+			{
+				visibleVariableDefinition = (VisibleVariableDefinition)componentDefinition;
+				AC_Utility.createVisibleVariableNode(parent, visibleVariableDefinition, glyph);
+			}
+		}
+		else
+		{
+			// this is the first instantiation of the module definition
+			// a visible variable definition and visible variable node need to be created
+			VariableType vType;
+			try
+			{
+				vType = VariableType.getType(varType);
+			}
+			catch (Exception e)
+			{
+				System.err.println("Error in SBMLParser.importVisibleVariable: Imported VariableType is invalid.");
+				e.printStackTrace();
+				return;
+			}
+			AC_Utility.createVisibleVariable(refName, vType, parent, glyph);
+		}
+		
+		//AC_GUI.addVisibleVariable(parent, refName, vType, glyph);
+	}
+	
+	private static void newimportEquivalence(Module parent, GraphicalObject glyph)
+	{
+		ModuleDefinition parentDefinition = parent.getModuleDefinition();
+		ACComponentDefinition componentDefinition;
+		EquivalenceDefinition equivalenceDefinition;
+		XMLNode annotation = glyph.getAnnotation().getChild(0);
+		String refName = annotation.getAttrValue("name", "http://www.copasi.org/Projects/JigCell_Model_Connector");
+		String varType = annotation.getAttrValue("vType", "http://www.copasi.org/Projects/JigCell_Model_Connector");
+		
+		// determine if the equivalence definition has already been created
+		if (parentDefinition.getInstances().size() > 1)
+		{
+			// this is not the first instantiation of the module definition
+			// an equivalence definition should already exist
+			// only an equivalence node needs to be created
+			componentDefinition = getACComponentDefinition(parentDefinition.getEquivalences().listIterator(), refName);
+			if (componentDefinition == null)
+			{
+				System.err.println("Error in SBMLParser.importEquivalence: componentDefinition for Equivalence " + refName + " is null.");
+				return;
+			}
+			else
+			{
+				equivalenceDefinition = (EquivalenceDefinition)componentDefinition;
+				AC_Utility.createEquivalenceNode(parent, equivalenceDefinition, glyph);
+			}
+		}
+		else
+		{
+			// this is the first instantiation of the module definition
+			// an equivalence definition and equivalence node need to be created
+			VariableType vType;
+			try
+			{
+				vType = VariableType.getType(varType);
+			}
+			catch (Exception e)
+			{
+				System.err.println("Error in SBMLParser.importEquivalence: Imported VariableType is invalid.");
+				e.printStackTrace();
+				return;
+			}
+			AC_Utility.createEquivalence(refName, vType, parent, glyph);
+		}
+		
+		//AC_GUI.addEquivalenceNode(parent, refName, glyph);
+	}
+	
+	private static void newimportPorts(ListOfPorts ports, Model parentModule, GeneralGlyph parentGlyph, Module mod)
+	{
+		String portIDRef;
+		String portName;
+		String portRefName;
+		String portType;
+		String varType;
+		ModuleDefinition parentDefinition = mod.getModuleDefinition();
+		ACComponentDefinition componentDefinition;
+		PortDefinition portDefinition;
+		org.sbml.libsbml.Port port;
+		ListOfGraphicalObjects subGlyphs = parentGlyph.getListOfSubGlyphs();
+		//System.out.println("parentGlyph name: " + parentGlyph.getName());
+		//System.out.println("Number of subglyphs: " + parentGlyph.getNumSubGlyphs());
+		GraphicalObject portGlyph;
+		XMLNode portAnnotation;
+		for(long i = 0; i < ports.size(); i++)
+		{
+			port = (org.sbml.libsbml.Port)ports.get(i);
+			portName = port.getId();
+			portIDRef = port.getIdRef();
+			portGlyph = subGlyphs.get(portName + "_PortGlyph");
+			//System.out.println("port name: " + portName);
+			if(portGlyph == null)
+			{
+				System.err.println("portGlyph = NULL");
+			}
+			//System.out.println("portGlyph name: " + portGlyph.getName());
+			if (portGlyph.getAnnotation() == null)
+			{
+				System.err.println("portGlyph.getAnn = NULL");
+			}
+			portAnnotation = portGlyph.getAnnotation().getChild(0);
+			//System.out.println("portAnnotation name: " + portAnnotation.getName());
+			//System.out.println("portAnnotation namespace uri: " + portAnnotation.getNamespaceURI());
+			portRefName = portAnnotation.getAttrValue("refName", "http://www.copasi.org/Projects/JigCell_Model_Connector");
+			portType = portAnnotation.getAttrValue("pType", "http://www.copasi.org/Projects/JigCell_Model_Connector");
+			varType = portAnnotation.getAttrValue("vType", "http://www.copasi.org/Projects/JigCell_Model_Connector");
+			
+			// determine if the port definition has already been created
+			if (parentDefinition.getInstances().size() > 1)
+			{
+				// this is not the first instantiation of the module definition
+				// a port definition should already exist
+				// only a port node needs to be created
+				componentDefinition = getACComponentDefinition(parentDefinition.getPorts().listIterator(), portRefName);
+				if (componentDefinition == null)
+				{
+					System.err.println("Error in SBMLParser.importPorts: componentDefinition for Port " + portName + " is null.");
+					return;
+				}
+				else
+				{
+					portDefinition = (PortDefinition)componentDefinition;
+					AC_Utility.createPortNode(mod, portName, portDefinition, portGlyph);
+				}
+			}
+			else
+			{
+				// this is the first instantiation of the module definition
+				// a port definition and port node need to be created
+				//determine the porttype and vartype and then call acutility.createport
+				PortType pType;
+				VariableType vType;
+				try
+				{
+					pType = PortType.getType(portType);
+					vType = VariableType.getType(varType);
+				}
+				catch (Exception e)
+				{
+					System.err.println("Error in SBMLParser.importPorts: Imported PortType or VariableType is invalid.");
+					e.printStackTrace();
+					return;
+				}
+				AC_Utility.createPort(mod, portRefName, portName, pType, vType, portGlyph);
+			}
+			
+			//AC_GUI.addPort(mod, portName, portRefName, portType, varType, portGlyph);
+		}
+	}
+	
 	private static String fixReactionModifiers(Module mod, String output)
 	{
 		try
@@ -1953,7 +2467,7 @@ public class SBMLParser {
 			gly.setBoundingBox(box);
 			gly.setId(definition.getName() + "_PortGlyph");
 			portAnnotation = "<ac:portInfo";
-			portAnnotation += " xmlns:ac=\"http://www.copasi.org/softwareprojects\"";
+			portAnnotation += " xmlns:ac=\"http://www.copasi.org/Projects/JigCell_Model_Connector\"";
 			portAnnotation += " ac:refName=\"" + definition.getRefName() + "\"";
 			portAnnotation += " ac:name=\"" + definition.getName() + "\"";
 			portAnnotation += " ac:pType=\"" + definition.getType().toString() + "\"";
@@ -1990,7 +2504,7 @@ public class SBMLParser {
 			gly.setId(definition.getRefName() + "_VisibleVariableGlyph");
 			
 			varAnnotation = "<ac:VisibleVariableInfo";
-			varAnnotation += " xmlns:ac=\"http://www.copasi.org/softwareprojects\"";
+			varAnnotation += " xmlns:ac=\"http://www.copasi.org/Projects/JigCell_Model_Connector\"";
 			varAnnotation += " ac:name=\"" + definition.getRefName() + "\"";
 			varAnnotation += " ac:vType=\"" + definition.getVariableType().toString() + "\"";
 			varAnnotation += "/>";
@@ -2024,7 +2538,7 @@ public class SBMLParser {
 			gly.setId(definition.getRefName() + "_EquivalenceNodeGlyph");
 			
 			eNodeAnnotation = "<ac:EquivalenceNodeInfo";
-			eNodeAnnotation += " xmlns:ac=\"http://www.copasi.org/softwareprojects\"";
+			eNodeAnnotation += " xmlns:ac=\"http://www.copasi.org/Projects/JigCell_Model_Connector\"";
 			eNodeAnnotation += " ac:name=\"" + definition.getRefName() + "\"";
 			eNodeAnnotation += " ac:vType=\"" + "Species" + "\"";
 			eNodeAnnotation += "/>";
@@ -2077,7 +2591,7 @@ public class SBMLParser {
 			{
 				MathematicalAggregatorDefinition maDefinition = (MathematicalAggregatorDefinition)definition;
 				submoduleAnnotation = "<ac:MathAggInfo";
-				submoduleAnnotation += " xmlns:ac=\"http://www.copasi.org/softwareprojects\"";
+				submoduleAnnotation += " xmlns:ac=\"http://www.copasi.org/Projects/JigCell_Model_Connector\"";
 				submoduleAnnotation += " ac:type=\"" + maDefinition.getOperation().toString() + "\"";
 				submoduleAnnotation += " ac:inputs=\"" + maDefinition.getNumberofInputs() + "\"";
 				submoduleAnnotation += "/>";
@@ -2109,6 +2623,273 @@ public class SBMLParser {
 			}
 			
 			parentGly.addSubGlyph(gly);
+			System.out.println("Added " + gly.getId() + " glyph.");
+		}
+	}
+	
+	private static void newexportLayoutInformation(Model model, Module module)
+	{
+		SBasePlugin basePlugin = (model.getPlugin("layout"));
+		LayoutModelPlugin layoutPlugin = (LayoutModelPlugin)basePlugin;
+		Layout layout = layoutPlugin.createLayout();
+		layout.setId("Layout_0");
+		
+		
+		GeneralGlyph moduleGlyph = layout.createGeneralGlyph();
+		moduleGlyph.setId(module.getID() + "_ModuleGlyph");
+		mxGeometry geo = module.getDrawingCellGeometrySubmodule();
+		BoundingBox box = createBoundingBox(geo);
+		moduleGlyph.setBoundingBox(box);
+		
+		newaddModuleLayoutInformation(moduleGlyph, module, null);
+	}
+	
+	private static void newaddModuleLayoutInformation(GeneralGlyph moduleGlyph, Module module, GeneralGlyph parentGlyph)
+	{
+		ModuleDefinition moduleDefinition = module.getModuleDefinition();
+		
+		if (moduleGlyph == null)
+		{
+			// module is not the container
+			// create a new glyph for the module
+			moduleGlyph = new GeneralGlyph();
+			moduleGlyph.setId(module.getID() + "_ModuleGlyph");
+			mxGeometry geo = module.getDrawingCellGeometrySubmodule();
+			BoundingBox box = createBoundingBox(geo);
+			moduleGlyph.setBoundingBox(box);
+		}
+		
+		if (moduleDefinition instanceof MathematicalAggregatorDefinition)
+		{
+			newaddMathAggAnnotation(moduleDefinition, moduleGlyph);
+		}
+		
+		// add the compartment to the layout
+		newaddCompartmentLayoutInformation(module, moduleGlyph);
+		
+		// add ports to the layout
+		if(module.getPorts().size() > 0)
+		{
+			newaddPortLayoutInformation(module, moduleGlyph);
+		}
+		
+		// add visible variables to the layout
+		if(module.getVisibleVariables().size() > 0)
+		{
+			//newaddVisibleVariableLayoutInformation(mod, moduleGlyph);
+			newaddComponentLayoutInformation(module.getVisibleVariables(), moduleGlyph, "VisibleVariable");
+		}
+		
+		// add equivalence nodes to the layout
+		if(module.getEquivalences().size() > 0)
+		{
+			//newaddEquivalenceLayoutInformation(mod, moduleGlyph);
+			newaddComponentLayoutInformation(module.getEquivalences(), moduleGlyph, "Equivalence");
+		}
+		
+		// add submodules to the layout
+		if(module.getChildren().size() > 0)
+		{
+			newaddSubmoduleLayoutInformation(module, moduleGlyph);
+		}
+		
+		if (parentGlyph != null)
+		{
+			parentGlyph.addSubGlyph(moduleGlyph);
+		}
+	}
+	
+	private static void newaddMathAggAnnotation(ModuleDefinition definition, GeneralGlyph moduleGlyph)
+	{
+		String annotation;
+		MathematicalAggregatorDefinition maDefinition = (MathematicalAggregatorDefinition)definition;
+		annotation = "<jcmc:MathAggInfo";
+		annotation += " xmlns:jcmc=\"http://copasi.org/Projects/JigCell_Model_Connector\"";
+		annotation += " jcmc:type=\"" + maDefinition.getOperation().toString() + "\"";
+		annotation += " jcmc:inputs=\"" + maDefinition.getNumberofInputs() + "\"";
+		annotation += "/>";
+		moduleGlyph.appendAnnotation(XMLNode.convertStringToXMLNode(annotation));
+	}
+	
+	private static void newaddCompartmentLayoutInformation(Module mod, GeneralGlyph parentGlyph)
+	{
+		CompartmentGlyph compartmentGlyph = new CompartmentGlyph();
+		compartmentGlyph.setId(mod.getID() + "_ContainerGlyph");
+		mxGeometry geo = mod.getDrawingCellGeometryModule();
+		BoundingBox box = createBoundingBox(geo);
+		compartmentGlyph.setBoundingBox(box);
+		parentGlyph.addSubGlyph(compartmentGlyph);
+	}
+	
+	private static void newaddPortLayoutInformation(Module mod, GeneralGlyph parentGlyph)
+	{
+		PortNode node;
+		PortDefinition definition;
+		Point point;
+		BoundingBox box;
+		String portAnnotation;
+		GraphicalObject graphic;
+		ListIterator<ACComponentNode> listOfPorts = mod.getPorts().listIterator();
+		while(listOfPorts.hasNext())
+		{
+			node = (PortNode)listOfPorts.next();
+			definition = (PortDefinition)node.getDefinition();
+			point = new Point();
+			box = new BoundingBox();
+			graphic = new GraphicalObject();
+			
+			point.setX(((mxCell)node.getDrawingCell()).getGeometry().getX());
+			point.setY(((mxCell)node.getDrawingCell()).getGeometry().getY());
+			box.setPosition(point);
+			graphic.setBoundingBox(box);
+			graphic.setId(definition.getName() + "_PortGlyph");
+			portAnnotation = "<jcmc:portInfo";
+			portAnnotation += " xmlns:jcmc=\"http://www.copasi.org/Projects/JigCell_Model_Connector\"";
+			portAnnotation += " jcmc:refName=\"" + definition.getRefName() + "\"";
+			portAnnotation += " jcmc:id=\"" + definition.getName() + "\"";
+			portAnnotation += " jcmc:pType=\"" + definition.getType().toString() + "\"";
+			portAnnotation += " jcmc:vType=\"" + definition.getVariableType().toString() + "\"";
+			portAnnotation += " jcmc:parentMod=\"" + node.getParent().getID() + "\"";
+			portAnnotation += "/>";
+			graphic.appendAnnotation(XMLNode.convertStringToXMLNode(portAnnotation));
+			
+			parentGlyph.addSubGlyph(graphic);
+		}
+	}
+	
+	private static void newaddVisibleVariableLayoutInformation(Module mod, GeneralGlyph parentGlyph)
+	{
+		VisibleVariableNode node;
+		ACComponentDefinition definition;
+		Point point;
+		BoundingBox box;
+		GraphicalObject graphic;
+		String varAnnotation;
+		ListIterator<ACComponentNode> vars = mod.getVisibleVariables().listIterator();
+		while(vars.hasNext())
+		{
+			node = (VisibleVariableNode)vars.next();
+			definition = node.getDefinition();
+			point = new Point();
+			box = new BoundingBox();
+			graphic = new GraphicalObject();
+			
+			point.setX(((mxCell)node.getDrawingCell()).getGeometry().getX());
+			point.setY(((mxCell)node.getDrawingCell()).getGeometry().getY());
+			box.setPosition(point);
+			graphic.setBoundingBox(box);
+			graphic.setId(definition.getRefName() + "_VisibleVariableGlyph");
+			
+			varAnnotation = "<jcmc:VisibleVariableInfo";
+			varAnnotation += " xmlns:jcmc=\"http://www.copasi.org/Projects/JigCell_Model_Connector\"";
+			varAnnotation += " jcmc:name=\"" + definition.getRefName() + "\"";
+			varAnnotation += " jcmc:vType=\"" + definition.getVariableType().toString() + "\"";
+			varAnnotation += "/>";
+			graphic.appendAnnotation(XMLNode.convertStringToXMLNode(varAnnotation));
+			
+			parentGlyph.addSubGlyph(graphic);
+		}
+	}
+	
+	private static void newaddEquivalenceLayoutInformation(Module mod, GeneralGlyph parentGlyph)
+	{
+		EquivalenceNode node;
+		ACComponentDefinition definition;
+		Point point;
+		BoundingBox box;
+		GraphicalObject graphic;
+		String eNodeAnnotation;
+		ListIterator<ACComponentNode> eNodes = mod.getEquivalences().listIterator();
+		while(eNodes.hasNext())
+		{
+			node = (EquivalenceNode)eNodes.next();
+			definition = node.getDefinition();
+			point = new Point();
+			box = new BoundingBox();
+			graphic = new GraphicalObject();
+			
+			point.setX(((mxCell)node.getDrawingCell()).getGeometry().getX());
+			point.setY(((mxCell)node.getDrawingCell()).getGeometry().getY());
+			box.setPosition(point);
+			graphic.setBoundingBox(box);
+			graphic.setId(definition.getRefName() + "_EquivalenceNodeGlyph");
+			
+			eNodeAnnotation = "<jcmc:EquivalenceNodeInfo";
+			eNodeAnnotation += " xmlns:jcmc=\"http://www.copasi.org/Projects/JigCell_Model_Connector\"";
+			eNodeAnnotation += " jcmc:name=\"" + definition.getRefName() + "\"";
+			eNodeAnnotation += " jcmc:vType=\"" + definition.getVariableType().toString() + "\"";
+			eNodeAnnotation += "/>";
+			graphic.appendAnnotation(XMLNode.convertStringToXMLNode(eNodeAnnotation));
+			
+			parentGlyph.addSubGlyph(graphic);
+		}
+	}
+	
+	private static void newaddComponentLayoutInformation(ArrayList<ACComponentNode> list, GeneralGlyph parentGlyph, String prefix)
+	{
+		ACComponentNode node;
+		ACComponentDefinition definition;
+		Point point;
+		BoundingBox box;
+		GraphicalObject graphic;
+		String annotation;
+		ListIterator<ACComponentNode> nodeList = list.listIterator();
+		while(nodeList.hasNext())
+		{
+			node = nodeList.next();
+			definition = node.getDefinition();
+			point = new Point();
+			box = new BoundingBox();
+			graphic = new GraphicalObject();
+			
+			point.setX(((mxCell)node.getDrawingCell()).getGeometry().getX());
+			point.setY(((mxCell)node.getDrawingCell()).getGeometry().getY());
+			box.setPosition(point);
+			graphic.setBoundingBox(box);
+			graphic.setId(definition.getRefName() + "_" + prefix + "NodeGlyph");
+			
+			annotation = "<jcmc:" + prefix + "NodeInfo";
+			annotation += " xmlns:jcmc=\"http://www.copasi.org/Projects/JigCell_Model_Connector\"";
+			annotation += " jcmc:name=\"" + definition.getRefName() + "\"";
+			annotation += " jcmc:vType=\"" + definition.getVariableType().toString() + "\"";
+			annotation += "/>";
+			graphic.appendAnnotation(XMLNode.convertStringToXMLNode(annotation));
+			
+			parentGlyph.addSubGlyph(graphic);
+		}
+	}
+	
+	private static void newaddSubmoduleLayoutInformation(Module parentModule, GeneralGlyph parentGlyph)
+	{
+		Module submodule;
+		ListIterator<Module> submoduleList = parentModule.getChildren().listIterator();
+		while(submoduleList.hasNext())
+		{
+			submodule = submoduleList.next();
+			newaddModuleLayoutInformation(null, submodule, parentGlyph);
+		}
+		
+		Module child;
+		ModuleDefinition definition;
+		Dimensions dim;
+		Point point;
+		BoundingBox box;
+		String submoduleAnnotation;
+		boolean isMathAgg;
+		GeneralGlyph gly;
+		
+		System.out.println(parentModule.getID() + " has " + parentModule.getChildren().size() + " children.");
+		while(submoduleList.hasNext())
+		{
+			child = submoduleList.next();
+			definition = child.getModuleDefinition();
+			dim = new Dimensions();
+			point = new Point();
+			box = new BoundingBox();
+			gly = new GeneralGlyph();
+			
+			
+
 			System.out.println("Added " + gly.getId() + " glyph.");
 		}
 	}
@@ -2641,5 +3422,31 @@ public class SBMLParser {
 		
 		// return string model
 		return libsbml.writeSBMLToString(document);	
+	}
+	
+	private static BoundingBox createBoundingBox(mxGeometry geo)
+	{
+		BoundingBox box = new BoundingBox();
+		Dimensions dim = new Dimensions();
+		Point point = new Point();
+		
+		if (geo != null)
+		{
+			dim.setHeight(geo.getHeight());
+			dim.setWidth(geo.getWidth());
+			point.setX(geo.getX());
+			point.setY(geo.getY());
+		}
+		else
+		{
+			dim.setHeight(0);
+			dim.setWidth(0);
+			point.setX(0);
+			point.setY(0);
+		}
+		
+		box.setDimensions(dim);
+		box.setPosition(point);
+		return box;
 	}
 }
