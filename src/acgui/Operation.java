@@ -23,4 +23,21 @@ public enum Operation
 	{
 		return name;
 	}
+	
+	public static Operation getType(String value)
+	{
+		if (value == null)
+		{
+			throw new IllegalArgumentException();
+		}
+		
+		for (Operation p : values())
+		{
+			if (value.equals(p.toString()))
+			{
+				return p;
+			}
+		}
+		throw new IllegalArgumentException();
+	}
 }

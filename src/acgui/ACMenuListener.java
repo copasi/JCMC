@@ -239,9 +239,11 @@ public class ACMenuListener implements ActionListener
 		case EXPORT_SBML:
 			if (AC_GUI.isModuleOpen())
 			{
+				//String suggestedname = AC_GUI.rootModule.getModuleDefinition().getName();
 				fileName = null;
 				fileChooser = new JFileChooser (new File ("."));
 				fileChooser.setFileFilter (new FileNameExtensionFilter("SBML file (.xml)","xml"));
+				//fileChooser.setSelectedFile(new File(suggestedname + ".xml"));
 				while (fileChooser.showSaveDialog(null) == JFileChooser.APPROVE_OPTION)
 				{
 					file = fileChooser.getSelectedFile();

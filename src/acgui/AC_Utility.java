@@ -45,7 +45,7 @@ public class AC_Utility
 		return module;
 	}
 	
-	public static Module createInstance(String name, String modulesbmlID, Module parent, ModuleDefinition definition, GeneralGlyph glyph)
+	public static Module createInstance(String name, String modulesbmlID, Module parent, ModuleDefinition definition, GraphicalObject containerGlyph, GraphicalObject submoduleGlyph)
 	{
 		// called from SBMLParser
 		Module module = new Module(name, definition, parent);
@@ -64,7 +64,7 @@ public class AC_Utility
 		module.setDrawingCellStyle(cellStyle);
 		//masterModuleList.add(mod);
 		AC_GUI.treeView.createNode(module);
-		AC_GUI.drawingBoard.createCell(module, glyph);
+		AC_GUI.drawingBoard.createCell(module, containerGlyph, submoduleGlyph);
 		if (parent != null)
 		{
 			parent.addChild(module);
@@ -658,7 +658,7 @@ public class AC_Utility
 		return pNode;
 	}
 	
-	public static PortNode createPortNode(Module parent, String name, PortDefinition definition, GraphicalObject glyph)
+	public static PortNode createPortNode(Module parent, PortDefinition definition, GraphicalObject glyph)
 	{
 		PortNode pNode = new PortNode(parent, definition);
 		AC_GUI.drawingBoard.createPort(pNode, glyph);

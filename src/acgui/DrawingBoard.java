@@ -176,7 +176,7 @@ public class DrawingBoard extends JPanel
 		}
 	}
 	
-	public void createCell(Module mod, GeneralGlyph glyph)
+	public void createCell(Module mod, GraphicalObject glyph)
 	{
 		if (glyph == null)
 		{
@@ -240,7 +240,142 @@ public class DrawingBoard extends JPanel
 		// Assign the created cell to the module
 		mod.setDrawingCell(cell);
 	}
+	
+	public void createCell(Module module, GraphicalObject containerGlyph, GraphicalObject submoduleGlyph)
+	{
+		Object parentCell;
+		mxGeometry geo;
+		mxGeometry containerGeo;
+		mxGeometry submoduleGeo;
+		double defaultModuleX = 25;
+		double defaultModuleY = 25;
+		double defaultModuleWidth = graphComponent.getVisibleRect().getWidth() - 50;
+		double defaultModuleHeight = graphComponent.getVisibleRect().getHeight() - 50;
+		double defaultSubmoduleX = 0;
+		double defaultSubmoduleY = 0;
+		double defaultSubmoduleWidth = DEFAULT_SUBMODULE_WIDTH;
+		double defaultSubmoduleHeight = DEFAULT_SUBMODULE_HEIGHT;
+		double x;
+		double y;
+		double width;
+		double height;
+		
+		if (containerGlyph == null)
+		{
+			x = defaultModuleX;
+			y = defaultModuleY;
+			width = defaultModuleWidth;
+			height = defaultModuleHeight;
+		}
+		else
+		{
+			x = containerGlyph.getBoundingBox().x();
+			y = containerGlyph.getBoundingBox().y();
+			width = containerGlyph.getBoundingBox().width();
+			height = containerGlyph.getBoundingBox().height();
+		}
+		
+		containerGeo = new mxGeometry(x, y, width, height);
+		
+		if (submoduleGlyph == null)
+		{
+			x = defaultSubmoduleX;
+			y = defaultSubmoduleY;
+			width = defaultSubmoduleWidth;
+			height = defaultSubmoduleHeight;
+		}
+		else
+		{
+			x = submoduleGlyph.getBoundingBox().x();
+			y = submoduleGlyph.getBoundingBox().y();
+			width = submoduleGlyph.getBoundingBox().width();
+			height = submoduleGlyph.getBoundingBox().height();
+		}
+		
+		submoduleGeo = new mxGeometry(x, y, width, height);
+		
+		module.setDrawingCellGeometryModule(containerGeo);
+		module.setDrawingCellGeometrySubmodule(submoduleGeo);
+		
+		// Determine what the parentCell will be
+		if (module.getParent() != null)
+		{
+			// The module's parent's drawing cell will be the parentCell
+			parentCell = module.getParent().getDrawingCell();
+			geo = (mxGeometry)submoduleGeo.clone();
+		}
+		else
+		{
+			// The module has no parent, the default parent will be the
+			// parentCell
+			parentCell = parent;
+			geo = (mxGeometry)containerGeo.clone();
+		}
 
+		// Create the cell
+		mxCell cell = (mxCell)graph.createVertex(parentCell, null, module, 0, 0, 1, 1, "");
+		cell.setConnectable(false);
+		cell.setGeometry(geo);
+		
+		// Assign the created cell to the module
+		module.setDrawingCell(cell);
+	}
+
+	public void setModuleCellGeometry(Module module, GraphicalObject containerGlyph, GraphicalObject submoduleGlyph)
+	{
+		mxGeometry containerGeo;
+		mxGeometry submoduleGeo;
+		double defaultModuleX = 25;
+		double defaultModuleY = 25;
+		double defaultModuleWidth = graphComponent.getVisibleRect().getWidth() - 50;
+		double defaultModuleHeight = graphComponent.getVisibleRect().getHeight() - 50;
+		double defaultSubmoduleX = 0;
+		double defaultSubmoduleY = 0;
+		double defaultSubmoduleWidth = DEFAULT_SUBMODULE_WIDTH;
+		double defaultSubmoduleHeight = DEFAULT_SUBMODULE_HEIGHT;
+		double x;
+		double y;
+		double width;
+		double height;
+		
+		if (containerGlyph == null)
+		{
+			x = defaultModuleX;
+			y = defaultModuleY;
+			width = defaultModuleWidth;
+			height = defaultModuleHeight;
+		}
+		else
+		{
+			x = containerGlyph.getBoundingBox().x();
+			y = containerGlyph.getBoundingBox().y();
+			width = containerGlyph.getBoundingBox().width();
+			height = containerGlyph.getBoundingBox().height();
+		}
+		
+		containerGeo = new mxGeometry(x, y, width, height);
+		
+		if (submoduleGlyph == null)
+		{
+			x = defaultSubmoduleX;
+			y = defaultSubmoduleY;
+			width = defaultSubmoduleWidth;
+			height = defaultSubmoduleHeight;
+		}
+		else
+		{
+			x = submoduleGlyph.getBoundingBox().x();
+			y = submoduleGlyph.getBoundingBox().y();
+			width = submoduleGlyph.getBoundingBox().width();
+			height = submoduleGlyph.getBoundingBox().height();
+		}
+		
+		submoduleGeo = new mxGeometry(x, y, width, height);
+		
+		module.setDrawingCellGeometryModule(containerGeo);
+		module.setDrawingCellGeometrySubmodule(submoduleGeo);
+	}
+	
 	public void createMathematicalAggregatorNode(Module maModule)
 	{
 		createCell(maModule);
@@ -3428,6 +3563,7 @@ public class DrawingBoard extends JPanel
 						//System.out.println("Connected edge count: " + graph.getModel().getEdgeCount(((mxCell)cell).getSource()));
 						// get the connection object from the drawing cell
 						ConnectionNode cNode = (ConnectionNode)((mxCell)cell).getValue();
+						
 						//System.out.println("Connected edge count: " + graph.getModel().getEdgeCount(((mxCell)cell).getSource()));
 						if (AC_GUI.canModuleBeModified(cNode.getParent()))
 						{

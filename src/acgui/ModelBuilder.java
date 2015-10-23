@@ -387,6 +387,7 @@ public class ModelBuilder
 		//now you can add your ports tab as a normal jtabbedpanel
 		portsPanel = new PortsPanel(msmb.getCustomFont());
 		tabPanel.addTab("Ports", null, portsPanel, null);
+		
 		/*
 		JPanel panelPorts = new JPanel();
 		panelPorts.setLayout(new BorderLayout());
@@ -810,6 +811,17 @@ public class ModelBuilder
 				}, 
 				MSMB_Element.SOMETHING_CHANGED);
 		
+		msmb.getMSMB_MainTabPanel().addChangeListener(
+				new ChangeListener() {
+					public void stateChanged(ChangeEvent changeEvent) {
+				        JTabbedPane sourceTabbedPane = (JTabbedPane) changeEvent.getSource();
+				        int index = sourceTabbedPane.getSelectedIndex();
+				        if (sourceTabbedPane.getComponentAt(index) == portsPanel)
+				        {
+				        	updateRefNameColumn();
+				        }
+				      }
+				});
 		// add selection listener for the ports table
 		//jTableCustom.getSelectionModel().addListSelectionListener(new ACRowListener());
 	}

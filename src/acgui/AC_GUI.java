@@ -977,15 +977,25 @@ public class AC_GUI extends JFrame
 	{
 		if (directDeletion)
 		{
-			drawingBoard.removeCell(edge.getDrawingCell());
-			AC_Utility.deleteConnection(edge);
+			if (canConnectionBeRemoved(edge))
+			{
+				drawingBoard.removeCell(edge.getDrawingCell());
+				AC_Utility.deleteConnection(edge);
+				setSavedInACFile(false);
+			}
+			else
+			{
+				String title = "Invalid Operation";
+				String message = "The connection cannot be removed because is connects the Port to its assigned field.";
+				AC_Utility.displayMessage(JOptionPane.ERROR_MESSAGE, title, message);
+			}
 		}
 		else
 		{
 			drawingBoard.removeCell(edge.getDrawingCell());
 			AC_Utility.deleteConnection(edge);
+			setSavedInACFile(false);
 		}
-		setSavedInACFile(false);
 	}
 	
 	public static void updatePort(PortNode port, String value, int col)
@@ -2094,6 +2104,21 @@ public class AC_GUI extends JFrame
 		
 		//CopasiUtility.printDataModelList();
 		return successfulSave;
+	}
+	
+	private static boolean canConnectionBeRemoved(ConnectionNode cNode)
+	{
+		ACComponentDefinition source = cNode.getConnectionDefinition().getSourceDefinition();
+		ACComponentDefinition target = cNode.getConnectionDefinition().getTargetDefinition();
+		
+		if ((source.getParent() == target.getParent())
+				&&(source.getVariableType() == target.getVariableType()) 
+				&& source.getRefName().equals(target.getRefName()))
+		{
+			return false;
+		}
+		
+		return true;
 	}
 	
 	private static void setSavedInACDataStructure(boolean value)
