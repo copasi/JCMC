@@ -8,7 +8,10 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.ListIterator;
+import java.util.Map;
 import java.util.Vector;
 
 import javax.swing.JOptionPane;
@@ -43,7 +46,8 @@ public class SBMLParser {
 	private static final String PORT_GLYPH_CODE = "_PortGlyph";
 	private static final String EQUIVALENCE_GLYPH_CODE = "_" + TerminalType.EQUIVALENCE.toString() + "NodeGlyph";
 	private static final String VISIBLEVARIABLE_GLYPH_CODE = "_" + TerminalType.VISIBLEVARIABLE.toString() + "NodeGlyph";
-	private static ArrayList<ModuleDefinition> definitionList = new ArrayList<ModuleDefinition>();
+	private ArrayList<ModuleDefinition> definitionList;
+	private int layoutIndex;
 	
 	//private static String eol = System.getProperty("line.separator");
 	
@@ -58,9 +62,11 @@ public class SBMLParser {
 		modelSBML = "";
 		fileName = "";
 		*/
+		definitionList = new ArrayList<ModuleDefinition>();
+		layoutIndex = 0;
 	}
 	
-	public static boolean exportSBML(Module rootModule, String fName)
+	public boolean exportSBML(Module rootModule, String fName)
 	{
 		//System.out.println("createUniqueIDs() start.");
 		AC_Utility.createUniqueIDs(rootModule);
@@ -131,12 +137,12 @@ public class SBMLParser {
 		}
 	}
 	
-	public static Module importSBML(String fileName, boolean external)
+	public Module importSBML(String fileName, boolean external)
 	{
 		return importSBML(fileName, null, external);
 	}
 	
-	public static Module importSBML(String fileName, Module parent, boolean external)
+	public Module importSBML(String fileName, Module parent, boolean external)
 	{
 		definitionList.clear();
 		Module mod = null;
@@ -147,7 +153,7 @@ public class SBMLParser {
 		if (external)
 		{
 			// import the external container module
-			// mod = ...
+			mod = importExternalContainerModule(document, parent);
 			mod.getModuleDefinition().setExternalSource(fileName);
 			//mod.getModuleDefinition().setExternalModelRef(mod.getModuleDefinition().getName());
 			String md5;
@@ -182,7 +188,7 @@ public class SBMLParser {
 		return libsbml.readSBMLFromFile(fileName);
 	}
 	
-	public static ModuleDefinition importExternalDefinition(ExternalModelDefinition moduleDefinition, ModuleDefinition parent, SBMLNamespaces nameSpaces, GeneralGlyph glyph)
+	public ModuleDefinition importExternalDefinition(ExternalModelDefinition moduleDefinition, ModuleDefinition parent, SBMLNamespaces nameSpaces, GeneralGlyph glyph)
 	{
 		String sbmlID = moduleDefinition.getId();
 		String name = moduleDefinition.getName();
@@ -221,12 +227,20 @@ public class SBMLParser {
 				// find the correct Model to import
 				// search listOfModelDefinitions
 				// search listOfExternalModelDefinitions
+				CompSBMLDocumentPlugin docCompPlugin = (CompSBMLDocumentPlugin)externalDoc.getPlugin("comp");
+				SBMLNamespaces newNameSpaces = new SBMLNamespaces(nameSpaces);
+				ListOfModelDefinitions internalModuleDefinitions = docCompPlugin.getListOfModelDefinitions();
+				ListOfExternalModelDefinitions externalModuleDefinitions = docCompPlugin.getListOfExternalModelDefinitions();
+				ModelDefinition internalModelDefinition = null;
+				ExternalModelDefinition externalModelDefinition = null;
+				internalModelDefinition = internalModuleDefinitions.get(modelRef);
+				externalModelDefinition = externalModuleDefinitions.get(modelRef);
 			}
 		}
 		return null;
 	}
 	
-	private static SBMLDocument exportContainerDefinition(Module containerModule)
+	private SBMLDocument exportContainerDefinition(Module containerModule)
 	{
 		ModuleDefinition containerDefinition = containerModule.getModuleDefinition();
 		SBMLDocument document;
@@ -377,7 +391,7 @@ public class SBMLParser {
 	 * Return the model definitions.
 	 * @param mod the model to output
 	 */
-	private static boolean exportSubmodelDefinitions(CompSBMLDocumentPlugin docPlugin, Module module)
+	private boolean exportSubmodelDefinitions(CompSBMLDocumentPlugin docPlugin, Module module)
 	{
 		ListIterator<Module> submodules = module.getChildren().listIterator();
 		Module currentModule;
@@ -386,7 +400,7 @@ public class SBMLParser {
 		//String prependName;
 		//CompSBMLDocumentPlugin docPlugin = (CompSBMLDocumentPlugin)sdoc.getPlugin("comp");
 		//ListOfModelDefinitions moduleDefinitions = docPlugin.getListOfModelDefinitions();
-		ModelDefinition moduleDefinition;
+		ModelDefinition modelDefinition;
 		String modSBML = "";
 		SBMLDocument tempDoc;
 		while(submodules.hasNext())
@@ -465,11 +479,11 @@ public class SBMLParser {
 					prependName = currentModuleDefinition.getName();
 				}
 				*/
-				moduleDefinition = new ModelDefinition(tempDoc.getModel());
+				modelDefinition = new ModelDefinition(tempDoc.getModel());
 				
 				if (currentModuleDefinition.getPorts().size() > 0)
 				{
-					if (!exportPortDefinitions(moduleDefinition, currentModuleDefinition))
+					if (!exportPortDefinitions(modelDefinition, currentModuleDefinition))
 					{
 						System.err.println("Error SBMLParser.exportSubmodelDefinitions: Module Definition " + currentModuleDefinition.getName() + " exportPortDefinitions failed.");
 						return false;
@@ -484,29 +498,30 @@ public class SBMLParser {
 						return false;
 					}
 					
-					if (!exportSubmodelInformation(moduleDefinition, currentModule))
+					if (!exportSubmodelInformation(modelDefinition, currentModule))
 					{
 						System.err.println("Error SBMLParser.exportSubmodelDefinitions: Module Definition " + currentModuleDefinition.getName() + " exportSubmodelInformation failed.");
 						return false;
 					}
 				}
 				
-				if (!exportReplacements(docPlugin, moduleDefinition, currentModule))
+				if (!exportReplacements(docPlugin, modelDefinition, currentModule))
 				{
 					System.err.println("Error SBMLParser.exportSubmodelDefinitions: Module Definition " + currentModuleDefinition.getName() + " exportReplacements failed.");
 					return false;
 				}
 				
-				docPlugin.addModelDefinition(moduleDefinition);
+				docPlugin.addModelDefinition(modelDefinition);
 			}
 		}
 		return true;
 	}
 	
-	private static boolean exportExternalSubmodelDefinition(CompSBMLDocumentPlugin docPlugin, ModuleDefinition moduleDefinition)
+	private boolean exportExternalSubmodelDefinition(CompSBMLDocumentPlugin docPlugin, ModuleDefinition moduleDefinition)
 	{
 		ExternalModelDefinition extDefinition = docPlugin.createExternalModelDefinition();
 		extDefinition.setId(moduleDefinition.getID());
+		extDefinition.setName(moduleDefinition.getName());
 		extDefinition.setSource(moduleDefinition.getExternalSource());
 		if (moduleDefinition.getExternalModelRef() != null)
 		{
@@ -519,7 +534,7 @@ public class SBMLParser {
 		return true;
 	}
 	
-	private static boolean exportPortDefinitions(Model model, ModuleDefinition definition)
+	private boolean exportPortDefinitions(Model model, ModuleDefinition definition)
 	{		
 		ListIterator<ACComponentDefinition> ports = definition.getPorts().listIterator();
 		PortDefinition portDefinition;
@@ -574,7 +589,7 @@ public class SBMLParser {
 		return successfulExport;
 	}
 	
-	private static boolean addPortAnnotation(PortDefinition definition, org.sbml.libsbml.Port modulePort)
+	private boolean addPortAnnotation(PortDefinition definition, org.sbml.libsbml.Port modulePort)
 	{
 		String annotation;
 		annotation = "<jcmc:portInfo";
@@ -602,7 +617,7 @@ public class SBMLParser {
 	 * Write the submodel information of the given module.
 	 * @param mod the module containing the submodels
 	 */
-	private static boolean exportSubmodelInformation(Model model, Module parent)
+	private boolean exportSubmodelInformation(Model model, Module parent)
 	{
 		ListIterator<Module> children = parent.getChildren().listIterator();
 		Module child;
@@ -637,7 +652,7 @@ public class SBMLParser {
 		return true;
 	}
 	
-	private static void addMathAggAnnotation(Submodel submodule, ModuleDefinition definition)
+	private void addMathAggAnnotation(Submodel submodule, ModuleDefinition definition)
 	{
 		String annotation;
 		MathematicalAggregatorDefinition maDefinition = (MathematicalAggregatorDefinition)definition;
@@ -649,7 +664,7 @@ public class SBMLParser {
 		submodule.appendAnnotation(XMLNode.convertStringToXMLNode(annotation));
 	}
 	
-	private static boolean exportReplacements(CompSBMLDocumentPlugin docPlugin, Model model, Module parent)
+	private boolean exportReplacements(CompSBMLDocumentPlugin docPlugin, Model model, Module parent)
 	{
 		if (parent.getChildren().size() > 0)
 		{
@@ -681,7 +696,7 @@ public class SBMLParser {
 		return true;
 	}
 	
-	private static boolean exportReplacementCompartments(CompSBMLDocumentPlugin docPlugin, Model model, Module module)
+	private boolean exportReplacementCompartments(CompSBMLDocumentPlugin docPlugin, Model model, Module module)
 	{
 		ListIterator<Module> children = module.getChildren().listIterator();
 		Module child;
@@ -834,7 +849,7 @@ public class SBMLParser {
 	}
 	*/
 	
-	private static boolean exportVisibleVariables(Model model, Module parent)
+	private boolean exportVisibleVariables(Model model, Module parent)
 	{
 		ListIterator<ACComponentNode> vars = parent.getVisibleVariables().listIterator();
 		while(vars.hasNext())
@@ -847,7 +862,7 @@ public class SBMLParser {
 		return true;
 	}
 	
-	private static boolean addVisibleVariableReplacements(Model model, VisibleVariableNode node)
+	private boolean addVisibleVariableReplacements(Model model, VisibleVariableNode node)
 	{
 		Object outgoingEdges [] = mxGraphModel.getOutgoingEdges(AC_GUI.drawingBoard.getGraph().getModel(), node.getDrawingCell());
 		Object incomingEdges [] = mxGraphModel.getIncomingEdges(AC_GUI.drawingBoard.getGraph().getModel(), node.getDrawingCell());
@@ -940,7 +955,7 @@ public class SBMLParser {
 		return true;
 	}
 	
-	private static boolean exportEquivalenceNodes(Model model, Module parent)
+	private boolean exportEquivalenceNodes(Model model, Module parent)
 	{
 		ListIterator<ACComponentNode> eNodes = parent.getEquivalences().listIterator();
 		while(eNodes.hasNext())
@@ -953,7 +968,7 @@ public class SBMLParser {
 		return true;
 	}
 	
-	private static boolean addEquivalenceNodeReplacements(Model model, EquivalenceNode eNode)
+	private boolean addEquivalenceNodeReplacements(Model model, EquivalenceNode eNode)
 	{
 		Object outgoingEdges [] = mxGraphModel.getOutgoingEdges(AC_GUI.drawingBoard.getGraph().getModel(), eNode.getDrawingCell());
 		String variableName;
@@ -994,7 +1009,7 @@ public class SBMLParser {
 		return true;
 	}
 	
-	private static boolean addSpeciesAnnotation(Species species, ACComponentNode node, TerminalType nodeType)
+	private boolean addSpeciesAnnotation(Species species, ACComponentNode node, TerminalType nodeType)
 	{
 		ACComponentDefinition nodeDefinition = node.getDefinition();
 		
@@ -1017,7 +1032,7 @@ public class SBMLParser {
 		return true;
 	}
 	
-	private static boolean addParameterAnnotation(Parameter parameter, ACComponentNode node, TerminalType nodeType)
+	private boolean addParameterAnnotation(Parameter parameter, ACComponentNode node, TerminalType nodeType)
 	{
 		ACComponentDefinition nodeDefinition = node.getDefinition();
 		
@@ -1082,7 +1097,7 @@ public class SBMLParser {
 		return header;
 	}
 	
-	private static String removeCOPASIMetaID(String sbml)
+	private String removeCOPASIMetaID(String sbml)
 	{
 		String output = sbml;
 		int startMetaIDIndex;
@@ -1100,7 +1115,7 @@ public class SBMLParser {
 		return output;
 	}
 	
-	private static String removeRenderPackage(String sbml)
+	private String removeRenderPackage(String sbml)
 	{
 		String renderInfo;
 		int startIndex = -1;
@@ -1173,7 +1188,7 @@ public class SBMLParser {
 	}
 	*/
 	
-	private static String getSpeciesSBMLid(ListOfSpecies speciesList, String speciesName)
+	private String getSpeciesSBMLid(ListOfSpecies speciesList, String speciesName)
 	{
 		for (long i = 0; i < speciesList.size(); i++)
 		{
@@ -1186,7 +1201,7 @@ public class SBMLParser {
 		return null;
 	}
 	
-	private static String getGlobalQSBMLid(ListOfParameters parameterList, String parameterName)
+	private String getGlobalQSBMLid(ListOfParameters parameterList, String parameterName)
 	{
 		for (long i = 0; i < parameterList.size(); i++)
 		{
@@ -1200,7 +1215,7 @@ public class SBMLParser {
 	}
 	
 	// return string representation of a Node (with XML tags and full expansion) 
-	private static String elementToString(Node n) 
+	private String elementToString(Node n) 
 	{
 		String name = n.getNodeName();
 		short type = n.getNodeType();
@@ -1844,7 +1859,7 @@ public class SBMLParser {
 	
 	
 	
-	private static Module importContainerModule(SBMLDocument doc, Module parent)
+	private Module importContainerModule(SBMLDocument doc, Module parent)
 	{
 		String moduleName = "";
 		String definitionName = "";
@@ -2021,7 +2036,228 @@ public class SBMLParser {
 		return module;
 	}
 	
-	private static ModuleDefinition importModuleDefinition(Model moduleDefinition, ModuleDefinition parent, SBMLNamespaces nameSpaces, Submodel model)
+	private Module importExternalContainerModule(SBMLDocument doc, Module parent)
+	{
+		String moduleName = "";
+		String definitionName = "";
+		String importedModelName = "";
+		String importedModelid = "";
+		String sbmlID = "";
+		String modString = "";
+		boolean hasCompPackage = false;
+		boolean hasLayoutPackage = false;
+		boolean hasGlyph = false;
+		LayoutModelPlugin lplugin = null;
+		GeneralGlyph glyph = null;
+		Model containerModel;
+		Model importModel;
+		
+		
+		/*
+		if (doc.getModel() == null)
+		{
+			// there is no Model in the sbml document
+			//System.err.println("Error in SBMLParser.importContainerModule: There is no Model in the SBML document.");
+			String msg = "There is no Model in the SBML document.";
+			displayErrorMessage(msg);
+			return null;
+		}
+		*/
+		if (doc.getLevel() < 3)
+		{
+			hasCompPackage = false;
+			hasLayoutPackage = false;
+		}
+		else
+		{
+			// check if the document uses the comp or layout packages
+			try
+			{
+				hasCompPackage = doc.isPackageEnabled("comp");
+				hasLayoutPackage = doc.isPackageEnabled("layout");				
+			} 
+			catch (Exception e)
+			{
+				hasCompPackage = false;
+				hasLayoutPackage = false;
+			}
+		}
+		
+		if (hasCompPackage)
+		{
+			/*
+			 * NOT CURRENTLY FOLLOWING THIS IMPLEMENTATION
+			// if multiple models exist in the document,
+			// ask the user which they would like to import
+			//importModel = whichModelToImport(doc);
+			*/
+			importModel = doc.getModel();
+		}
+		else
+		{
+			importModel = doc.getModel();
+		}
+
+		/*
+		if (!validateModuleDefinitionName(doc))
+		{
+			//System.err.println("Error in SBMLParser.importContainerModule: validateModuleDefinitionName() returns false.");
+			return null;
+		}
+		*/
+		String message = "Enter a name for the imported template:";
+		definitionName = AC_Utility.promptUserForNewModuleDefinitionName(message);
+		message = "Enter a Module name:";
+		moduleName = AC_Utility.promptUserForNewModuleName(parent, message);
+		containerModel = doc.getModel();
+		importedModelName = importModel.getName();
+		importedModelid = importModel.getId();
+		
+		if (importedModelName == null || importedModelName.isEmpty())
+		{
+			importedModelName = importedModelid;
+		}
+		/*
+		definitionName = containerMod.getName();
+		if (parent == null)
+		{
+			// imported module will be the root module
+			moduleName = definitionName;
+		}
+		else
+		{
+			// imported module will be a submodule
+			moduleName = AC_Utility.promptUserForNewModuleName(parent, "Enter a Module name:");
+		}
+		*/
+		if (hasLayoutPackage)
+		{
+			try
+			{
+				lplugin = (LayoutModelPlugin)containerModel.getPlugin("layout");
+				ListOfLayouts layouts = lplugin.getListOfLayouts();
+				//System.out.println("Number of layouts: " + layouts.size());
+				if (layouts.size() > 0)
+				{
+					//Layout layout = layouts.get(0);
+					//glyph = layout.getGeneralGlyph(name + "_glyph");
+					//glyph = layout.getGeneralGlyph(0);
+					glyph = findGlyph(doc, containerModel, importModel);
+				}
+			}
+			catch (Exception e)
+			{
+				glyph = null;
+			}			
+			hasGlyph = (glyph != null);
+		}
+		
+		/*
+		System.out.println("Submodules number = " + modelCompPlugin.getNumSubmodels());
+		System.out.println("Ports number = " + modelCompPlugin.getNumPorts());
+		System.out.println("Layouts number = " + layouts.size());
+		System.out.println("glyphID: " + glyph.getId());
+		System.out.println("Number of containerMod replacedElements = " + modelCompPlugin.getNumReplacedElements());
+		CompSBasePlugin compartmentCompPlugin = (CompSBasePlugin)containerMod.getListOfCompartments().get(0).getPlugin("comp");
+		System.out.println("Number of compartment replacedElements = " + compartmentCompPlugin.getNumReplacedElements());
+		// compartmentCompPlugin.getListOfReplacedElements().removeFromParentAndDelete();
+		//layout.getListOfAdditionalGraphicalObjects().removeFromParentAndDelete();
+		*/
+		
+		SBMLNamespaces ns = new SBMLNamespaces(importModel.getSBMLNamespaces());
+		//ns.addNamespaces(doc.getNamespaces());
+		SBMLDocument newDoc = new SBMLDocument(ns);
+		//System.out.println(libsbml.writeSBMLToString(newDoc));
+		int setModelCode = newDoc.setModel(importModel);
+		if(setModelCode != 0)
+		{
+			System.err.println("Error in SBMLParser.importContainerModule: setModelCode = " + setModelCode);
+			return null;
+		}
+		System.out.println(libsbml.writeSBMLToString(newDoc));
+		removePluginData(newDoc);
+		modString = libsbml.writeSBMLToString(newDoc);
+		//System.out.println(modString);
+		//System.out.println("Validate container module: " + importModel.getId());
+		if (!checkValidSBML(modString))
+		{
+			System.err.println("The import Model is invalid.");
+			return null;
+		}
+		//System.out.println("Validation successful.");
+		//modString = modString.replace("comp:required=\"false\"", "comp:required=\"true\" render:required=\"false\"");
+		//modString = modString.replace("xmlns:comp=\"http://www.sbml.org/sbml/level3/version1/comp/version1\"", "");
+		//modString = modString.replace("comp:required=\"false\"", "");
+		//String name, GeneralGlyph glyph, boolean createDatamodel
+		//Module mod = AC_GUI.xnewModule(name, sbmlID, modString, parent, glyph, true);
+		ModuleDefinition definition;
+		Module module = null;
+		if (parent == null)
+		{
+			definition = AC_Utility.createModuleDefinition(importedModelid, definitionName, modString, null);
+		}
+		else
+		{
+			definition = AC_Utility.createModuleDefinition(importedModelid, definitionName, modString, parent.getModuleDefinition());
+		}
+		definitionList.add(definition);
+		
+		if (!hasCompPackage && !hasLayoutPackage)
+		{
+			module = AC_Utility.createInstance(moduleName, parent, definition);
+		}
+		
+		if (hasCompPackage && hasLayoutPackage)
+		{
+
+			ListOfGraphicalObjects subGlyphs;
+			GraphicalObject containerGlyph = null;
+			if (hasGlyph)
+			{
+				subGlyphs = glyph.getListOfSubGlyphs();
+				containerGlyph = getCompartmentGlyph(subGlyphs);
+			}
+			module = AC_Utility.createInstance(moduleName, importedModelid, parent, definition, containerGlyph, glyph);
+			// add visible variables and equivalence nodes
+			/*
+			GraphicalObject subGlyph;
+			for (long i = 0; i < glyph.getNumSubGlyphs(); i++)
+			{
+				subGlyph = subGlyphs.get(i);
+				if (subGlyph.getId().endsWith("_VisibleVariableGlyph"))
+				{
+					newimportVisibleVariable(module, subGlyph);
+				}
+				else if (subGlyph.getId().endsWith("_EquivalenceNodeGlyph"))
+				{
+					newimportEquivalence(module, subGlyph);
+				}
+			}
+			// add ports
+			if(modelCompPlugin.getNumPorts() > 0)
+			{
+				newimportPorts(modelCompPlugin.getListOfPorts(), containerMod, glyph, module);
+			}
+			// add submodules
+			if(modelCompPlugin.getNumSubmodels() > 0)
+			{
+				newimportSubmodules(modelCompPlugin.getListOfSubmodels(), doc, glyph, module);
+			}
+			// add connections
+			if (containerMod.getNumSpecies() > 0)
+			{
+				importReplacementsFromSpecies(containerMod.getListOfSpecies(), module, true);
+			}
+			*/
+			importCompPackageComponents(module, importModel, doc, glyph, false);
+		}
+		definition.setExternalModelRef(importedModelid);
+		// change the name of the Module and ModuleDefinition so they do not conflict
+		//AC_GUI.changeActiveModule(mod);
+		return module;
+	}
+	
+	private ModuleDefinition importModuleDefinition(Model moduleDefinition, ModuleDefinition parent, SBMLNamespaces nameSpaces, Submodel model)
 	{
 		String sbmlID = moduleDefinition.getId();
 		String name = moduleDefinition.getName();
@@ -2094,7 +2330,93 @@ public class SBMLParser {
 		}
 	}
 	
-	private static void importCompPackageComponents(Module module, Model modelDefinition, SBMLDocument document, GeneralGlyph glyph, boolean fromContainer)
+	private ModuleDefinition importExternalModuleDefinition(ExternalModelDefinition externalDefinition, ModuleDefinition parent, Submodel model)
+	{
+		ModuleDefinition moduleDefinition;
+		String sbmlID = externalDefinition.getId();
+		String name = externalDefinition.getName();
+		String source = externalDefinition.getSource();
+		String modelRef = externalDefinition.getModelRef();
+		String md5 = externalDefinition.getMd5();
+		
+		Model refModel = externalDefinition.getReferencedModel();
+		String sbmlString;
+		SBMLDocument doc = new SBMLDocument(refModel.getSBMLNamespaces());
+		
+		int setModelCode = doc.setModel(refModel);
+		if(setModelCode != 0)
+		{
+			System.err.println("Error in SBMLParser.importExternalModuleDefinition: setModelCode = " + setModelCode);
+			return null;
+		}
+		/*
+		if (!validateModuleDefinitionName(doc))
+		{
+			System.err.println("Error in SBMLParser.importModuleDefinition: validateModuleDefinitionName() returns false.");
+			return null;
+		}
+		*/
+		//newDoc.setPackageRequired("layout", false);
+		//newDoc.setPackageRequired("comp", false);
+		removePluginData(doc);
+		sbmlString = libsbml.writeSBMLToString(doc);
+		//System.out.println(modString);
+		System.out.println("Validate submodule: " + externalDefinition.getId());
+		if (!checkValidSBML(sbmlString))
+		{
+			System.err.println("Error in SBMLParser.importModuleDefinition: A submodel definition is invalid.");
+			return null;
+		}
+		System.out.println("Validation successful.");
+		
+		if (model.getAnnotation() != null)
+		{
+			// the submodule is a MathematicalAggregator
+			XMLNode modAnnotation = model.getAnnotation().getChild(0);
+			String inputNumber = modAnnotation.getAttrValue("inputs", "http://www.copasi.org/Projects/JigCell_Model_Connector");
+			String op = modAnnotation.getAttrValue("type", "http://www.copasi.org/Projects/JigCell_Model_Connector");
+			
+			Operation operation;
+			/*
+			if (op.equals(Operation.PRODUCT.toString()))
+			{
+				operation = Operation.PRODUCT;
+			}
+			else if (op.equals(Operation.SUM.toString()))
+			{
+				operation = Operation.SUM;
+			}
+			else
+			{
+				System.err.println("Error in SBMLParser.importModuleDefinition: Invalid operation for a MathematicalAggregator.");
+				return null;
+			}
+			*/
+			try
+			{
+				operation = Operation.getType(op);
+			}
+			catch (Exception e)
+			{
+				System.err.println("Error in SBMLParser.importModuleDefinition: Invalid operation for a MathematicalAggregator.");
+				e.printStackTrace();
+				return null;
+			}
+			moduleDefinition = AC_Utility.createMathematicalAggregatorDefinition(sbmlID, name, sbmlString, Integer.parseInt(inputNumber), operation, parent);
+		}
+		else
+		{
+			// the submodule is a Submodule
+			moduleDefinition = AC_Utility.createModuleDefinition(sbmlID, name, sbmlString, parent);
+		}
+		moduleDefinition.setExternal(true);
+		moduleDefinition.setExternalSource(source);
+		moduleDefinition.setExternalModelRef(modelRef);
+		moduleDefinition.setmd5(md5);
+		return moduleDefinition;
+	}
+	
+	private void importCompPackageComponents(Module module, Model modelDefinition, SBMLDocument document, GeneralGlyph glyph, boolean fromContainer)
 	{		
 		CompModelPlugin modelCompPlugin = (CompModelPlugin)modelDefinition.getPlugin("comp");
 		// add ports
@@ -2120,7 +2442,7 @@ public class SBMLParser {
 		}
 	}
 	
-	private static void importSubmodules(ListOfSubmodels submodules, SBMLDocument document, GeneralGlyph parentGlyph, Module parent)
+	private void importSubmodules(ListOfSubmodels submodules, SBMLDocument document, GeneralGlyph parentGlyph, Module parent)
 	{
 		CompSBMLDocumentPlugin docCompPlugin = (CompSBMLDocumentPlugin)document.getPlugin("comp");
 		SBMLNamespaces nameSpaces = new SBMLNamespaces();
@@ -2197,9 +2519,10 @@ public class SBMLParser {
 					if (validExternalFile)
 					{
 						//definition = importExternalDefinition(externalSource, externalModelRef);
-						definition = importExternalDefinition(externalModuleDefinition, parent.getModuleDefinition(), nameSpaces, glyph);
+						//definition = importExternalDefinition(externalModuleDefinition, parent.getModuleDefinition(), nameSpaces, glyph);
 						modelDefinition = externalModuleDefinition.getReferencedModel();
-						//System.out.println(moduleDefinition.toSBML());
+						definition = importExternalModuleDefinition(externalModuleDefinition, parent.getModuleDefinition(), submodule);
+						//System.out.println(modelDefinition.getSBMLDocument().toSBML());
 					}
 				}
 				else
@@ -2294,7 +2617,7 @@ public class SBMLParser {
 		}
 	}	
 	
-	private static void importPorts(ListOfPorts ports, Model parentModule, GeneralGlyph parentGlyph, Module mod)
+	private void importPorts(ListOfPorts ports, Model parentModule, GeneralGlyph parentGlyph, Module mod)
 	{
 		String portName;
 		String portRefName;
@@ -2408,13 +2731,13 @@ public class SBMLParser {
 		}
 	}
 	
-	private static void importReplacements(Model modelDefinition, Module module, GeneralGlyph parentGlyph, boolean fromContainer)
+	private void importReplacements(Model modelDefinition, Module module, GeneralGlyph parentGlyph, boolean fromContainer)
 	{
 		importSpecies(modelDefinition.getListOfSpecies(), module, parentGlyph, fromContainer);
 		importParameters(modelDefinition.getListOfParameters(), module, parentGlyph, fromContainer);
 	}
 	
-	private static void importSpecies(ListOfSpecies list, Module module, GeneralGlyph parentGlyph, boolean fromContainer)
+	private void importSpecies(ListOfSpecies list, Module module, GeneralGlyph parentGlyph, boolean fromContainer)
 	{
 		String name;
 		VariableType vType = VariableType.SPECIES;
@@ -2433,7 +2756,7 @@ public class SBMLParser {
 		}
 	}
 	
-	private static void importParameters(ListOfParameters list, Module module, GeneralGlyph parentGlyph, boolean fromContainer)
+	private void importParameters(ListOfParameters list, Module module, GeneralGlyph parentGlyph, boolean fromContainer)
 	{
 		String name;
 		VariableType vType = VariableType.GLOBAL_QUANTITY;
@@ -2452,7 +2775,7 @@ public class SBMLParser {
 		}
 	}
 	
-	private static void importField(SBase field, VariableType vType, Module module, GeneralGlyph parentGlyph, boolean fromContainer)
+	private void importField(SBase field, VariableType vType, Module module, GeneralGlyph parentGlyph, boolean fromContainer)
 	{
 		if (field.getAnnotation() != null)
 		{
@@ -2483,7 +2806,7 @@ public class SBMLParser {
 		}
 	}
 	
-	private static void importEquivalence(Module parent, String refName, VariableType type, GeneralGlyph parentGlyph)
+	private void importEquivalence(Module parent, String refName, VariableType type, GeneralGlyph parentGlyph)
 	{
 		ModuleDefinition parentDefinition = parent.getModuleDefinition();
 		ACComponentDefinition componentDefinition;
@@ -2492,7 +2815,7 @@ public class SBMLParser {
 		if (parentGlyph != null)
 		{
 			ListOfGraphicalObjects subGlyphs = parentGlyph.getListOfSubGlyphs();
-			glyph = subGlyphs.get(refName + VISIBLEVARIABLE_GLYPH_CODE);
+			glyph = subGlyphs.get(refName + EQUIVALENCE_GLYPH_CODE);
 		}
 		boolean hasGlyph = (glyph != null);
 		
@@ -2538,7 +2861,7 @@ public class SBMLParser {
 		//AC_GUI.addEquivalenceNode(parent, refName, glyph);
 	}
 	
-	private static void importVisibleVariable(Module parent, String refName, VariableType type, GeneralGlyph parentGlyph)
+	private void importVisibleVariable(Module parent, String refName, VariableType type, GeneralGlyph parentGlyph)
 	{
 		ModuleDefinition parentDefinition = parent.getModuleDefinition();
 		ACComponentDefinition componentDefinition;
@@ -2593,7 +2916,7 @@ public class SBMLParser {
 		//AC_GUI.addVisibleVariable(parent, refName, vType, glyph);
 	}
 	
-	private static void importConnections(ListOfReplacedElements replacedElementsList, String name, VariableType vType, Module module, boolean fromContainer)
+	private void importConnections(ListOfReplacedElements replacedElementsList, String name, VariableType vType, Module module, boolean fromContainer)
 	{
 		ACComponentNode node = findVariable(name, vType, module);
 		if (node instanceof VisibleVariableNode)
@@ -2606,7 +2929,7 @@ public class SBMLParser {
 		}
 	}
 	
-	private static void importVisibleVariableConnections(VisibleVariableNode var, ListOfReplacedElements replacedElementsList, Module module, boolean fromContainer)
+	private void importVisibleVariableConnections(VisibleVariableNode var, ListOfReplacedElements replacedElementsList, Module module, boolean fromContainer)
 	{
 		mxCell variableDrawingCell = var.getDrawingCell();
 		String portRef;
@@ -2690,7 +3013,7 @@ public class SBMLParser {
 		}
 	}
 	
-	private static void importEquivalenceNodeConnections(EquivalenceNode eNode, ListOfReplacedElements replacedElementsList, Module module, boolean fromContainer)
+	private void importEquivalenceNodeConnections(EquivalenceNode eNode, ListOfReplacedElements replacedElementsList, Module module, boolean fromContainer)
 	{
 		mxCell eNodeDrawingCell = eNode.getDrawingCell();
 		String portRef;
@@ -2714,7 +3037,7 @@ public class SBMLParser {
 		}
 	}
 	
-	private static ACComponentNode findVariable(String name, VariableType type, Module module)
+	private ACComponentNode findVariable(String name, VariableType type, Module module)
 	{
 		ACComponentNode node = null;
 		ArrayList<ACComponentNode> list;
@@ -2733,7 +3056,144 @@ public class SBMLParser {
 		return node;
 	}
 	
-	private static String fixReactionModifiers(Module mod, String output)
+	private Model whichModelToImport(SBMLDocument document)
+	{
+		CompSBMLDocumentPlugin docCompPlugin = (CompSBMLDocumentPlugin)document.getPlugin("comp");
+		if ((docCompPlugin.getNumModelDefinitions() == 0)
+				&& (docCompPlugin.getNumExternalModelDefinitions() == 0))
+		{
+			// there are no additional models in the document
+			// return the main model
+			return document.getModel();
+		}
+		Map<String, Object> info = collectModelInformation(document);
+		//System.out.println(info);
+		Object nameArray[] = info.keySet().toArray();
+		//swapNameOrder(nameArray);
+		
+		String input = (String)JOptionPane.showInputDialog(
+                null,
+                "Please select a template to import:",
+                "Import Template",
+                JOptionPane.QUESTION_MESSAGE,
+                null,
+                nameArray,
+                nameArray[0]);
+		System.out.println(input);
+		if (input == null)
+		{
+			return null;
+		}
+		Object selection = info.get(input);
+		Model model = retrieveModel(selection);
+		System.out.println("Model name: " + model.getName());
+		System.out.println("Model id: " + model.getId());
+		return model;
+	}
+	
+	private Map<String, Object> collectModelInformation(SBMLDocument document)
+	{
+		CompSBMLDocumentPlugin docCompPlugin = (CompSBMLDocumentPlugin)document.getPlugin("comp");
+		Map<String, Object> info = new HashMap<String, Object>();
+		
+		String name;
+		if (document.getModel() != null)
+		{
+			Model model = document.getModel();
+			if (!model.getName().isEmpty())
+			{
+				name = model.getName() + " (Main Model)";
+			}
+			else if (!model.getId().isEmpty())
+			{
+				name = model.getId() + " (Main Model)";
+			}
+			else
+			{
+				name = "Entire File";
+			}
+			info.put(name, model);
+			//System.out.println(name);
+			//System.out.println(model.toSBML());
+		}
+		ModelDefinition model;
+		for (long i = 0; i < docCompPlugin.getNumModelDefinitions(); i++)
+		{
+			model = docCompPlugin.getModelDefinition(i);
+			if (!model.getName().isEmpty())
+			{
+				name = model.getName();
+			}
+			else
+			{
+				name = model.getId();
+			}
+			info.put(name, model);
+			//System.out.println(name);
+			//System.out.println(model.toSBML());
+		}
+		ExternalModelDefinition extModel;
+		for (long i = 0; i< docCompPlugin.getNumExternalModelDefinitions(); i++)
+		{
+			extModel = docCompPlugin.getExternalModelDefinition(i);
+			if (!extModel.getName().isEmpty())
+			{
+				name = extModel.getName();
+			}
+			else
+			{
+				name = extModel.getId();
+			}
+			info.put(name, extModel);
+			//System.out.println(name);
+			//System.out.println(extModel.toSBML());
+		}
+		return info;
+	}
+	
+	private void swapNameOrder(List<String> names)
+	{
+		int mainIndex;
+		String postFix = " (Main Model)";
+		String name;
+		for (int i = 0; i < names.size(); i++)
+		{
+			name = names.get(i);
+			if (name.endsWith(postFix))
+			{
+				names.remove(i);
+				names.add(0, name);
+				return;
+			}
+		}
+	}
+	
+	private Model retrieveModel(Object complex)
+	{
+		Model simpleModel;
+		if (complex instanceof ExternalModelDefinition)
+		{
+			ExternalModelDefinition extDefinition = (ExternalModelDefinition)complex;
+			simpleModel = extDefinition.getReferencedModel();
+		}
+		else if (complex instanceof ModelDefinition)
+		{
+			ModelDefinition definition = (ModelDefinition)complex;
+			simpleModel = definition;
+		}
+		else if (complex instanceof Model)
+		{
+			simpleModel = (Model)complex;
+		}
+		else
+		{
+			simpleModel = null;
+		}
+		//System.out.println(simpleModel.toSBML());
+		return simpleModel;
+	}
+	
+	private String fixReactionModifiers(Module mod, String output)
 	{
 		try
 		{
@@ -2989,13 +3449,12 @@ public class SBMLParser {
 		}
 	}
 	*/
-	private static void exportLayoutInformation(Model model, Module module)
+	private void exportLayoutInformation(Model model, Module module)
 	{
-		SBasePlugin basePlugin = (model.getPlugin("layout"));
+		SBasePlugin basePlugin = model.getPlugin("layout");
 		LayoutModelPlugin layoutPlugin = (LayoutModelPlugin)basePlugin;
 		Layout layout = layoutPlugin.createLayout();
-		layout.setId("Layout_0");
-		
+		layout.setId("Layout_" + layoutIndex++);
 		
 		GeneralGlyph moduleGlyph = layout.createGeneralGlyph();
 		moduleGlyph.setId(module.getID() + SUBMODULE_GLYPH_CODE);
@@ -3006,7 +3465,7 @@ public class SBMLParser {
 		addModuleLayoutInformation(moduleGlyph, module, null);
 	}
 	
-	private static void addModuleLayoutInformation(GeneralGlyph moduleGlyph, Module module, GeneralGlyph parentGlyph)
+	private void addModuleLayoutInformation(GeneralGlyph moduleGlyph, Module module, GeneralGlyph parentGlyph)
 	{
 		ModuleDefinition moduleDefinition = module.getModuleDefinition();
 		
@@ -3052,7 +3511,7 @@ public class SBMLParser {
 		// add submodules to the layout
 		if(module.getChildren().size() > 0)
 		{
-			newaddSubmoduleLayoutInformation(module, moduleGlyph);
+			addSubmoduleLayoutInformation(module, moduleGlyph);
 		}
 		
 		if (parentGlyph != null)
@@ -3061,7 +3520,7 @@ public class SBMLParser {
 		}
 	}
 	
-	private static void addMathAggAnnotation(ModuleDefinition definition, GeneralGlyph moduleGlyph)
+	private void addMathAggAnnotation(ModuleDefinition definition, GeneralGlyph moduleGlyph)
 	{
 		String annotation;
 		MathematicalAggregatorDefinition maDefinition = (MathematicalAggregatorDefinition)definition;
@@ -3073,7 +3532,7 @@ public class SBMLParser {
 		moduleGlyph.appendAnnotation(XMLNode.convertStringToXMLNode(annotation));
 	}
 	
-	private static void addCompartmentLayoutInformation(Module mod, GeneralGlyph parentGlyph)
+	private void addCompartmentLayoutInformation(Module mod, GeneralGlyph parentGlyph)
 	{
 		CompartmentGlyph compartmentGlyph = new CompartmentGlyph();
 		compartmentGlyph.setId(mod.getID() + CONTAINER_MODULE_GLYPH_CODE);
@@ -3083,7 +3542,7 @@ public class SBMLParser {
 		parentGlyph.addSubGlyph(compartmentGlyph);
 	}
 	
-	private static void addPortLayoutInformation(Module mod, GeneralGlyph parentGlyph)
+	private void addPortLayoutInformation(Module mod, GeneralGlyph parentGlyph)
 	{
 		PortNode node;
 		PortDefinition definition;
@@ -3187,7 +3646,7 @@ public class SBMLParser {
 		}
 	}
 	*/
-	private static void addComponentLayoutInformation(ArrayList<ACComponentNode> list, GeneralGlyph parentGlyph, String prefix)
+	private void addComponentLayoutInformation(ArrayList<ACComponentNode> list, GeneralGlyph parentGlyph, String prefix)
 	{
 		ACComponentNode node;
 		ACComponentDefinition definition;
@@ -3221,7 +3680,7 @@ public class SBMLParser {
 		}
 	}
 	
-	private static void newaddSubmoduleLayoutInformation(Module parentModule, GeneralGlyph parentGlyph)
+	private void addSubmoduleLayoutInformation(Module parentModule, GeneralGlyph parentGlyph)
 	{
 		Module submodule;
 		ListIterator<Module> submoduleList = parentModule.getChildren().listIterator();
@@ -3232,7 +3691,7 @@ public class SBMLParser {
 		}
 	}
 	
-	private static Species getSpecies(ListOfSpecies speciesList, String name)
+	private Species getSpecies(ListOfSpecies speciesList, String name)
 	{
 		Species currentSpecies;
 		for (long i = 0; i < speciesList.size(); i++)
@@ -3246,7 +3705,7 @@ public class SBMLParser {
 		return null;
 	}
 	
-	private static Parameter getParameter(ListOfParameters parameterList, String name)
+	private Parameter getParameter(ListOfParameters parameterList, String name)
 	{
 		Parameter currentParameter;
 		for (long i = 0; i < parameterList.size(); i++)
@@ -3260,7 +3719,7 @@ public class SBMLParser {
 		return null;
 	}
 	
-	private static String getSpeciesName(ListOfSpecies speciesList, String idRef)
+	private String getSpeciesName(ListOfSpecies speciesList, String idRef)
 	{
 		Species spec = speciesList.get(idRef);
 		if(spec == null)
@@ -3271,7 +3730,7 @@ public class SBMLParser {
 		return spec.getName();
 	}
 	
-	private static String getGlobalQuantityName(ListOfParameters parameterList, String idRef)
+	private String getGlobalQuantityName(ListOfParameters parameterList, String idRef)
 	{
 		Parameter param = parameterList.get(idRef);
 		if(param == null)
@@ -3282,7 +3741,7 @@ public class SBMLParser {
 		return param.getName();
 	}
 	
-	private static Module findModule(String moduleID, Module module, boolean fromContainer)
+	private Module findModule(String moduleID, Module module, boolean fromContainer)
 	{
 		if (fromContainer)
 		{
@@ -3311,7 +3770,7 @@ public class SBMLParser {
 		return null;
 	}
 	
-	private static PortNode findPort(String portName, String parentModuleID, Module module, boolean fromContainer)
+	private PortNode findPort(String portName, String parentModuleID, Module module, boolean fromContainer)
 	{
 		Module portParentMod = findModule(parentModuleID, module, fromContainer);
 		if (portParentMod == null)
@@ -3332,7 +3791,120 @@ public class SBMLParser {
 		return null;
 	}
 	
-	private static void removePluginData(SBMLDocument document)
+	private GeneralGlyph findGlyph(SBMLDocument document, Model containerModel, Model importModel)
+	{
+		String targetName = importModel.getName() + SUBMODULE_GLYPH_CODE;;
+		String targetID = importModel.getId();
+		GeneralGlyph modelGlyph = null;
+		LayoutModelPlugin lplugin = (LayoutModelPlugin)containerModel.getPlugin("layout");
+		ListOfLayouts layouts = lplugin.getListOfLayouts();
+		Layout layout = layouts.get(0);
+		GeneralGlyph glyph = layout.getGeneralGlyph(0);
+		if (glyph != null)
+		{
+			// check if the first glyph corresponds to importModel
+			if (targetName.equals(glyph.getId()))
+			{
+				return glyph;
+			}
+			
+			// check for instances of importModel in the submodels
+			List<String> instanceNames = findInstanceNames(document, containerModel, targetID);
+			
+			if (instanceNames.size() > 0)
+			{
+				//add SUBMODULE_GLYPH_CODE to each item in instanceNames
+				String name;
+				for (int i = 0; i < instanceNames.size(); i++)
+				{
+					name = instanceNames.get(i) + SUBMODULE_GLYPH_CODE;
+					instanceNames.set(i, name);
+				}
+				modelGlyph = findGlyph(glyph, instanceNames);
+			}
+		}
+		
+		/*
+		String targetName = model.getName() + SUBMODULE_GLYPH_CODE;
+		
+		if (glyph.getId().equals(targetName))
+		{
+			return glyph;
+		}
+		findGlyph(glyph, targetName, modelGlyph);
+		*/
+		return modelGlyph;
+	}
+	
+	private GeneralGlyph findGlyph(GeneralGlyph glyph, List<String> instanceNames)
+	{
+		GeneralGlyph modelGlyph = null;
+		if (instanceNames.contains(glyph.getId()))
+		{
+			modelGlyph = glyph;
+		}
+		else
+		{
+			GraphicalObject graphObject;
+			GeneralGlyph tempGlyph;
+			for (long i = 0; i < glyph.getNumSubGlyphs(); i++)
+			{
+				graphObject = glyph.getSubGlyph(i);
+				if (graphObject instanceof GeneralGlyph)
+				{
+					tempGlyph = findGlyph((GeneralGlyph)graphObject, instanceNames);
+					if (tempGlyph != null)
+					{
+						return tempGlyph;
+					}
+				}
+			}
+		}
+		return modelGlyph;
+	}
+	
+	private List<String> findInstanceNames(SBMLDocument document, Model root, String targetModelRef)
+	{
+		List<String> names = new ArrayList<String>();
+		try
+		{
+			if (document.isPackageEnabled("comp"))
+			{
+				findInstanceNames(document, root, targetModelRef, names);
+			}
+		} 
+		catch (Exception e)
+		{
+			// nothing to do
+		}
+		
+		return names;
+	}
+	
+	private void findInstanceNames(SBMLDocument document, Model containerModel, String targetModelRef, List<String> names)
+	{
+		CompSBMLDocumentPlugin docPlugin = (CompSBMLDocumentPlugin)document.getPlugin("comp");
+		CompModelPlugin modelPlugin = (CompModelPlugin)containerModel.getPlugin("comp");
+		if (modelPlugin.getNumSubmodels() > 0)
+		{
+			Submodel submodel;
+			String submodelRef;
+			ModelDefinition submodelDefinition;
+			for (long i = 0; i < modelPlugin.getNumSubmodels(); i++)
+			{
+				submodel = modelPlugin.getSubmodel(i);
+				submodelRef = submodel.getModelRef();
+				if (submodelRef.equals(targetModelRef))
+				{
+					names.add(submodel.getId());
+				}
+				submodelDefinition = docPlugin.getModelDefinition(submodelRef);
+				findInstanceNames(document, submodelDefinition, targetModelRef, names);
+			}
+		}
+	}
+	
+	private void removePluginData(SBMLDocument document)
 	{
 		/*
 		CompModelPlugin compPlugin = (CompModelPlugin)model.getPlugin("comp");
@@ -3431,7 +4003,7 @@ public class SBMLParser {
 		}
 	}
 	
-	private static void removeReplacedElements(ListOf list)
+	private void removeReplacedElements(ListOf list)
 	{
 		SBase item;
 		CompSBasePlugin itemPlugin;
@@ -3446,7 +4018,7 @@ public class SBMLParser {
 		}
 	}
 	
-	private static boolean checkValidSBML(String sbml)
+	private boolean checkValidSBML(String sbml)
 	{
 		SBMLDocument sdoc = libsbml.readSBMLFromString(sbml);
 		System.out.println("Document Level: " + sdoc.getLevel());
@@ -3462,7 +4034,7 @@ public class SBMLParser {
 		//libsbml.writeSBMLToFile(sdoc, "_" + sdoc.getModel().getId() + "_debug.xml");
 	}
 	
-	private static void setSBMLNamespaces(SBMLDocument doc, XMLNamespaces importedNamespaces)
+	private void setSBMLNamespaces(SBMLDocument doc, XMLNamespaces importedNamespaces)
 	{
 		// create the new SBMLNamspace with level 3 version 1
 		SBMLNamespaces sbmlns = new SBMLNamespaces(3, 1);
@@ -3488,7 +4060,7 @@ public class SBMLParser {
 		//System.out.println(doc.isSetPackageRequired("comp"));
 	}
 	
-	private static void generateModuleIDs(Module mod)
+	private void generateModuleIDs(Module mod)
 	{
 		int count;
 		String prefix;
@@ -3515,7 +4087,7 @@ public class SBMLParser {
 		}
 	}
 	
-	private static String validateModuleName(Module parent, String name)
+	private String validateModuleName(Module parent, String name)
 	{		
 		if (name == null || name.isEmpty())
 		{
@@ -3535,7 +4107,7 @@ public class SBMLParser {
 		return name;
 	}
 	
-	private static boolean validateModuleDefinitionName(SBMLDocument document)
+	private boolean validateModuleDefinitionName(SBMLDocument document)
 	{
 		String name = document.getModel().getName();
 		
@@ -3563,7 +4135,7 @@ public class SBMLParser {
 		return true;
 	}
 	
-	private static boolean validateContainerModuleName(SBMLDocument document)
+	private boolean validateContainerModuleName(SBMLDocument document)
 	{
 		String name = document.getModel().getName();
 		
@@ -3591,7 +4163,7 @@ public class SBMLParser {
 		return true;
 	}
 	
-	private static String generateContainerModuleDefinitionName(String moduleName)
+	private String generateContainerModuleDefinitionName(String moduleName)
 	{
 		int index = 0;
 		String base = moduleName + "Template";
@@ -3604,7 +4176,7 @@ public class SBMLParser {
 		return candidate;
 	}
 	
-	private static ModuleDefinition getModuleDefinition(String id)
+	private ModuleDefinition getModuleDefinition(String id)
 	{
 		ModuleDefinition currentDefinition;
 		ListIterator<ModuleDefinition> list = definitionList.listIterator();
@@ -3619,7 +4191,7 @@ public class SBMLParser {
 		return null;
 	}
 	
-	private static ACComponentDefinition getACComponentDefinition(ListIterator<ACComponentDefinition> list, String refName)
+	private ACComponentDefinition getACComponentDefinition(ListIterator<ACComponentDefinition> list, String refName)
 	{
 		ACComponentDefinition currentDefinition;
 		while (list.hasNext())
@@ -3633,7 +4205,7 @@ public class SBMLParser {
 		return null;
 	}
 	
-	private static GraphicalObject getCompartmentGlyph(ListOfGraphicalObjects list)
+	private GraphicalObject getCompartmentGlyph(ListOfGraphicalObjects list)
 	{
 		GraphicalObject subGlyph;
 		for (long i = 0; i < list.size(); i++)
@@ -3647,7 +4219,7 @@ public class SBMLParser {
 		return null;
 	}
 	
-	private static void prependNameToComponents(SBMLDocument doc, String name)
+	private void prependNameToComponents(SBMLDocument doc, String name)
 	{
 		if (!prependNameToSpecies(doc, name))
 		{
@@ -3670,7 +4242,7 @@ public class SBMLParser {
 		}
 	}
 	
-	private static boolean prependNameToSpecies(SBMLDocument doc, String name)
+	private boolean prependNameToSpecies(SBMLDocument doc, String name)
 	{
 		ListOfSpecies list = doc.getModel().getListOfSpecies();
 		String newName;
@@ -3688,7 +4260,7 @@ public class SBMLParser {
 		return true;
 	}
 	
-	private static boolean prependNameToParameters(SBMLDocument doc, String name)
+	private boolean prependNameToParameters(SBMLDocument doc, String name)
 	{
 		ListOfParameters list = doc.getModel().getListOfParameters();
 		String newName;
@@ -3706,7 +4278,7 @@ public class SBMLParser {
 		return true;
 	}
 	
-	private static boolean prependNameToCompartments(SBMLDocument doc, String name)
+	private boolean prependNameToCompartments(SBMLDocument doc, String name)
 	{
 		ListOfCompartments list = doc.getModel().getListOfCompartments();
 		String newName;
@@ -3724,7 +4296,7 @@ public class SBMLParser {
 		return true;
 	}
 	
-	private static boolean prependNameToReactions(SBMLDocument doc, String name)
+	private boolean prependNameToReactions(SBMLDocument doc, String name)
 	{
 		ListOfReactions list = doc.getModel().getListOfReactions();
 		String newName;
@@ -3742,7 +4314,7 @@ public class SBMLParser {
 		return true;
 	}
 	
-	private static String ensureCompIsEnabled(String sbmlString)
+	private String ensureCompIsEnabled(String sbmlString)
 	{
 		SBMLDocument document = libsbml.readSBMLFromString(sbmlString);
 		if (document.getNumErrors(libsbml.LIBSBML_SEV_ERROR) > 0)
@@ -3776,7 +4348,7 @@ public class SBMLParser {
 		return libsbml.writeSBMLToString(document);	
 	}
 	
-	private static BoundingBox createBoundingBox(mxGeometry geo)
+	private BoundingBox createBoundingBox(mxGeometry geo)
 	{
 		BoundingBox box = new BoundingBox();
 		Dimensions dim = new Dimensions();
@@ -3802,7 +4374,7 @@ public class SBMLParser {
 		return box;
 	}
 	
-	private static SBMLDocument readSBMLDocument(String fileName)
+	private SBMLDocument readSBMLDocument(String fileName)
 	{
 		SBMLDocument document;
 		try
@@ -3841,17 +4413,17 @@ public class SBMLParser {
 		return document;
 	}
 	
-	private static boolean isDocumentValid(SBMLDocument document)
+	private boolean isDocumentValid(SBMLDocument document)
 	{
 		return document.getNumErrors() == 0;
 	}
 	
-	private static boolean isDocumentLevelSupported(SBMLDocument document)
+	private boolean isDocumentLevelSupported(SBMLDocument document)
 	{
 		return document.getLevel() == 3;
 	}
 	
-	private static void displayErrorMessage(String message)
+	private void displayErrorMessage(String message)
 	{
 		String title = "Import Error";
 		AC_Utility.displayMessage(JOptionPane.ERROR_MESSAGE, title, message);

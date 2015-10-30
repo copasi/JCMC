@@ -20,8 +20,9 @@ import javax.swing.tree.DefaultMutableTreeNode;
 public class ACMenuListener implements ActionListener
 {
 
-	JFileChooser fileChooser;
+	final JFileChooser fileChooser = new JFileChooser(".");
 	File file;
+	String suggestedName;
 	String fileName;
 	String msg;
 	
@@ -39,7 +40,6 @@ public class ACMenuListener implements ActionListener
 		command = command.replaceAll(" ", "_");
 		MenuItem selection = MenuItem.valueOf(command.toUpperCase());
 		String name;
-		Module parentMod;
 		DefaultMutableTreeNode node;
 		DefaultMutableTreeNode parent;
 		MathematicalAggregatorAddEditor mathAddEditor;
@@ -76,7 +76,7 @@ public class ACMenuListener implements ActionListener
 			}
 			else
 			{
-				fileChooser = new JFileChooser(".");
+				//fileChooser = new JFileChooser(".");
 	    		
 	            if (fileChooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) 
 	            {
@@ -118,8 +118,10 @@ public class ACMenuListener implements ActionListener
 				else
 				{
 					fileName = null;
-					fileChooser = new JFileChooser (new File ("."));
+					//fileChooser = new JFileChooser (new File ("."));
+					suggestedName = AC_GUI.rootModule.getModuleDefinition().getName();
 					fileChooser.setFileFilter (new FileNameExtensionFilter("Model file (.jcmc)","jcmc"));
+					fileChooser.setSelectedFile(new File(suggestedName));
 					while (fileChooser.showSaveDialog(null) == JFileChooser.APPROVE_OPTION)
 					{
 						file = fileChooser.getSelectedFile();
@@ -188,8 +190,10 @@ public class ACMenuListener implements ActionListener
 			if (AC_GUI.isModuleOpen())
 			{
 				fileName = null;
-				fileChooser = new JFileChooser (new File ("."));
+				//fileChooser = new JFileChooser (new File ("."));
+				suggestedName = AC_GUI.rootModule.getModuleDefinition().getName();
 				fileChooser.setFileFilter (new FileNameExtensionFilter("Model file (.jcmc)","jcmc"));
+				fileChooser.setSelectedFile(new File(suggestedName));
 				while (fileChooser.showSaveDialog(null) == JFileChooser.APPROVE_OPTION)
 				{
 					file = fileChooser.getSelectedFile();
@@ -239,11 +243,11 @@ public class ACMenuListener implements ActionListener
 		case EXPORT_SBML:
 			if (AC_GUI.isModuleOpen())
 			{
-				//String suggestedname = AC_GUI.rootModule.getModuleDefinition().getName();
 				fileName = null;
-				fileChooser = new JFileChooser (new File ("."));
+				//fileChooser = new JFileChooser (new File ("."));
+				suggestedName = AC_GUI.rootModule.getModuleDefinition().getName();
 				fileChooser.setFileFilter (new FileNameExtensionFilter("SBML file (.xml)","xml"));
-				//fileChooser.setSelectedFile(new File(suggestedname + ".xml"));
+				fileChooser.setSelectedFile(new File(suggestedName));
 				while (fileChooser.showSaveDialog(null) == JFileChooser.APPROVE_OPTION)
 				{
 					file = fileChooser.getSelectedFile();

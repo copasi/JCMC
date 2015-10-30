@@ -95,6 +95,7 @@ public class AC_GUI extends JFrame
 	 * 
 	 * @param args command line arguments
 	 */
+	/*
 	public static void main(String[] args)
 	{
 		try
@@ -116,6 +117,7 @@ public class AC_GUI extends JFrame
 		// make the frame full screen
 		// currentGUI.setExtendedState(JFrame.MAXIMIZED_BOTH);
 	}
+	*/
 	
 	/**
 	* Adds the specified path to the java library path
@@ -123,6 +125,7 @@ public class AC_GUI extends JFrame
 	* @param pathToAdd the path to add
 	* @throws Exception
 	*/
+	/*
 	public static void addLibraryPath(String pathToAdd) throws Exception{
 		final Field usrPathsField = ClassLoader.class.getDeclaredField("usr_paths");
 		usrPathsField.setAccessible(true);
@@ -142,6 +145,7 @@ public class AC_GUI extends JFrame
 		newPaths[newPaths.length-1] = pathToAdd;
 		usrPathsField.set(null, newPaths);
 	}
+	*/
 	
 	private String getVersionFromFile() 
 	{
@@ -195,7 +199,9 @@ public class AC_GUI extends JFrame
 		{
 			if ((ext.equals(".xml")) || (ext.equals(".sbml")))
 			{
-				mod = SBMLParser.importSBML(fileName, external);
+				//mod = SBMLParser.importSBML(fileName, external);
+				SBMLParser parser = new SBMLParser();
+				mod = parser.importSBML(fileName, external);
 			}
 			else if (ext.equals(".cps"))
 			{
@@ -260,7 +266,9 @@ public class AC_GUI extends JFrame
 		{
 			if ((ext.equals(".xml")) || (ext.equals(".sbml")))
 			{
-				mod = SBMLParser.importSBML(fileName, parent, external);
+				//mod = SBMLParser.importSBML(fileName, parent, external);
+				SBMLParser parser = new SBMLParser();
+				mod = parser.importSBML(fileName, parent, external);
 			}
 			else if (ext.equals(".cps"))
 			{
@@ -344,7 +352,8 @@ public class AC_GUI extends JFrame
 			return;
 		}
 		//CopasiUtility.printDataModelList();
-		if (SBMLParser.exportSBML(activeModule, fileName))
+		SBMLParser parser = new SBMLParser();
+		if (parser.exportSBML(activeModule, fileName))
 		{
 			JOptionPane.showMessageDialog(null, "The module has been saved in " + fileName);
 			addRecentFile(fileName);
@@ -1683,7 +1692,7 @@ public class AC_GUI extends JFrame
 		//JScrollPane modelBuilderWindow = new JScrollPane(modelBuilderPanel);
 		
 		// The aggregation window
-		drawingBoard = new DrawingBoard();
+		drawingBoard = new DrawingBoard(this);
 
 		// The tree window
 		treeView = new TreeView();

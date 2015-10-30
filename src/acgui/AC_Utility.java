@@ -2450,7 +2450,8 @@ public class AC_Utility
 	private static String generateModuleDefinitionName()
 	{
 		int index = 0;
-		String candidate = "ModuleTemplate_" + index;
+		String prefix = "ModuleTemplate_";
+		String candidate = prefix + index;
 		while (moduleDefinitionNameSet.contains(candidate))
 		{
 			index++;

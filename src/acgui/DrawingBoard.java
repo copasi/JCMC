@@ -54,6 +54,7 @@ public class DrawingBoard extends JPanel
 	private final int DEFAULT_BUTTON_HEIGHT = 20;
 	private final int DEFAULT_BUTTON_WIDTH = 20;
 	
+	private AC_GUI gui;
 	private ACGraph graph;
 	private Object parent;
 	private Module activeModule;
@@ -64,8 +65,9 @@ public class DrawingBoard extends JPanel
 	/**
 	 * Construct the drawing board.
 	 */
-	public DrawingBoard()
+	public DrawingBoard(AC_GUI iGUI)
 	{
+		gui = iGUI;
 		graph = new ACGraph();
 		this.styleSetup();
 		graph.setDropEnabled(false);
