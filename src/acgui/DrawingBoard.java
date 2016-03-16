@@ -3595,40 +3595,30 @@ public class DrawingBoard extends JPanel
 						if (sourceValue instanceof PortNode)
 						{
 							source = "Port ";
-							source += ((PortNode)sourceValue).getParent().getModuleDefinition().getName();
-							source += ".";// + ((PortNode)sourceValue).getPortDefinition().getName();
-						} else if (sourceValue instanceof VisibleVariableNode)
+							source += ((PortNode)sourceValue).getParent().getName();
+							source += "." + ((PortNode)sourceValue).getDefinition().getName();
+						} else if ((sourceValue instanceof VisibleVariableNode) || (sourceValue instanceof EquivalenceNode))
 						{
-							source = "Variable ";
-							//source += ((VisibleVariableNode)sourceValue).getVisibleVariableDefinition().getRefName();
-						} else if (sourceValue instanceof EquivalenceNode)
-						{
-							source = "Equivalence Node ";
-							//source += ((EquivalenceNode)sourceValue).getEquivalenceDefinition().getRefName();
-						}
-						source += ((ACComponentNode)sourceValue).getDefinition().getRefName();
+							source = ((ACComponentNode)sourceValue).getDefinition().getVariableType().toString();
+							source += " " + ((ACComponentNode)sourceValue).getDefinition().getRefName();
+						}				
 						
 						if (targetValue instanceof PortNode)
 						{
 							target = "Port ";
-							target += ((PortNode)targetValue).getParent().getModuleDefinition().getName();
-							target += ".";// + ((PortNode)targetValue).getPortDefinition().getName();
-						} else if (targetValue instanceof VisibleVariableNode)
+							target += ((PortNode)targetValue).getParent().getName();
+							target += "." + ((PortNode)targetValue).getDefinition().getName();
+						} else if ((targetValue instanceof VisibleVariableNode) || (targetValue instanceof EquivalenceNode))
 						{
-							target = "Variable ";
-							//target += ((VisibleVariableNode)targetValue).getVisibleVariableDefinition().getRefName();
-						} else if (targetValue instanceof EquivalenceNode)
-						{
-							target = "Equivalence Node ";
-							//target += ((EquivalenceNode)targetValue).getEquivalenceDefinition().getRefName();
+							target = ((ACComponentNode)targetValue).getDefinition().getVariableType().toString();
+							target += " " + ((ACComponentNode)targetValue).getDefinition().getRefName();
 						}
-						target += ((ACComponentNode)targetValue).getDefinition().getRefName();
 						
 						String msg = "Source = " + source;
 						msg += AC_Utility.eol;
 						msg += "Destination = " + target;
 						msg += AC_Utility.eol;
-						msg += "CellStyle: " + cNode.getDrawingCellStyle();
+						//msg += "CellStyle: " + cNode.getDrawingCellStyle();
 						JOptionPane.showMessageDialog(null, msg);
 					}
 				});
