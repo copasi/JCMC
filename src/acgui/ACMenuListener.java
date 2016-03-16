@@ -439,7 +439,29 @@ public class ACMenuListener implements ActionListener
 						{
 							if (AC_GUI.canModuleRemoveSubmodule(AC_GUI.activeModule))
 							{
-								AC_GUI.removeSubmodule(AC_GUI.selectedModule, true);
+								msg = "Removing a Module will remove all associated connections and" + AC_Utility.eol;
+								msg += "any Submodules contained within." + AC_Utility.eol;
+								msg += "This operation is not reversible." + AC_Utility.eol;
+								msg += "Are you sure you want to remove ";
+								msg += "\"" + AC_GUI.selectedModule.getName() + "\"?";
+								int n = JOptionPane.showOptionDialog(AC_GUI.drawingBoard.graphComponent,
+									    msg,
+									    "Warning",
+									    JOptionPane.YES_NO_OPTION,
+									    JOptionPane.WARNING_MESSAGE,
+									    null,     //do not use a custom Icon
+									    null,  //the titles of buttons
+									    JOptionPane.NO_OPTION); //default button title
+								switch(n)
+								{
+									case JOptionPane.YES_OPTION:
+										//System.out.println("The user chose to remove.");
+										AC_GUI.removeSubmodule(AC_GUI.selectedModule, true);
+										break;
+									case JOptionPane.NO_OPTION:
+										//System.out.print("The user chose not to remove.");
+										break;
+								}
 							}
 						}
 						else
@@ -465,7 +487,7 @@ public class ACMenuListener implements ActionListener
 				{
 					// no Module was selected.
 					JOptionPane.showMessageDialog(null,
-							"Please select a module from the tree to remove.");
+							"Please select a module to remove.");
 				}
 			}
 			else

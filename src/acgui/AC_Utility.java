@@ -1731,7 +1731,7 @@ public class AC_Utility
 	
 	public static boolean createUniqueIDs(Module module)
 	{
-		id_index = 0;
+		id_index = 10;
 		try
 		{
 			setModuleDefinitionID(module.getModuleDefinition());
