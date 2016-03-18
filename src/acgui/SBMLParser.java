@@ -2257,14 +2257,14 @@ public class SBMLParser {
 		return module;
 	}
 	
-	private ModuleDefinition importModuleDefinition(Model moduleDefinition, ModuleDefinition parent, SBMLNamespaces nameSpaces, Submodel model)
+	private ModuleDefinition importInternalModuleDefinition(Model internalDefinition, ModuleDefinition parent, SBMLNamespaces nameSpaces, Submodel model)
 	{
-		String sbmlID = moduleDefinition.getId();
-		String name = moduleDefinition.getName();
+		String sbmlID = internalDefinition.getId();
+		String name = internalDefinition.getName();
 		String sbmlString;
 		SBMLDocument doc = new SBMLDocument(nameSpaces);
 		
-		int setModelCode = doc.setModel(moduleDefinition);
+		int setModelCode = doc.setModel(internalDefinition);
 		if(setModelCode != 0)
 		{
 			System.err.println("Error in SBMLParser.importModuleDefinition: setModelCode = " + setModelCode);
@@ -2280,7 +2280,7 @@ public class SBMLParser {
 		removePluginData(doc);
 		sbmlString = libsbml.writeSBMLToString(doc);
 		//System.out.println(modString);
-		System.out.println("Validate submodule: " + moduleDefinition.getId());
+		System.out.println("Validate submodule: " + internalDefinition.getId());
 		if (!checkValidSBML(sbmlString))
 		{
 			System.err.println("Error in SBMLParser.importModuleDefinition: A submodel definition is invalid.");
@@ -2338,9 +2338,21 @@ public class SBMLParser {
 		String source = externalDefinition.getSource();
 		String modelRef = externalDefinition.getModelRef();
 		String md5 = externalDefinition.getMd5();
-		
-		Model refModel = externalDefinition.getReferencedModel();
 		String sbmlString;
+		
+		SBMLHTTPResolver resolver = new SBMLHTTPResolver();
+		int resolverIndex = SBMLResolverRegistry.getInstance().addResolver(resolver);
+		Model refModel = externalDefinition.getReferencedModel();
+		SBMLResolverRegistry.getInstance().removeResolver(resolverIndex);
+		SBMLResolverRegistry.deleteResolerRegistryInstance();
+		resolver = null;
+		
+		if (refModel == null)
+		{
+			// the externalDefinition was not successfully retrieved
+			return null;
+		}
+		
 		SBMLDocument doc = new SBMLDocument(refModel.getSBMLNamespaces());
 		
 		int setModelCode = doc.setModel(refModel);
@@ -2500,7 +2512,7 @@ public class SBMLParser {
 			
 			//modString = modString.replace("xmlns:comp=\"http://www.sbml.org/sbml/level3/version1/comp/version1\"", "");
 			//modString = modString.replace("comp:required=\"false\"", "");
-			definition = getModuleDefinition(modelRef);
+			definition = getExistingModuleDefinition(modelRef);
 			if (definition == null)
 			{
 				if ((internalModuleDefinition != null) && (externalModuleDefinition == null))
@@ -2508,7 +2520,7 @@ public class SBMLParser {
 					// module definition is internal
 					modelDefinition = internalModuleDefinition;
 					//System.out.println(moduleDefinition.toSBML());
-					definition = importModuleDefinition(modelDefinition, parent.getModuleDefinition(), nameSpaces, submodule);
+					definition = importInternalModuleDefinition(modelDefinition, parent.getModuleDefinition(), nameSpaces, submodule);
 				}
 				else if ((internalModuleDefinition == null) && (externalModuleDefinition != null))
 				{
@@ -4176,7 +4188,13 @@ public class SBMLParser {
 		return candidate;
 	}
 	
-	private ModuleDefinition getModuleDefinition(String id)
+	/**
+	 * Searches existing JCMC ModuleDefinitions for a match.
+	 * @param id, the id to match
+	 * @return the matching JCMC ModuleDefinition if found,
+	 * otherwise null.
+	 */
+	private ModuleDefinition getExistingModuleDefinition(String id)
 	{
 		ModuleDefinition currentDefinition;
 		ListIterator<ModuleDefinition> list = definitionList.listIterator();
@@ -4381,18 +4399,18 @@ public class SBMLParser {
 		{			
 			document = libsbml.readSBMLFromFile(fileName);
 			
-			//System.out.println("Document Level: " + sdoc.getLevel());
-			//System.out.println("Document Version: " + sdoc.getVersion());
+			System.out.println("Document Level: " + document.getLevel());
+			System.out.println("Document Version: " + document.getVersion());
 
 			if (!isDocumentValid(document))
 			{
 				String msg = "This SBML file contains errors. Please try to open a valid SBML file.";
 				displayErrorMessage(msg);
-				/*
+				
 				System.err.println("Encountered errors while reading the file. ");
 				System.err.println("Please correct the following errors and try again.");
 				document.printErrors();
-				*/
+				
 				return null;
 			}
 			
