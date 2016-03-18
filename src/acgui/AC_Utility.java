@@ -1302,9 +1302,9 @@ public class AC_Utility
 		{
 			if (displayMessage)
 			{
-				String message = "\"" + module.getName() + "\" ";
-				message += " already contains a submodule with the name \"" + name + "\"." + eol;
-				message += "A container cannot have the same name as one of its submodules." + eol;
+				String message = "<html><b>" + module.getName() + "</b> ";
+				message += " already contains a submodule with the name \"" + name + "\".<br>";
+				message += "A container cannot have the same name as one of its submodules.<br>";
 				message += "Please enter a different name.";
 				//JOptionPane.showMessageDialog(null, message, "Invalid Name", JOptionPane.WARNING_MESSAGE);
 				displayMessage(JOptionPane.WARNING_MESSAGE, "Invalid Name", message);

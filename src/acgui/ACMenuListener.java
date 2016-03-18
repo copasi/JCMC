@@ -8,6 +8,7 @@ import java.io.File;
 import javax.swing.ImageIcon;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -56,6 +57,7 @@ public class ACMenuListener implements ActionListener
 			}
 			else
 			{
+				String o = "awesome";
 				name = AC_Utility.promptUserForNewModuleName(null, "Please enter a name:");
 				if (name != null)
 				{
@@ -439,11 +441,11 @@ public class ACMenuListener implements ActionListener
 						{
 							if (AC_GUI.canModuleRemoveSubmodule(AC_GUI.activeModule))
 							{
-								msg = "Removing a Module will remove all associated connections and" + AC_Utility.eol;
-								msg += "any Submodules contained within." + AC_Utility.eol;
-								msg += "This operation is not reversible." + AC_Utility.eol;
+								msg = "<html>Removing a Module will remove all associated connections and<br>";
+								msg += "any Submodules contained within.<br>";
+								msg += "This operation is not reversible.<br>";
 								msg += "Are you sure you want to remove ";
-								msg += "\"" + AC_GUI.selectedModule.getName() + "\"?";
+								msg += "<b>" + AC_GUI.selectedModule.getName() + "</b>?";
 								int n = JOptionPane.showOptionDialog(AC_GUI.drawingBoard.graphComponent,
 									    msg,
 									    "Warning",

@@ -1508,7 +1508,7 @@ public class AC_GUI extends JFrame
 			{
 				//Object[] options = {"Yes","No","Cancel"};
 				int userInput = JOptionPane.showOptionDialog(null,
-						"Model \""+ activeModule.getName() +"\" has been modified. Do you want to save the changes?",
+						"<html>Model <b>"+ activeModule.getName() +"</b> has been modified. Do you want to save the changes?",
 						"Question",
 						JOptionPane.YES_NO_CANCEL_OPTION,
 						JOptionPane.QUESTION_MESSAGE,
@@ -1601,7 +1601,7 @@ public class AC_GUI extends JFrame
 			{
 				//Object[] options = {"Yes","No","Cancel"};
 				int userInput = JOptionPane.showOptionDialog(null,
-						"Model \""+ activeModule.getName() +"\" has been modified. Do you want to save the changes?",
+						"<html>Model <b>"+ activeModule.getName() +"</b> has been modified. Do you want to save the changes?",
 						"Question",
 						JOptionPane.YES_NO_CANCEL_OPTION,
 						JOptionPane.QUESTION_MESSAGE,
